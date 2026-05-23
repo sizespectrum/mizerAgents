@@ -6,3 +6,6 @@
 ^pkgdown$
 ^README\.Rmd$
 ^cran-comments\.md$
+^\.positai$
+^\.claude$
+^AGENTS\.md$

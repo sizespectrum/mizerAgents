@@ -17,8 +17,8 @@ with a single function call.
 ## Installation
 
 ```r
-# install.packages("remotes")
-remotes::install_github("sizespectrum/mizerAgents")
+# install.packages("pak")
+pak::pak("sizespectrum/mizerAgents")
 ```
 
 ## Usage
@@ -40,12 +40,13 @@ This creates:
 - **`CLAUDE.md`** / **`GEMINI.md`** — agent-specific shims pointing to
   `AGENTS.md` (only created if they do not already exist).
 
-Then start your AI coding agent from the terminal:
+Then open a terminal in your project directory and start your favourite
+coding agent CLI, for example:
 
 ```
-claude    # Claude Code
-codex     # Codex CLI
-gemini    # Gemini CLI
+claude    # Claude Code (Anthropic)
+codex     # Codex CLI (OpenAI)
+agy       # Antigravity CLI (Google)
 copilot   # GitHub Copilot CLI
 ```
 
@@ -62,8 +63,3 @@ The agent will immediately have the mizer context it needs.
 ## Documentation
 
 <https://sizespectrum.github.io/mizerAgents/>
-
-## Related packages
-
-- [mizer](https://sizespectrum.org/mizer/) — the core size-spectrum modelling package
-- [mizerExamples](https://sizespectrum.org/mizerExamples/) — example mizer models

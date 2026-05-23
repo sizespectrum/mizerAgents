@@ -27,5 +27,6 @@ URL: https://sizespectrum.github.io/mizerAgents/,
     https://github.com/sizespectrum/mizerAgents
 BugReports: https://github.com/sizespectrum/mizerAgents/issues
 Language: en-GB
+VignetteBuilder: knitr
 Config/testthat/edition: 3
 Config/roxygen2/version: 8.0.0

@@ -10,7 +10,7 @@
 \href{https://sizespectrum.org/mizer/}{mizer} package for dynamic multi-species
 size-spectrum modelling. It bundles a mizer reference card and API
 documentation optimised for large language models, and deploys them into any
-mizer project with a single call to \code{\link[mizer:setup_mizer_agent]{setup_mizer_agent()}}.
+mizer project with a single call to \code{\link[=setup_mizer_agent]{setup_mizer_agent()}}.
 }
 \seealso{
 Useful links:

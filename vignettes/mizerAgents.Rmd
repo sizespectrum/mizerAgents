@@ -22,14 +22,14 @@ functions do in plain language.
 This article explains how to get an agent working inside RStudio and shows
 a range of example tasks where one can save you significant time.
 
-
 ## Quick start: one-line setup
 
-Mizer bundles everything an AI agent needs to understand its API. Run this
-once in your R project:
+mizerAgents bundles everything an AI agent needs to understand the mizer API.
+You only need to run this once in your R project:
 
 ```r
-mizer::setup_mizer_agent()
+pak::pak("sizespectrum/mizerAgents")
+mizerAgents::setup_mizer_agent()
 ```
 
 This creates four files in your working directory:
