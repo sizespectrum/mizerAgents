@@ -1,0 +1,28 @@
+url: https://sizespectrum.github.io/mizerAgents/
+
+template:
+  bootstrap: 5
+
+home:
+  title: "mizerAgents — AI Agent Support for Mizer"
+  description: >
+    Set up AI coding agents (Claude Code, Copilot, Codex, Gemini) to work
+    effectively with the mizer size-spectrum modelling package.
+
+reference:
+  - title: "Setting up AI agents"
+    desc: >
+      Deploy mizer context files into your project so that AI agents pick
+      up the mizer reference card and API documentation automatically.
+    contents:
+      - setup_mizer_agent
+
+navbar:
+  structure:
+    left:  [intro, reference, articles, news]
+    right: [search, github]
+  components:
+    github:
+      icon: fab fa-github
+      href: https://github.com/sizespectrum/mizerAgents
+      aria-label: GitHub
