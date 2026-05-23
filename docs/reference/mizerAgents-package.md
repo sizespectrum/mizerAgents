@@ -5,7 +5,7 @@
 multi-species size-spectrum modelling. It bundles a mizer reference card
 and API documentation optimised for large language models, and deploys
 them into any mizer project with a single call to
-[`setup_mizer_agent()`](https://sizespectrum.org/mizer/reference/setup_mizer_agent.html).
+[`setup_mizer_agent()`](https://sizespectrum.github.io/mizerAgents/reference/setup_mizer_agent.md).
 
 ## See also
 

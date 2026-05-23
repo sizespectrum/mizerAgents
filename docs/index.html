@@ -24,7 +24,7 @@
 
     <a class="navbar-brand me-2" href="index.html">mizerAgents</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -61,8 +61,8 @@
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># install.packages("remotes")</span></span>
-<span><span class="fu">remotes</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"sizespectrum/mizerAgents"</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="co"># install.packages("pak")</span></span>
+<span><span class="fu">pak</span><span class="fu">::</span><span class="fu"><a href="https://pak.r-lib.org/reference/pak.html" class="external-link">pak</a></span><span class="op">(</span><span class="st">"sizespectrum/mizerAgents"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="usage">Usage<a class="anchor" aria-label="anchor" href="#usage"></a>
@@ -80,10 +80,10 @@
 <li>
 <strong><code>CLAUDE.md</code></strong> / <strong><code>GEMINI.md</code></strong> — agent-specific shims pointing to <code>AGENTS.md</code> (only created if they do not already exist).</li>
 </ul>
-<p>Then start your AI coding agent from the terminal:</p>
-<pre><code><span><span class="va">claude</span>    <span class="co"># Claude Code</span></span>
-<span><span class="va">codex</span>     <span class="co"># Codex CLI</span></span>
-<span><span class="va">gemini</span>    <span class="co"># Gemini CLI</span></span>
+<p>Then open a terminal in your project directory and start your favourite coding agent CLI, for example:</p>
+<pre><code><span><span class="va">claude</span>    <span class="co"># Claude Code (Anthropic)</span></span>
+<span><span class="va">codex</span>     <span class="co"># Codex CLI (OpenAI)</span></span>
+<span><span class="va">agy</span>       <span class="co"># Antigravity CLI (Google)</span></span>
 <span><span class="va">copilot</span>   <span class="co"># GitHub Copilot CLI</span></span></code></pre>
 <p>The agent will immediately have the mizer context it needs.</p>
 </div>
@@ -120,16 +120,6 @@
 <h2 id="documentation">Documentation<a class="anchor" aria-label="anchor" href="#documentation"></a>
 </h2>
 <p><a href="https://sizespectrum.github.io/mizerAgents/" class="uri">https://sizespectrum.github.io/mizerAgents/</a></p>
-</div>
-<div class="section level2">
-<h2 id="related-packages">Related packages<a class="anchor" aria-label="anchor" href="#related-packages"></a>
-</h2>
-<ul>
-<li>
-<a href="https://sizespectrum.org/mizer/" class="external-link">mizer</a> — the core size-spectrum modelling package</li>
-<li>
-<a href="https://sizespectrum.org/mizerExamples/" class="external-link">mizerExamples</a> — example mizer models</li>
-</ul>
 </div>
 </div>
   </main><aside class="col-md-3"><div class="links">
