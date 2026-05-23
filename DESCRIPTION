@@ -1,0 +1,31 @@
+Package: mizerAgents
+Title: AI Agent Support for Mizer
+Date: 2026-05-23
+Type: Package
+Description: Provides tools for setting up AI coding agents (such as Claude
+    Code, GitHub Copilot, Codex, or Gemini) to work effectively with the mizer
+    R package for dynamic multi-species size-spectrum modelling. Bundles a
+    curated mizer reference card and API documentation optimised for large
+    language models, and installs them into any mizer project with a single
+    function call.
+Maintainer: Gustav Delius <gustav.delius@york.ac.uk>
+Authors@R: person("Gustav", "Delius", email="gustav.delius@york.ac.uk",
+                  role=c("cre", "aut", "cph"),
+                  comment = c(ORCID = "0000-0003-4092-8228"))
+Version: 0.0.0.9000
+License: GPL-3
+Suggests:
+    mizer,
+    testthat (>= 3.0.0),
+    pkgdown,
+    roxygen2,
+    knitr,
+    rmarkdown
+Roxygen: list(markdown = TRUE)
+Encoding: UTF-8
+URL: https://sizespectrum.github.io/mizerAgents/,
+    https://github.com/sizespectrum/mizerAgents
+BugReports: https://github.com/sizespectrum/mizerAgents/issues
+Language: en-GB
+Config/testthat/edition: 3
+Config/roxygen2/version: 8.0.0
