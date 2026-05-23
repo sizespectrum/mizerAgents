@@ -1,0 +1,207 @@
+---
+title: "Using AI Agents with Mizer"
+output:
+  html_document:
+    toc: yes
+    fig_width: 5
+    fig_height: 5
+vignette: >
+  %\VignetteIndexEntry{Using AI agents with mizer}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+## Overview
+
+AI coding agents can be surprisingly effective at helping you build,
+calibrate, analyse and extend mizer models. Unlike a web search or a static
+manual, an agent can read your actual data and scripts, suggest specific
+parameter changes, write R snippets for your situation, and explain what
+functions do in plain language.
+
+This article explains how to get an agent working inside RStudio and shows
+a range of example tasks where one can save you significant time.
+
+
+## Quick start: one-line setup
+
+Mizer bundles everything an AI agent needs to understand its API. Run this
+once in your R project:
+
+```r
+mizer::setup_mizer_agent()
+```
+
+This creates four files in your working directory:
+
+- **`MIZER-AGENTS.md`** — a concise mizer reference: core workflow, key object
+  descriptions, a species parameter table, and the path to the full local
+  API documentation. This file is package-managed and can be updated when
+  mizer is upgraded.
+- **`AGENTS.md`** — a project-specific instruction file that is initially created
+  with a `@MIZER-AGENTS.md` shim line at the start.
+- **`CLAUDE.md`** and **`GEMINI.md`** — one-line shims containing
+  `@AGENTS.md`, so that agent-specific tools that look for their own named
+  file also pick up the shared context.
+
+`MIZER-AGENTS.md` is always updated when you run `setup_mizer_agent()`, but
+`AGENTS.md`, `CLAUDE.md`, and `GEMINI.md` are only created if they do not already exist
+(preserving your custom project notes and shims).
+
+
+## Running an AI agent in the terminal
+
+The **Terminal** tab in RStudio (open it with **Tools → Terminal → New
+Terminal**) runs a real shell in your project directory. AI coding agents
+can run here alongside your normal R session and can read and edit the same
+files.
+
+Alternatively, you may want to open a terminal in a separate window from
+the RStudio window, for example if you work with multiple monitors. Then
+start the agent there in the working directory of your project.
+
+
+## What an AI agent can help with
+
+- **Building a model** — translating a species parameter spreadsheet into a
+  working `newMultispeciesParams()` call, identifying missing columns and
+  suggesting sensible defaults.
+- **Calibration** — diagnosing why a species is not converging in `steady()`,
+  or suggesting which parameters to adjust when biomasses are off.
+- **Writing analysis code** — producing R code to compare scenarios, extract
+  rates, or reshape output for plotting.
+- **Explaining functions** — describing what a function does and when to use
+  it, especially for less familiar parts of the API such as
+  `setRateFunction()` or `setComponent()`.
+- **Extending mizer** — scaffolding a custom rate function or a new ecosystem
+  component.
+- **Debugging** — reading an error message or a suspicious plot alongside your
+  code and suggesting fixes.
+
+An agent is not infallible. Always verify R code it produces actually runs
+and gives sensible results, especially for anything involving numerical tuning.
+
+
+## Giving the agent context about your project
+
+After running `setup_mizer_agent()` you will have an `AGENTS.md` in your
+project directory. It begins with the line `@MIZER-AGENTS.md`, which shims in the
+mizer package reference. Open `AGENTS.md` and add a short description of your own
+project below it. For example:
+
+```markdown
+@MIZER-AGENTS.md
+
+# Celtic Sea mizer model
+
+This project builds and analyses a mizer model for the Celtic Sea,
+calibrated to ICES survey data for 2010–2020.
+
+## Species
+Cod, Haddock, Whiting, Herring, Sprat, Mackerel — 6 species.
+
+## Key files
+- `species_params.csv` — species parameter table
+- `celtic_model.R` — builds and saves the MizerParams object
+- `scenarios.R` — runs and compares fishing scenarios
+
+## Workflow
+1. Build: `celtic_model.R`, saves `celtic_params.rds`
+2. Load: `params <- readRDS("celtic_params.rds")`
+3. Project and analyse in `scenarios.R`
+```
+
+This project-specific context costs ten minutes to write and saves
+re-explaining your setup at the start of every session.
+
+
+## Example prompts
+
+The examples below illustrate the kinds of request that work well. Type
+them directly into the agent's terminal session, or into a browser-based
+AI assistant.
+
+### Getting a model started
+
+> "I have a CSV of species parameters for the Celtic Sea at
+> `data/celtic_species_params.csv`. Read it and help me set up a mizer
+> model. Tell me which required columns are missing and what sensible
+> defaults I could use."
+
+The agent will inspect the file, identify missing columns such as `w_max`
+or `beta`, suggest defaults, and produce a `newMultispeciesParams()` call
+ready to run.
+
+### Diagnosing calibration problems
+
+> "I've run `steady(params)` and biomass of Whiting is about 4× too high
+> compared to the `biomass_observed` column. What's the most likely cause
+> and what should I try first?"
+
+A good response will walk through the relevant parameters (`gamma`, `beta`,
+`sigma`, `z0`) and suggest targeted changes rather than blind adjustments.
+
+### Writing scenario code
+
+> "Write R code that runs three fishing scenarios — status quo, 50% effort
+> reduction, and effort doubled — for 50 years each, then plots yield
+> through time for all three on the same axes with a legend."
+
+The agent will produce a self-contained snippet using `project()` and
+`plotYield()`. Check it, run it, and ask for tweaks.
+
+### Understanding a function
+
+> "What does `setBevertonHolt()` actually do? I'm confused about the
+> `reproduction_level` argument and when I should change it during
+> calibration."
+
+You will get a plain-language explanation of the Beverton-Holt
+stock–recruitment relationship in mizer, what `reproduction_level`
+represents ecologically, and guidance on when to adjust it.
+
+### Adding custom biology
+
+> "I want growth rates to scale with water temperature following a Q10
+> relationship. Show me how to use `setRateFunction()` to replace the
+> encounter rate so that `params@other_params$temp` is used."
+
+The agent will produce a custom encounter function and the
+`setRateFunction()` call to register it — the kind of task that would
+otherwise require careful reading of the
+[extending mizer](extending-mizer.html) article.
+
+### Debugging an error
+
+> "Running `project(params, t_max = 50)` throws this warning repeatedly:
+> [paste warning text]. What does it mean and how do I fix it?"
+
+Share the exact text of the warning. The agent will usually identify the
+cause (e.g. a species going near-extinct, a numerical instability from too
+large a time step) and suggest a remedy.
+
+
+## Tips for effective use
+
+**Be specific.** "My model doesn't work" is hard to help with.
+"Cod biomass is 10× too high after `steady()` and I've already tried
+reducing `gamma`" is much easier.
+
+**Share actual files.** CLI agents can read your `.rds` files, CSVs and R
+scripts. Give them your real data and they produce targeted suggestions
+rather than generic advice.
+
+**Iterate.** If the first response misses the mark, say so and explain what
+you expected. Agents improve substantially with clarifying feedback within a
+session.
+
+**Verify numerical results.** An agent knows the mizer API well but may not
+know whether a particular parameter value is ecologically plausible for
+your system. Apply your domain knowledge.
+
+**Teach the agent** After you have had to explain something to the agent to
+make the agent's answers more useful to you, tell the agent to "Add what I
+just told you to AGENTS.md so that you know this in future sessions."
+
+**Keep sessions focused.** One task per session tends to produce better
+results than a long chain of unrelated questions.

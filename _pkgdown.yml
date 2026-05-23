@@ -1,7 +1,10 @@
 url: https://sizespectrum.github.io/mizerAgents/
+destination: docs
 
 template:
   bootstrap: 5
+  params:
+    bootswatch: cerulean
 
 home:
   title: "mizerAgents — AI Agent Support for Mizer"
@@ -20,8 +23,11 @@ reference:
 navbar:
   structure:
     left:  [intro, reference, articles, news]
-    right: [search, github]
+    right: [mizer, search, github]
   components:
+    mizer:
+      text: mizer Home
+      href: https://sizespectrum.org/mizer
     github:
       icon: fab fa-github
       href: https://github.com/sizespectrum/mizerAgents
