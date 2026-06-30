@@ -12,7 +12,7 @@ Maintainer: Gustav Delius <gustav.delius@york.ac.uk>
 Authors@R: person("Gustav", "Delius", email="gustav.delius@york.ac.uk",
                   role=c("cre", "aut", "cph"),
                   comment = c(ORCID = "0000-0003-4092-8228"))
-Version: 0.1.0
+Version: 0.3.1
 License: GPL-3
 Suggests:
     mizer,
