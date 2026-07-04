@@ -34,6 +34,13 @@ containing just \verb{@AGENTS.md}) so that agent-specific tools that look for
 their own named file also pick up the shared context. These shims are only
 created if the files do not already exist.
 
+It also installs a set of bundled Claude Code \emph{skills} into
+\verb{.claude/skills/} (one sub-directory with a \code{SKILL.md} per skill, e.g.
+\code{analyse-and-plot} and \code{build-multispecies-model}). Claude Code loads these
+automatically when a task matches, giving step-by-step guidance for common
+mizer workflows. Like \code{MIZER-AGENTS.md}, the skills are package-managed and
+refreshed on every call so they stay up to date.
+
 After running this function, start your AI coding agent
 (e.g. \code{claude}, \code{codex}, \code{copilot} or \code{gemini}) from the RStudio Terminal
 and it will immediately have the mizer context it needs.
