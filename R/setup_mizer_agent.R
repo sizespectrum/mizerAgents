@@ -13,6 +13,13 @@
 #' their own named file also pick up the shared context. These shims are only
 #' created if the files do not already exist.
 #'
+#' It also installs a set of bundled Claude Code *skills* into
+#' `.claude/skills/` (one sub-directory with a `SKILL.md` per skill, e.g.
+#' `analyse-and-plot` and `build-multispecies-model`). Claude Code loads these
+#' automatically when a task matches, giving step-by-step guidance for common
+#' mizer workflows. Like `MIZER-AGENTS.md`, the skills are package-managed and
+#' refreshed on every call so they stay up to date.
+#'
 #' After running this function, start your AI coding agent
 #' (e.g. `claude`, `codex`, `copilot` or `gemini`) from the RStudio Terminal
 #' and it will immediately have the mizer context it needs.
@@ -87,10 +94,30 @@ setup_mizer_agent <- function(path = ".", overwrite = FALSE) {
         }
     }
 
+    # Deploy the bundled Claude skills into `.claude/skills/`. Each skill is a
+    # sub-directory containing a `SKILL.md` file. These are package-managed, so
+    # they are always refreshed (like `MIZER-AGENTS.md`) to stay up to date.
+    skills_src <- system.file("skills", package = "mizerAgents")
+    if (nzchar(skills_src) && dir.exists(skills_src)) {
+        skills_dest <- normalizePath(file.path(path, ".claude", "skills"),
+                                     mustWork = FALSE)
+        dir.create(skills_dest, recursive = TRUE, showWarnings = FALSE)
+        skill_dirs <- list.dirs(skills_src, recursive = FALSE)
+        for (skill_dir in skill_dirs) {
+            dest <- file.path(skills_dest, basename(skill_dir))
+            if (dir.exists(dest)) unlink(dest, recursive = TRUE)
+            file.copy(skill_dir, skills_dest, recursive = TRUE)
+            message("Installed skill: ", basename(skill_dir))
+        }
+    }
+
     message(
         "\nMizer API documentation for AI agents:",
         "\n  Overview:  ", llms_src,
         if (nzchar(llms_full_src)) paste0("\n  Full docs: ", llms_full_src) else "",
+        if (nzchar(skills_src) && dir.exists(skills_src)) {
+            "\n  Skills:    .claude/skills/ (loaded automatically by Claude Code)"
+        } else "",
         "\n\nStart your AI coding agent from the terminal, e.g.:\n",
         "  claude    (Claude Code)\n",
         "  codex     (Codex CLI)\n",

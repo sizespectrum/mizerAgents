@@ -46,11 +46,13 @@ species × size), `NResource(sim)`.
 
 ## Species parameters
 
-The `species_params` data frame must have `species` (name) and `w_max`
-(maximum weight in grams). Everything else has defaults.
+The `species_params` data frame must have `species` (name) and `w_inf` (the
+von Bertalanffy asymptotic weight in grams). Everything else has defaults.
 
 | Column | Meaning |
 |--------|---------|
+| `w_inf` | Von Bertalanffy asymptotic weight (g) — the required maximum-size parameter |
+| `w_max` | Computational upper size boundary (g); defaults to `1.5 * w_inf` |
 | `w_mat` | Maturity weight (g) |
 | `beta` | Preferred predator/prey mass ratio (default ~100) |
 | `sigma` | S.d. of lognormal predation kernel (default ~1.3) |

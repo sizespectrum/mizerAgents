@@ -39,6 +39,11 @@ This creates:
   the shim is prepended to any existing content).
 - **`CLAUDE.md`** / **`GEMINI.md`** — agent-specific shims pointing to
   `AGENTS.md` (only created if they do not already exist).
+- **`.claude/skills/`** — bundled Claude Code skills (`analyse-and-plot`,
+  `build-multispecies-model`, `calibrate-model`, `run-simulation`,
+  `set-up-fishing`, `change-parameters`, `extend-mizer`) that Claude loads
+  automatically when a task matches, giving step-by-step guidance for common
+  mizer workflows.
 
 Then open a terminal in your project directory and start your favourite
 coding agent CLI, for example:
@@ -59,6 +64,7 @@ The agent will immediately have the mizer context it needs.
 | `inst/AGENTS.md` | Mizer reference card deployed by `setup_mizer_agent()` |
 | `inst/llms.txt` | Concise mizer API overview (start here) |
 | `inst/llms-full.txt` | Full documentation for every mizer function |
+| `inst/skills/` | Claude Code skills deployed to `.claude/skills/` |
 
 ## Documentation
 
