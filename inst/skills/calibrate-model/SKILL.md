@@ -4,7 +4,7 @@ description: >-
   Bring a mizer model to steady state and calibrate it to observed data. Use
   whenever the user wants to find the steady state (steady, projectToSteady,
   steadySingleSpecies), match modelled biomass, yield, or growth to observations
-  (calibrateBiomass, matchBiomasses, calibrateYield, matchYields, matchGrowth),
+  (calibrateBiomass, matchBiomasses, calibrateYield, matchGrowth),
   set the level of density-dependent reproduction (setBevertonHolt), or diagnose
   why a model will not settle or reproduce observed values.
 ---
@@ -39,9 +39,9 @@ Re-run `steady()` after **any** `match...`/`calibrate...` step — those functio
 move parameters off the current steady state.
 
 **Yield instead of biomass:** use `calibrateYield()` (scales overall abundance to
-total observed yield) and `matchYields()` (per-species), which read
-`yield_observed`. Yield matching depends on the fishing setup, so make sure gears
-and effort are right first (see the `set-up-fishing` skill).
+total observed yield), which reads `yield_observed`. Yield calibration depends on
+the fishing setup, so make sure gears and effort are right first (see the
+`set-up-fishing` skill).
 
 **What each does, briefly:**
 
@@ -50,7 +50,6 @@ and effort are right first (see the `set-up-fishing` skill).
 | `calibrateBiomass()` | `kappa` (resource level) | total community biomass |
 | `matchBiomasses()` | per-species abundance | each `biomass_observed` |
 | `calibrateYield()` | overall abundance scale | total community yield |
-| `matchYields()` | per-species abundance | each `yield_observed` |
 | `matchGrowth()` | `h`, `gamma`, `ks`, `k` | von Bertalanffy growth to `w_mat`/`w_inf` |
 
 ## Finding the steady state

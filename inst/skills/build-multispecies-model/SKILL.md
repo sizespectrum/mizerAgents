@@ -6,7 +6,7 @@ description: >-
   newMultispeciesParams(), set up an interaction matrix or fishing gears, bring
   the model to steady state with steady(), or calibrate/match it to observed
   biomasses, yields, or growth (calibrateBiomass, matchBiomasses, matchGrowth,
-  matchYields, setBevertonHolt). Follow this ordered workflow rather than
+  calibrateYield, setBevertonHolt). Follow this ordered workflow rather than
   guessing at parameters or writing the dynamics by hand.
 ---
 
@@ -98,8 +98,8 @@ params <- matchGrowth(params)        # rescale h, gamma, ks, k so growth hits w_
 params <- steady(params)             # re-converge after the adjustments
 ```
 
-For yield instead of biomass, use `calibrateYield()` and `matchYields()`
-(these need `yield_observed`). After any `match...`, re-run `steady()` and check
+For yield instead of biomass, use `calibrateYield()` (this needs
+`yield_observed`). After any `match...`, re-run `steady()` and check
 with `plotBiomassObservedVsModel(params)` / `plotYieldObservedVsModel(params)`.
 
 ## Step 5 — Tune density-dependent reproduction
