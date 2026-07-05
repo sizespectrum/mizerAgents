@@ -80,7 +80,18 @@ species with `species = c(...)`. See `?plotting_functions`.
 **Against size:** `plotSpectra(sim)`, `plotFeedingLevel(sim)`, `plotPredMort(sim)`,
 `plotFMort(sim)`, `plotGrowthCurves(sim)`, `plotDiet(params, species = "Cod")`.
 **Calibration:** `plotBiomassObservedVsModel(params)`, `plotYieldObservedVsModel(params)`.
-**Overview:** `plot(sim)` combines several panels.
+**Overview:** `plot(sim)` combines several panels; `plot(params)` shows the same
+panels for a model's steady state.
+
+**Common arguments** — most plot and summary functions (named or array) share:
+`species` (subset), `tlim = c(min, max)` (restrict the time axis of a
+time-series plot), `time_range` (average over a period, for plots against size),
+`wlim`/`ylim` (restrict the visible size/value window), `highlight`, `total`, and
+`log_x`/`log_y`. Note `tlim` replaces the deprecated `start_time`/`end_time`, and
+`log_x`/`log_y` replace the older single `log`. `wlim`/`ylim` only set the
+**visible window** — to change the numbers (e.g. the size range a biomass is
+summed over) pass `min_w`/`max_w` (or `min_l`/`max_l`) to the `get...()` function
+instead, e.g. `plotBiomass(sim, min_w = 10)`.
 
 ## 5. Plotting arrays directly (the compositional API)
 

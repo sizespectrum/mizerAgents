@@ -49,7 +49,7 @@ For form 4, build a `time × gear` matrix with **numeric, increasing** row names
 (times) and column names matching the gear names:
 
 ```r
-gears <- names(getInitialEffort(params))             # gear names (a named vector)
+gears <- names(initial_effort(params))               # gear names (a named vector)
 years <- 2010:2030
 effort_array <- array(1, dim = c(length(years), length(gears)),
                       dimnames = list(time = years, gear = gears))
