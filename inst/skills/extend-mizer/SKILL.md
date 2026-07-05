@@ -69,6 +69,19 @@ other_params(params)$extra_mort <- 0.1     # store the parameter
 params <- setRateFunction(params, "Mort", "myMort")
 ```
 
+**Time-dependent rates are the key reason to reach for `setRateFunction()`.**
+Species parameters and rate arrays are fixed for the whole simulation, but a rate
+*function* receives the current time `t` and can therefore change as the run
+proceeds — seasonal forcing, a warming trend, a management measure that switches
+on in a given year, and so on. Wrap the built-in and scale its result by `t`:
+
+```r
+seasonalMort <- function(params, t, ...) {
+    mizerMort(params, t = t, ...) * (1 + 0.3 * sin(2 * pi * t))   # t in years
+}
+params <- setRateFunction(params, "Mort", "seasonalMort")
+```
+
 ## Adding a component
 
 Use `setComponent()` for a new dynamical quantity (any R object: scalar, vector

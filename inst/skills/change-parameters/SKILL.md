@@ -17,14 +17,22 @@ intent, and let mizer propagate the change downwards.** Drop to a lower level
 only to deliberately override mizer's calculation. Every setter returns a **new**
 `MizerParams` — always reassign (`params <- setResource(params, ...)`).
 
-There are three levels:
+A mizer model is built in layers, and almost every change is a choice of which
+layer to reach into:
 
-1. **Species parameters** — per-species scalars (`w_inf`, `beta`, `gamma`, `h`,
-   `erepro`, …). Most are used to *calculate* the size-dependent rate arrays.
+1. **Size-independent parameters** — the high-level inputs: per-species scalars
+   (`w_inf`, `beta`, `gamma`, `h`, `erepro`, …), fishing gears (`gear_params`),
+   resource scalars (`resource_params`), and the interaction matrix. Most are used
+   to *calculate* the size-dependent rate arrays below. **This is where almost all
+   everyday work happens.**
 2. **Size-dependent rates** — arrays over size (search volume, metabolic rate,
-   predation kernel, …), built from the species parameters by `set…()` functions.
-3. **Other groups** — fishing (`gear_params`), resource (`resource_params`),
-   interaction (`setInteraction`).
+   predation kernel, selectivity, resource capacity, …) that mizer builds from the
+   level-1 parameters. Reach in here only when you need a size-dependence mizer
+   does not produce by default.
+3. **Rate functions** — the functions mizer calls to compute rates during a
+   simulation. Replace one with `setRateFunction()` (e.g. to make a rate
+   time-dependent), or add a whole new dynamical component with `setComponent()`.
+   See the `extend-mizer` skill.
 
 ## Species parameters: which accessor
 
@@ -69,26 +77,47 @@ just changes the model): `alpha`, `w_min` (egg size), `erepro`, `R_max`,
 
 ## Setting a rate array directly — and the freeze trap
 
-Each rate has a setter. Called with only `params`, it **recomputes** the array
-from the current species parameters:
+Each size-dependent rate has its own setter. Called with only `params`, it
+**recomputes** the array from the current species parameters (unless the array is
+frozen — see below):
 
 ```r
 params <- setMetabolicRate(params)         # recompute from k, ks, p
 params <- setParams(params)                # rebuild ALL rate arrays at once
 ```
 
-**Trap:** passing an array to a setter **freezes** it. mizer marks it "set
+Each rate array also has a **direct setter/getter** — `metab(params) <-`,
+`search_vol(params) <-`, etc. (and `metab(params)`, `search_vol(params)` to read
+it) — that writes an array straight in. This is equivalent to passing the array
+to the `set…()` function, except the direct setter modifies `params` **in place**
+while `set…()` returns a **new** object:
+
+```r
+metab(params) <- my_array                             # direct setter, in place
+params <- setMetabolicRate(params, metab = my_array)  # same, returns new object
+```
+
+**Trap:** either way, supplying an array **freezes** it. mizer marks it "set
 manually" and will no longer update it from species parameters. After this,
 changing the feeding species parameter has *no effect* on that rate:
 
 ```r
 params <- setSearchVolume(params, search_vol = my_array)  # frozen
 given_species_params(params)$gamma <- 2 * gamma           # search volume UNCHANGED now
-params <- setSearchVolume(params)          # recompute to hand control back
+```
+
+To hand control back to mizer you must pass **`reset = TRUE`**. A bare
+`set…(params)` will **not** recompute a frozen array — it leaves the manual value
+in place and warns:
+
+```r
+params <- setSearchVolume(params, reset = TRUE)   # drop the override, recompute
 ```
 
 If a user reports "I changed `gamma`/`h`/`beta` but nothing happened," suspect a
-manually-set (frozen) rate array — recompute it with its bare `set…(params)`.
+manually-set (frozen) rate array — recompute it with `set…(params, reset = TRUE)`.
+The `reset` argument works the same way for every rate setter, including
+`setFishing()` and `setResource()`.
 
 ## Fishing
 
@@ -149,10 +178,12 @@ instead.
 |---|---|
 | a per-species value | `given_species_params(params) <- …` |
 | a rate, keeping it tied to the parameters | change the underlying species parameter |
-| a rate to a bespoke array (freezing it) | the matching `set…(params, array)` |
+| a rate to a bespoke array (freezing it) | `metab(params) <- …` (direct) or the matching `set…(params, array)` |
+| a frozen rate back to its default form | `set…(params, reset = TRUE)` |
 | everything after several edits | `setParams(params)` |
 | fishing gears / selectivity / catchability | `gear_params(params) <- …` |
-| baseline effort or selectivity arrays | `setFishing(params, …)` |
+| baseline effort or selectivity/catchability arrays | `setFishing(params, …)` |
 | the resource (kappa, lambda, r_pp, …) | `resource_params(params) <- …` |
 | the resource capacity/rate as a bespoke array (freezing it) | `resource_capacity(params) <- …` / `resource_rate(params) <- …` / `setResource(params, …)` |
 | species interactions | `setInteraction(params, …)` |
+| how a rate is *computed* (e.g. to make it time-dependent) | `setRateFunction(params, …)` (see `extend-mizer`) |

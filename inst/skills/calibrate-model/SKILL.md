@@ -55,15 +55,25 @@ and effort are right first (see the `set-up-fishing` skill).
 
 ## Finding the steady state
 
-- **`steady(params)`** — runs the dynamics to convergence and stores the result
-  as the initial state. The default first choice.
-- **`projectToSteady(params)`** — the lower-level routine `steady()` builds on;
-  exposes `t_max`, `tol`, and `return_sim` if you need to watch convergence.
+- **`steady(params)`** — runs the dynamics to convergence **with births held
+  fixed**, then stores the result as the initial state. Holding births constant
+  lets the dynamics settle reliably onto *a* steady state, so this is the default
+  first choice during setup and calibration.
 - **`steadySingleSpecies(params)`** — sets each species' spectrum to its
-  single-species steady form given the current rates, without changing the
-  resource; a fast way to get a sensible starting spectrum before `steady()`.
+  single-species steady form (also with births held fixed) given the current
+  rates, without changing the resource; a fast way to get a sensible starting
+  spectrum before `steady()`.
+- **`projectToSteady(params)`** — the lower-level routine `steady()` builds on,
+  but with **births responding dynamically** rather than held fixed; exposes
+  `t_max`, `tol`, and `return_sim` if you need to watch convergence.
 - **`steadyNewton(params)`** *(experimental)* — solves the steady-state equation
   directly, converging even when the steady state is dynamically unstable.
+
+After converging, `steady()` and `steadySingleSpecies()` re-tune the reproduction
+parameters so that density-dependent reproduction reproduces exactly that birth
+rate at the new steady state. Use their `preserve` argument to choose whether
+`reproduction_level` (default), `R_max`, or `erepro` is held fixed during that
+re-tuning.
 
 ## Density-dependent reproduction
 

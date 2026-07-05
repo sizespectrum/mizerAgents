@@ -78,9 +78,12 @@ to a steady state, which also sets the initial values used by later steps and by
 params <- steady(params)
 ```
 
-`steady()` runs the dynamics to convergence. For a steady state that is
-dynamically unstable, the experimental `steadyNewton()` solves the
-steady-state equation directly.
+`steady()` runs the dynamics to convergence **with births held fixed** (which
+makes it settle reliably), then re-tunes the reproduction parameters to that
+steady state — use its `preserve` argument to pick whether `reproduction_level`
+(default), `R_max`, or `erepro` is held fixed. For a steady state that is
+dynamically unstable, the experimental `steadyNewton()` solves the steady-state
+equation directly.
 
 ## Step 4 — Calibrate to observations
 

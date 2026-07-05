@@ -40,6 +40,24 @@ gp["Cod, Otter", "catchability"] <- 0.8   # row names are "species, gear"
 gear_params(params) <- gp
 ```
 
+**Setting one up from scratch.** Assign a fresh data frame with one row per
+gear–species combination. Only `species` is strictly required: `gear` defaults to
+the species name, `sel_func` to `knife_edge`, `catchability` to 1, and the
+`knife_edge` cut-off to `w_mat`. You must, however, supply the parameter columns
+of whatever `sel_func` you choose. mizer generates the `"species, gear"` row names
+for you:
+
+```r
+gear_params(params) <- data.frame(
+    gear         = c("Otter", "Beam"),
+    species      = c("Cod",   "Cod"),
+    sel_func     = "sigmoid_length",   # recycled to both rows
+    l50          = c(25, 20),          # 50% selected at this length (cm)
+    l25          = c(20, 15),          # 25% selected at this length (cm)
+    catchability = 1
+)
+```
+
 If each species is caught by only one gear, you may instead put the gear columns
 directly in `species_params` when building the model; mizer copies them into
 `gear_params`. (Later edits to those `species_params` columns will **not**
@@ -69,24 +87,50 @@ gp$l25 <- 20            # 25% selected at 20 cm
 gear_params(params) <- gp
 ```
 
+## The selectivity and catchability arrays
+
+Behind the scenes mizer turns the `gear_params` table into two numeric arrays,
+the ones that enter the fishing-mortality formula directly. You can read them,
+and — when a `sel_func` cannot express the shape you need — set them by hand:
+
+| Function | Returns | Dimensions |
+|---|---|---|
+| `catchability(params)` / `getCatchability(params)` | `Q[g,i]` | gear × species |
+| `selectivity(params)` / `getSelectivity(params)` | `S[g,i](w)` | gear × species × size |
+
+The bare and `get`-prefixed names are equivalent. Each has a matching setter that
+pushes an array straight into the model (this routes through `setFishing()`, so
+validation still runs):
+
+```r
+selectivity(params)["Otter", "Cod", ]      # the S curve for one gear–species pair
+
+sel <- getSelectivity(params)
+sel["Otter", "Cod", ] <- my_curve          # length = number of size bins, in [0, 1]
+selectivity(params) <- sel                 # triggers recalculation via setFishing()
+```
+
+Setting an array by hand **freezes** it: mizer marks it manual and stops
+recalculating it from `gear_params`, so later edits to the gear table leave it
+untouched (you'll see a message saying so). To discard the hand-set array and
+rebuild from `gear_params`, call `setFishing(params, reset = TRUE)`.
+
 ## `setFishing()`
 
 `setFishing(params, selectivity = NULL, catchability = NULL, reset = FALSE,
 initial_effort = NULL, ...)` recomputes the fishing setup after a change.
 Assigning `gear_params(params) <- ...` already triggers recalculation, so you
-usually only call `setFishing()` when supplying a `selectivity` or `catchability`
-**array** directly, or to set a baseline effort:
+usually only call `setFishing()` directly when supplying a `selectivity` or
+`catchability` **array**, setting a baseline effort, or rebuilding from scratch:
 
 ```r
 params <- setFishing(params, initial_effort = c(Otter = 1, Beam = 0.5))
+params <- setFishing(params, reset = TRUE)   # rebuild arrays from gear_params
 ```
-
-Use `reset = TRUE` to rebuild the selectivity/catchability arrays from
-`gear_params` from scratch.
 
 ## Baseline effort
 
-The model stores a baseline effort per gear, read with `getInitialEffort(params)`
+The model stores a baseline effort per gear, read with `initial_effort(params)`
 (a named vector) and set via `initial_effort(params) <- ...` or the
 `initial_effort` argument of `setFishing()`. This is the effort used when
 `project()` is called without an explicit `effort` argument.
@@ -102,7 +146,9 @@ To vary effort **through time** in a run, pass a time × gear array to
 
 ```r
 gear_params(params)                 # the gear table
-getInitialEffort(params)            # baseline effort per gear
+catchability(params)                # Q array (gear × species)
+selectivity(params)                 # S array (gear × species × size)
+initial_effort(params)              # baseline effort per gear
 plotFMort(params)                   # realised fishing mortality at size
 getFMortGear(params)                # F by gear × species × size
 ```
