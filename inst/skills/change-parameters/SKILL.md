@@ -23,7 +23,7 @@ There are three levels:
    `erepro`, …). Most are used to *calculate* the size-dependent rate arrays.
 2. **Size-dependent rates** — arrays over size (search volume, metabolic rate,
    predation kernel, …), built from the species parameters by `set…()` functions.
-3. **Other groups** — fishing (`gear_params`), resource (`setResource`),
+3. **Other groups** — fishing (`gear_params`), resource (`resource_params`),
    interaction (`setInteraction`).
 
 ## Species parameters: which accessor
@@ -105,25 +105,31 @@ gear_params(params) <- gp                  # rebuilds fishing mortality
 Use `setFishing()` for supplying selectivity/catchability arrays directly or
 setting baseline effort. See the `set-up-fishing` skill.
 
-## Resource — NOT parallel to gear_params
+## Resource — same model as species parameters
 
-**Trap:** `resource_params(params)` returns scalars (`kappa`, `lambda`, `r_pp`,
-`n`, `w_pp_cutoff`), but assigning to it **does not rebuild the resource arrays**
-(not even followed by `setResource()`). These are essentially set-up metadata,
-and the scalar `kappa`/`r_pp` arguments are deprecated.
+`resource_params(params)` returns scalars (`kappa`, `lambda`, `r_pp`, `n`,
+`w_pp_cutoff`) that set up the resource size-spectrum arrays, and — like
+`given_species_params<-` — assigning to it **rebuilds those arrays**:
 
 ```r
-resource_params(params)$kappa <- 1e11      # stored, but resource is UNCHANGED
+resource_params(params)$kappa  <- 1e11     # rebuilds the carrying capacity (cc_pp)
+resource_params(params)$lambda <- 2.05     # rebuilds cc_pp (slope)
+resource_params(params)$r_pp   <- 10       # rebuilds the replenishment rate (rr_pp)
 ```
 
-Change the resource through `setResource()` or the array replacement functions,
-which take effect immediately:
+`kappa`, `lambda`, `w_pp_cutoff` drive the capacity `cc_pp`; `r_pp`, `n` drive
+the rate `rr_pp`.
+
+Setting the size-resolved arrays directly **freezes** them ("set manually"), the
+same as the species rate arrays — a later scalar change then leaves them alone.
+Recompute from the scalars with `setResource(params, reset = TRUE)`:
 
 ```r
-params <- setResource(params, resource_capacity = my_capacity)  # array over size
-resource_rate(params)     <- my_rate       # array over size
-resource_capacity(params) <- my_capacity
-resource_level(params)    <- my_level
+resource_capacity(params) <- my_capacity   # array over size; now frozen
+resource_params(params)$kappa <- 1e11      # ignored while cc_pp is frozen
+params <- setResource(params, reset = TRUE)  # unfreeze: recompute from scalars
+resource_rate(params)  <- my_rate          # freeze rr_pp instead
+resource_level(params) <- my_level
 ```
 
 ## Interaction matrix
@@ -147,5 +153,6 @@ instead.
 | everything after several edits | `setParams(params)` |
 | fishing gears / selectivity / catchability | `gear_params(params) <- …` |
 | baseline effort or selectivity arrays | `setFishing(params, …)` |
-| the resource | `setResource(params, …)` or `resource_capacity(params) <- …` (**not** `resource_params(params) <-`) |
+| the resource (kappa, lambda, r_pp, …) | `resource_params(params) <- …` |
+| the resource capacity/rate as a bespoke array (freezing it) | `resource_capacity(params) <- …` / `resource_rate(params) <- …` / `setResource(params, …)` |
 | species interactions | `setInteraction(params, …)` |
