@@ -5,6 +5,27 @@ fish communities. It tracks the full size distribution of each species and
 the plankton resource, computing growth, predation, and mortality from
 individual-level physiology.
 
+## Do not write mizer code from memory
+
+Mizer's API has moved on, and most mizer code in your training data predates
+the version installed here — recollection that feels solid is often a version
+or two stale. Before calling any function you have not looked up in this
+session, grep for it in `llms-full.txt` (path at the end of this file) and
+check the real signature. This failure is quiet: outdated calls often still
+run and return plausible numbers.
+
+Memory is most often stale on:
+
+- **maximum size** — `w_inf`, `w_repro_max` and `w_max` are three distinct
+  parameters (see below), not one
+- **setting species parameters** — use `species_params(params) <- value`, which
+  records the change and recalculates dependent quantities
+- **reproduction** — `setBevertonHolt()` takes `erepro`, `R_max` *or*
+  `reproduction_level`; check which the task calls for
+
+If the installed mizer disagrees with this file, the installed mizer wins.
+Check with `?name` and say so rather than quietly working around it.
+
 ## Core workflow
 
 ```r

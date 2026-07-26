@@ -39,8 +39,10 @@ This creates:
 - **`MIZER-AGENTS.md`** — a concise mizer reference card that AI agents read
   automatically on startup, including key objects, the core workflow, and links
   to the bundled API documentation.
-- **`AGENTS.md`** — updated to include `@MIZER-AGENTS.md` (created fresh, or
-  the shim is prepended to any existing content).
+- **`AGENTS.md`** — your project instruction file, updated to include a short
+  package-managed block pointing agents at `MIZER-AGENTS.md`. Only the block
+  between the `<!-- mizerAgents: start -->` and `<!-- mizerAgents: end -->`
+  markers is refreshed on each run; anything you add outside it is preserved.
 - **`CLAUDE.md`** / **`GEMINI.md`** — agent-specific shims pointing to
   `AGENTS.md` (only created if they do not already exist).
 - **`.claude/skills/`** — bundled skills (`analyse-and-plot`,

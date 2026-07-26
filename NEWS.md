@@ -2,6 +2,33 @@
 
 ## New features
 
+* The reference card (`inst/AGENTS.md`) opens with a "Do not write mizer code
+  from memory" section: mizer's API has moved on, most mizer code in the
+  training data predates the installed version, and outdated calls often still
+  run and return plausible numbers. It names the parameters recollection is
+  most often stale on (the `w_inf` / `w_repro_max` / `w_max` distinction, the
+  `species_params(params) <-` setter, the `setBevertonHolt()` arguments) and
+  tells agents to treat the installed mizer as authoritative over the card, and
+  to report any discrepancy rather than work around it.
+
+* The `AGENTS.md` shim written by `setup_mizer_agent()` is no longer a bare
+  `@MIZER-AGENTS.md` line: it now carries a short note telling agents what the
+  file is and to read it before touching mizer code. Codex and Copilot do not
+  resolve `@` imports, so for them the note is what gets the card read; the
+  import is kept for Claude Code and Gemini CLI, which inline it at startup
+  whether or not the agent thinks it needs it.
+
+* That block is now delimited by `<!-- mizerAgents: start -->` and
+  `<!-- mizerAgents: end -->` comments and refreshed in place on every
+  `setup_mizer_agent()` run, so later improvements to it reach projects that
+  are already set up — previously it was written once and then frozen. It is
+  refreshed wherever in the file it sits, and everything outside the markers is
+  left alone, so your own project notes are preserved. Shims written by earlier
+  versions have no markers and are migrated automatically; a note you have
+  reworded yourself is treated as yours and left in place. The file is not
+  touched at all when nothing would change, so re-running setup no longer
+  dirties it.
+
 * `setup_mizer_agent()` now adds a "Task skills" index to `MIZER-AGENTS.md`,
   generated from the bundled skills' own frontmatter (name, one-line
   description, and path). This makes the skills usable by agents other than

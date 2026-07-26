@@ -11,10 +11,10 @@ setup_mizer_agent(path = ".", overwrite = FALSE)
 to the current working directory, which should be your R project root.}
 
 \item{overwrite}{If \code{TRUE}, replace an existing \code{AGENTS.md} entirely with a
-clean shim. If \code{FALSE} (the default), preserve any custom content in
-\code{AGENTS.md} while prepending the \verb{@MIZER-AGENTS.md} shim if not already
-present. \code{MIZER-AGENTS.md} is always overwritten to ensure it stays
-up-to-date.}
+clean shim, discarding your project notes. If \code{FALSE} (the default), keep
+the rest of \code{AGENTS.md} and only refresh the marked mizer block, adding it
+at the top if it is not there yet. \code{MIZER-AGENTS.md} is always overwritten
+to ensure it stays up-to-date.}
 }
 \value{
 Invisibly returns the path to the \code{AGENTS.md} file.
@@ -27,9 +27,16 @@ key object descriptions, and the path to the full mizer API documentation
 bundled with the package.
 }
 \details{
-It also creates (or updates) an \code{AGENTS.md} file with a \verb{@MIZER-AGENTS.md}
-shim so that agents read both the project-specific instructions and the mizer
-reference. It also creates \code{CLAUDE.md} and \code{GEMINI.md} shim files (each
+It also creates (or updates) an \code{AGENTS.md} file with a short note and a
+\verb{@MIZER-AGENTS.md} import, so that agents read both the project-specific
+instructions and the mizer reference. Agents that resolve \code{@} imports (Claude
+Code, Gemini CLI) pick the reference up automatically at startup; the note
+tells those that do not (Codex, Copilot) to read the file themselves. This
+block is delimited by \verb{<!-- mizerAgents: start -->} and
+\verb{<!-- mizerAgents: end -->} comments and is refreshed in place on every run,
+so that improvements to it reach existing projects. Add your own project
+notes outside those markers, where they will be left untouched.
+It also creates \code{CLAUDE.md} and \code{GEMINI.md} shim files (each
 containing just \verb{@AGENTS.md}) so that agent-specific tools that look for
 their own named file also pick up the shared context. These shims are only
 created if the files do not already exist.
