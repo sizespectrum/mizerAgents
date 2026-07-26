@@ -85,13 +85,9 @@ build the model with `second_order_w = TRUE` (van Leer flux) and project with
 - The steady-state feeding level is set by the `f0` species parameter (from which
   the default `gamma` is derived), **not** by `h`; `h = Inf` makes `gamma`
   non-finite. See the `change-parameters` skill.
-- Growth diffusion is off by default (`use_predation_diffusion` `FALSE`, `D_ext`
-  0), so the base model is pure advection. External diffusion is
-  `D(w) = D_ext * w^{n+1}`. This is
-  enormous at large `w`, so it can produce a large residual at the **upper size
-  boundary** that can spread inward over long runs — keep `w_max` well above the
-  sizes you analyse. Adding diffusion also shifts the steady state, so recompute
-  it.
+- With growth diffusion on (`D_ext > 0`), set `w_max` well above the sizes you
+  analyse so abundance at the boundary stays negligible; the default
+  `1.5 * w_inf` is usually enough, raise it if `D_ext` is large.
 
 ## Plotting
 
