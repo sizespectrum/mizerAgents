@@ -75,23 +75,10 @@ the fishing setup, so make sure gears and effort are right first (see the
   of magnitude, or a degenerate reproduction setup such as a spectrum that produces
   no eggs (`RDI = 0`) fed by a fixed external influx.
 
-### Analysing dynamic stability (experimental, mizer ≥ 3.2)
-
-Once you have a fixed point (from `steadyNewton()` or `steady()`), these tools
-characterise its dynamics — useful for oscillation / limit-cycle work:
-
-- **`getStability(params)`** — eigenvalues of the linearised one-step map at the
-  fixed point; reports stable/unstable, the spectral radius, and (near a Hopf
-  bifurcation) the emergent cycle period. `steadyNewton(params, stability = TRUE)`
-  runs it automatically and attaches the result as the `"stability"` attribute.
-  `steady()`/`projectToSteady()` similarly attach a `"convergence"` attribute
-  recording whether they settled on a steady state, a limit cycle, or neither.
-- **`getLimitCycleSim(params)`** — turns a `steadyNewton()` result into a
-  `MizerSim` covering one period of the limit cycle in the linear approximation,
-  ready for `plotBiomass()` / `plotSpectra()`.
-- **`plotBifurcation(params, ...)`** — bifurcation diagram over fishing effort:
-  a stable steady state shows as a single line, a limit cycle as a band, so a
-  Hopf bifurcation appears where the band opens up.
+Once you have a fixed point, analysing the *dynamics around* it — stable vs
+unstable, limit-cycle period, bifurcation diagrams — is covered by the
+`analyse-stability` skill (`getStability()`, `getLimitCycleSim()`,
+`plotBifurcation()`).
 
 After converging, `steady()` and `steadySingleSpecies()` re-tune the reproduction
 parameters so that density-dependent reproduction reproduces exactly that birth
