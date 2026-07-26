@@ -74,6 +74,21 @@ from the final state:
 sim2 <- project(sim, t_max = 10, effort = 2)
 ```
 
+**Carry a simulation's state into a fresh `MizerParams`** — to start a new run
+(often under different settings) or to analyse a particular time step, extract a
+`MizerParams` whose initial spectra and effort are taken from the simulation:
+
+```r
+params_end <- finalParams(sim)      # state at the last time step
+params_0   <- initialParams(sim)    # state at the first time step
+params_t   <- getParams(sim, time_range = 2010:2015)  # averaged over a range
+sim_next   <- project(params_end, t_max = 20, effort = 0.5)
+```
+
+`finalParams(sim)` and `initialParams(sim)` are shorthands for the final and
+initial steps of `getParams()`. Prefer these over the **deprecated**
+`setInitialValues(params, sim)`.
+
 **Scenario comparison** — project the same params under different efforts, then
 compare with the plotting tools (`plotBiomass`, `plotYield`, `plotSpectra2`,
 `plotCDF2`; see the `analyse-and-plot` skill):
@@ -83,6 +98,38 @@ sim_low  <- project(params, t_max = 30, effort = 0.5)
 sim_high <- project(params, t_max = 30, effort = 1.5)
 plotSpectra2(sim_low, sim_high, "F = 0.5", "F = 1.5")
 ```
+
+## Numerical scheme: watch for numerical diffusion
+
+For steady states and slow biomass/yield trends the defaults are fine. But the
+default flux scheme (first-order **upwind**) carries substantial *numerical
+diffusion*: it smears out cohorts and travelling waves and can **silently damp a
+real oscillation or limit cycle down to a flat line** — with no error to warn
+you. This is a correctness issue, not just accuracy, so for **any study of
+dynamics** (oscillations, cohort/wave structure, generation cycles, real
+growth-diffusion effects) switch to the second-order scheme:
+
+- **Space:** build the model with `second_order_w = TRUE` (the van Leer,
+  flux-limited scheme) — set it in `newMultispeciesParams(..., second_order_w =
+  TRUE)`, or on an existing model with `second_order_w(params) <- TRUE`. Because
+  it changes the discrete steady state it lives in the params object, not in a
+  `project()` argument.
+- **Time:** project with `method = "tr_bdf2"` (L-stable, second order in time).
+
+```r
+params <- newMultispeciesParams(sp, second_order_w = TRUE)
+sim    <- project(params, t_max = 200, method = "tr_bdf2")
+```
+
+Symptom that you needed this: an oscillation that is present with `second_order_w
+= TRUE` but disappears (settles to a flat steady state) under the default upwind
+scheme is being killed by numerical diffusion, not by real dynamics.
+
+**Isolating a feedback loop.** To switch off the resource → growth feedback (the
+"phantom jam") while keeping everything else — e.g. to separate an internal
+instability from a boundary/reproduction one — freeze the resource with
+`params <- setResource(params, resource_dynamics = "resource_constant")` before
+projecting.
 
 ## Tips
 

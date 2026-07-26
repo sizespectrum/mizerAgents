@@ -1,3 +1,28 @@
+# Extract the `description` field from a SKILL.md YAML frontmatter block.
+# Handles both an inline value and a folded/literal block scalar (`>`, `>-`,
+# `|`, ...), collapsing it to a single-line string. Internal helper.
+.skill_description <- function(skill_md) {
+    lines <- readLines(skill_md, warn = FALSE)
+    idx <- grep("^description:", lines)
+    if (length(idx) == 0) return("(no description)")
+    idx <- idx[1]
+    val <- sub("^description:[ \t]*", "", lines[idx])
+    if (grepl("^[>|]", val) || !nzchar(trimws(val))) {
+        # Block scalar: collect following indented (or blank) lines until the
+        # next top-level key or the closing `---`.
+        parts <- character(0)
+        j <- idx + 1
+        while (j <= length(lines) &&
+               !grepl("^---", lines[j]) &&
+               (grepl("^[ \t]", lines[j]) || !nzchar(lines[j]))) {
+            if (nzchar(trimws(lines[j]))) parts <- c(parts, trimws(lines[j]))
+            j <- j + 1
+        }
+        val <- paste(parts, collapse = " ")
+    }
+    trimws(val)
+}
+
 #' Set up an AI agent to help with your mizer project
 #'
 #' Creates (or updates) a `MIZER-AGENTS.md` file in your project directory
@@ -19,6 +44,12 @@
 #' automatically when a task matches, giving step-by-step guidance for common
 #' mizer workflows. Like `MIZER-AGENTS.md`, the skills are package-managed and
 #' refreshed on every call so they stay up to date.
+#'
+#' So that agents other than Claude Code (which do not discover `.claude/skills/`
+#' natively) can use the skills too, an index of them — each skill's name,
+#' one-line description, and path — is generated from the skills' own frontmatter
+#' and added to `MIZER-AGENTS.md`. Those agents can then read the relevant
+#' `SKILL.md` on demand when a task matches.
 #'
 #' After running this function, start your AI coding agent
 #' (e.g. `claude`, `codex`, `copilot` or `gemini`) from the RStudio Terminal
@@ -44,10 +75,34 @@ setup_mizer_agent <- function(path = ".", overwrite = FALSE) {
     agents_src    <- system.file("AGENTS.md",     package = "mizerAgents")
     llms_src      <- system.file("llms.txt",      package = "mizerAgents")
     llms_full_src <- system.file("llms-full.txt", package = "mizerAgents")
+    skills_src    <- system.file("skills",        package = "mizerAgents")
     mizer_dest    <- normalizePath(file.path(path, "MIZER-AGENTS.md"), mustWork = FALSE)
     agents_dest   <- normalizePath(file.path(path, "AGENTS.md"),       mustWork = FALSE)
 
     mizer_section <- paste(readLines(agents_src, warn = FALSE), collapse = "\n")
+
+    # Add a "task skills" index to the always-loaded reference card, generated
+    # from the bundled skills' own frontmatter. Claude Code discovers
+    # `.claude/skills/` natively; every other agent does not, so this index is
+    # how they learn which skills exist and when to read them. Only the index
+    # (names + descriptions + path) is added here; the skill bodies stay on disk
+    # and are read on demand, mirroring Claude Code's lazy loading.
+    if (nzchar(skills_src) && dir.exists(skills_src)) {
+        skill_dirs <- sort(list.dirs(skills_src, recursive = FALSE))
+        index_lines <- vapply(skill_dirs, function(d) {
+            sprintf("- **`%s`** — %s",
+                    basename(d), .skill_description(file.path(d, "SKILL.md")))
+        }, character(1))
+        mizer_section <- paste0(
+            mizer_section,
+            "\n\n## Task skills (read on demand)\n\n",
+            "Step-by-step guides for common mizer tasks are installed under ",
+            "`.claude/skills/<name>/SKILL.md`. Claude Code loads them ",
+            "automatically; other agents should **read the matching file before ",
+            "starting** such a task rather than working from memory. Triggers:\n\n",
+            paste(index_lines, collapse = "\n"), "\n"
+        )
+    }
 
     # Append local paths to both documentation files
     mizer_section <- paste0(
@@ -97,7 +152,6 @@ setup_mizer_agent <- function(path = ".", overwrite = FALSE) {
     # Deploy the bundled Claude skills into `.claude/skills/`. Each skill is a
     # sub-directory containing a `SKILL.md` file. These are package-managed, so
     # they are always refreshed (like `MIZER-AGENTS.md`) to stay up to date.
-    skills_src <- system.file("skills", package = "mizerAgents")
     if (nzchar(skills_src) && dir.exists(skills_src)) {
         skills_dest <- normalizePath(file.path(path, ".claude", "skills"),
                                      mustWork = FALSE)

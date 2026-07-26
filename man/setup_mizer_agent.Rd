@@ -41,6 +41,12 @@ automatically when a task matches, giving step-by-step guidance for common
 mizer workflows. Like \code{MIZER-AGENTS.md}, the skills are package-managed and
 refreshed on every call so they stay up to date.
 
+So that agents other than Claude Code (which do not discover \verb{.claude/skills/}
+natively) can use the skills too, an index of them — each skill's name,
+one-line description, and path — is generated from the skills' own frontmatter
+and added to \code{MIZER-AGENTS.md}. Those agents can then read the relevant
+\code{SKILL.md} on demand when a task matches.
+
 After running this function, start your AI coding agent
 (e.g. \code{claude}, \code{codex}, \code{copilot} or \code{gemini}) from the RStudio Terminal
 and it will immediately have the mizer context it needs.

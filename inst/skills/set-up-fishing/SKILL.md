@@ -142,6 +142,25 @@ initial_effort(params) <- c(Industrial = 0, Pelagic = 1, Beam = 0.5, Otter = 0.5
 To vary effort **through time** in a run, pass a time × gear array to
 `project()` — see the `run-simulation` skill.
 
+## Catchability sets the units of effort
+
+Because `F = S * Q * E`, only the product `Q * E` is pinned down by the fishing
+mortality — so **catchability defines what one unit of effort means**. This gives
+you two common conventions:
+
+- **Effort = fishing mortality rate.** Set `catchability = 1`; then an effort of
+  `E` produces `F = E` on fully-selected sizes. Simplest when you want to drive
+  the model directly with F values (e.g. from a stock assessment).
+- **Effort in real-world units** (vessel-days, kW-days, …). Fold the conversion
+  into catchability: `Q` is the fraction of the selected stock taken per unit of
+  whatever effort you supply. A useful trick is to set each species' catchability
+  to its `F` in a chosen reference year, so an effort of 1 reproduces that year's
+  fishing mortality and other years' efforts are relative to it.
+
+Either way, if you rescale catchability you must rescale effort inversely to keep
+the same `F`. This is why yield calibration (`calibrateYield`) depends on the
+fishing setup being fixed first.
+
 ## Checking the setup
 
 ```r

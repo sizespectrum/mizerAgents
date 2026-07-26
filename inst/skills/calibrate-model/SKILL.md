@@ -88,6 +88,10 @@ Alternatively pass `R_max`, `erepro`, or a per-species named vector. This does
 not change the steady state itself — it sets how the model responds to
 perturbations away from it.
 
+Read the current values back with `getReproductionLevel(params)`, which returns
+the realised reproduction level per species — useful to check what a model was
+tuned to before changing it.
+
 ## Diagnosing calibration problems
 
 - **Model won't settle in `steady()`** — the initial spectrum is likely far off.

@@ -129,6 +129,19 @@ When the model looks right, project it forward and analyse the results — see t
 sim <- project(params, t_max = 20, effort = 1)
 ```
 
+## Saving and loading a model
+
+A calibrated model is worth persisting so you don't rebuild it every session.
+Use mizer's own save/restore functions rather than bare `saveRDS()` — they store
+the model in a version-stable form:
+
+```r
+saveParams(params, "cod_model.rds")   # write a MizerParams to disk
+params <- readParams("cod_model.rds")  # read it back
+```
+
+`saveSim()` / `readSim()` do the same for a `MizerSim` object.
+
 ## Common pitfalls
 
 - Forgetting to reassign the return value (`steady(params)` without `params <-`)

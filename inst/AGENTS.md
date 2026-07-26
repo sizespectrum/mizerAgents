@@ -38,21 +38,23 @@ plotSpectra(sim)
 
 **`MizerParams`** — holds all model parameters. Never modify slots directly.
 All setter functions return a new copy: `params <- setFishing(params, ...)`.
-Change species parameters with `given_species_params(params) <- value`, which
-triggers recalculation of dependent quantities.
 
 **`MizerSim`** — simulation output from `project()`. Arrays: `N(sim)` (time ×
 species × size), `NResource(sim)`.
 
 ## Species parameters
 
-The `species_params` data frame must have `species` (name) and `w_inf` (the
-von Bertalanffy asymptotic weight in grams). Everything else has defaults.
+The `species_params` data frame must have `species` (name) and the
+von Bertalanffy asymptotic weight `w_inf`. Everything else has defaults.
+Change species parameters with `species_params(params) <- value`, which records
+the change and triggers recalculation of dependent quantities. See the
+`change-parameters` skill.
 
 | Column | Meaning |
 |--------|---------|
-| `w_inf` | Von Bertalanffy asymptotic weight (g) — the required maximum-size parameter |
-| `w_max` | Computational upper size boundary (g); defaults to `1.5 * w_inf` |
+| `w_inf` | Von Bertalanffy asymptotic weight (g); accepted maximum-size input, sets `w_repro_max` |
+| `w_max` | Computational upper size-grid boundary (g) — purely numerical; defaults to `1.5 * w_inf` |
+| `w_repro_max` | Weight beyond which no growth/reproduction |
 | `w_mat` | Maturity weight (g) |
 | `beta` | Preferred predator/prey mass ratio (default ~100) |
 | `sigma` | S.d. of lognormal predation kernel (default ~1.3) |
@@ -61,16 +63,48 @@ von Bertalanffy asymptotic weight in grams). Everything else has defaults.
 | `erepro` | Reproductive efficiency |
 | `R_max` | Beverton-Holt max recruitment |
 | `biomass_observed` | Observed biomass for `calibrateBiomass()` |
-| `yield_observed` | Observed yield for `matchYields()` |
 
 ## Units
 
 Weights in grams, lengths in cm, time in years.
 
+## Numerical scheme for dynamics
+
+The default `project()` flux scheme (first-order upwind) carries substantial
+*numerical* diffusion that silently smears cohorts and travelling waves and can
+completely damp real oscillations / limit cycles — a correctness issue, not just
+accuracy. For any study of dynamics (oscillations, cohort waves, diffusion),
+build the model with `second_order_w = TRUE` (van Leer flux) and project with
+`method = "tr_bdf2"` (second order in time). See the `run-simulation` skill.
+
+## Gotchas
+
+- `w_max` defaults to `1.5 * w_inf`. Passing `max_w = w_inf` to
+  `newMultispeciesParams()` then errors — set a `w_max` column equal to `w_inf`
+  as well.
+- The steady-state feeding level is set by the `f0` species parameter (from which
+  the default `gamma` is derived), **not** by `h`; `h = Inf` makes `gamma`
+  non-finite. See the `change-parameters` skill.
+- Growth diffusion is off by default (`use_predation_diffusion` `FALSE`, `D_ext`
+  0), so the base model is pure advection. External diffusion is
+  `D(w) = D_ext * w^{n+1}`. This is
+  enormous at large `w`, so it can produce a large residual at the **upper size
+  boundary** that can spread inward over long runs — keep `w_max` well above the
+  sizes you analyse. Adding diffusion also shifts the steady state, so recompute
+  it.
+
 ## Plotting
 
-Mizer provides many built-in plotting functions. Always prefer these over
-writing custom plotting code.
+The return values of most `get...()` functions also have `plot()` methods,
+so you can visualise any quantity directly.
+Always prefer this over writing custom plotting code.
+
+```r
+plot(getSSB(sim))           # ArrayTimeBySpecies  → time series per species
+plot(getTrophicLevel(params)) # ArraySpeciesBySize → curve per species
+```
+
+In addition, Mizer provides many custom plotting functions. 
 
 ```r
 plot(sim)              # overview of simulation
@@ -79,14 +113,6 @@ plotBiomass(sim)       # biomass over time
 plotYield(sim)         # yield over time
 plotGrowthCurves(sim)  # growth curves
 plotFMort(sim)         # fishing mortality
-```
-
-The return values of most `get...()` functions also have `plot()` methods,
-so you can visualise any quantity directly without writing custom plotting code:
-
-```r
-plot(getSSB(sim))           # ArrayTimeBySpecies  → time series per species
-plot(getTrophicLevel(params)) # ArraySpeciesBySize → curve per species
 ```
 
 Grep for "plot" in `llms-full.txt` to discover the full list of available

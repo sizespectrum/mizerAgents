@@ -1,3 +1,40 @@
+# mizerAgents 0.3.2
+
+## New features
+
+* `setup_mizer_agent()` now adds a "Task skills" index to `MIZER-AGENTS.md`,
+  generated from the bundled skills' own frontmatter (name, one-line
+  description, and path). This makes the skills usable by agents other than
+  Claude Code, which do not discover `.claude/skills/` natively: they read the
+  index from the always-loaded reference card and open the relevant `SKILL.md`
+  on demand, mirroring Claude Code's lazy loading. No skill content is
+  duplicated, so the index cannot drift from the skills.
+
+## Updated for mizer 3.2
+
+* The reference card (`inst/AGENTS.md`) and the `change-parameters` skill now
+  recommend `species_params(params) <-` as the setter for scripts. As of mizer
+  3.2 it records the change in `given_species_params` and triggers recalculation
+  of dependent rates, so the old advice to avoid it (and use only
+  `given_species_params(params) <-`) no longer applies; `given_species_params()`
+  is now framed as the interactive alternative that warns about overrides. A
+  version note points users on mizer < 3.2 back to the old rule.
+
+* Species-parameter documentation now distinguishes `w_max` (the purely
+  computational size-grid boundary) from `w_repro_max` (mizer 3.2's name for the
+  asymptotic size, i.e. the old `w_inf`).
+
+* Replaced the stale `matchYields()` reference with `calibrateYield()`.
+
+## Skills
+
+* Captured lessons from dynamics/limit-cycle work: `inst/AGENTS.md` gains
+  "Numerical scheme for dynamics" and "Gotchas" sections; `run-simulation` gains
+  a "Numerical scheme: watch for numerical diffusion" section (upwind scheme
+  silently damping real oscillations, the `second_order_w` / `tr_bdf2` fix, and
+  freezing the resource to isolate the phantom-jam feedback); `change-parameters`
+  gains "The feeding level is set by `f0`, not `h`".
+
 # mizerAgents 0.1.0
 
 ## New features

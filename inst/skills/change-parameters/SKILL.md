@@ -42,17 +42,25 @@ layer to reach into:
 | `calculated_species_params(params)` | parameters mizer derived or defaulted |
 | `species_params(params)` | everything (given, with calculated filling gaps) |
 
-**Rule: change species parameters with `given_species_params(params) <-`.** It
-records the value as *given* and triggers recalculation of the derived scalars
-**and** the size-dependent rate arrays that depend on it.
+**Rule (mizer ≥ 3.2): change species parameters with `species_params(params) <-`.**
+As of mizer 3.2 this is the recommended setter for scripts: it detects what you
+changed, records it as *given* (so defaults can no longer overwrite it), and
+triggers recalculation of the derived scalars **and** the size-dependent rate
+arrays that depend on it.
 
 ```r
-given_species_params(params)$beta <- 150   # also rebuilds the predation kernel
+species_params(params)$beta <- 150   # recorded as given; also rebuilds the predation kernel
 ```
 
-Do **not** use `species_params(params) <-` for edits: it writes into the combined
-table without recalculating derived scalars, and the value can be **silently
-overwritten** the next time a recalculation is triggered.
+`given_species_params(params) <-` does the same recording and recalculation and
+is preferable in **interactive** sessions, because it additionally *warns* when
+you change a parameter whose effect is overridden by another parameter you have
+already given.
+
+> **Version note.** Older guidance said to avoid `species_params(params) <-`
+> because it bypassed the `given_species_params` protection and skipped
+> recalculation. That was fixed in mizer 3.2. On mizer **< 3.2**, still prefer
+> `given_species_params(params) <-` for edits.
 
 Columns come back as named vectors: `species_params(params)$w_mat` is named by
 species; `given_species_params(params)$gamma` is `NA` where the user never set it.
@@ -74,6 +82,22 @@ the relevant setter automatically:
 Other species parameters are used **directly** and build no array (changing them
 just changes the model): `alpha`, `w_min` (egg size), `erepro`, `R_max`,
 `interaction_resource`, and the length–weight parameters `a`, `b`.
+
+## The feeding level is set by `f0`, not `h`
+
+When `gamma` (the search-volume coefficient) is not supplied, mizer **derives it
+from the target feeding level `f0`** — roughly `gamma ∝ h · f0 / (1 - f0)` — so
+that the modelled steady-state feeding level equals `f0`. A consequence often
+missed: raising `h` does **not** lower the feeding level, because the derived
+`gamma` compensates and the feeding level stays pinned at `f0`. To make growth
+more or less resource-dependent (a stronger or weaker density dependence / the
+"phantom-jam" feedback), change **`f0`**, not `h`: low `f0` makes juvenile growth
+strongly resource-limited, `f0` near 1 makes it nearly saturated and
+resource-insensitive.
+
+Corollary: `h = Inf` (a deliberately "no-satiation" model) makes the derived
+`gamma` non-finite and throws `search_vol must not contain non-finite values` —
+supply `gamma` explicitly in that case.
 
 ## Setting a rate array directly — and the freeze trap
 
@@ -176,7 +200,7 @@ instead.
 
 | To change… | Use |
 |---|---|
-| a per-species value | `given_species_params(params) <- …` |
+| a per-species value | `species_params(params) <- …` (mizer ≥ 3.2; `given_species_params(params) <-` interactively or on older mizer) |
 | a rate, keeping it tied to the parameters | change the underlying species parameter |
 | a rate to a bespoke array (freezing it) | `metab(params) <- …` (direct) or the matching `set…(params, array)` |
 | a frozen rate back to its default form | `set…(params, reset = TRUE)` |

@@ -21,6 +21,16 @@ Most functions accept **either** a `MizerSim` object (returning a **time series*
 state). So `getBiomass(sim)` gives biomass over time, `getBiomass(params)` gives
 biomass now.
 
+To get the single value **at one time step** of a simulation, extract a
+`MizerParams` snapshot with `finalParams(sim)` (last step), `initialParams(sim)`
+(first step), or `getParams(sim, time_range = ...)` (averaged over a range) and
+pass that in. Prefer this over indexing the time series with `idxFinalT(sim)`:
+
+```r
+getMeanMaxWeight(finalParams(sim))          # equilibrium value at the last step
+getMeanMaxWeight(sim)[idxFinalT(sim), ]     # older equivalent
+```
+
 If you need a function you don't see here, `grep` for `"plot"` or the specific
 name in the bundled `llms-full.txt` before writing custom code — don't read the
 whole file.
