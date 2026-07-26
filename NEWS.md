@@ -1,3 +1,10 @@
+# mizerAgents 0.3.2.9000
+
+* The `calibrate-model` skill documents the experimental mizer 3.2.9000 stability
+  tools — `getStability()`, `getLimitCycleSim()` and `plotBifurcation()` — and
+  the fuller `steadyNewton()` behaviour, for analysing unstable steady states and
+  limit cycles.
+
 # mizerAgents 0.3.2
 
 ## New features
