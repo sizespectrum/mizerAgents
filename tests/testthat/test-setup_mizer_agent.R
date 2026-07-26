@@ -29,16 +29,20 @@ test_that("setup_mizer_agent works as expected", {
     expect_true(any(grepl("llms.txt", mizer_content, fixed = TRUE)))
     expect_false(any(grepl("llms-full", mizer_content, fixed = TRUE)))
 
-    # AGENTS.md should contain the marked block: a note plus the `@` import
+    # Each instruction file should contain the marked block: a note plus the
+    # `@` import. All three carry it, so an agent that reads only its own named
+    # file still gets the mizer context.
+    for (dest in c(agents_dest, claude_dest, gemini_dest)) {
+        content <- readLines(dest)
+        expect_true("@MIZER-AGENTS.md" %in% content, info = dest)
+        expect_true(any(grepl("Read `MIZER-AGENTS.md`", content, fixed = TRUE)),
+                    info = dest)
+        expect_true(any(grepl("mizerAgents: start", content, fixed = TRUE)),
+                    info = dest)
+        expect_true(any(grepl("mizerAgents: end", content, fixed = TRUE)),
+                    info = dest)
+    }
     agents_content <- readLines(agents_dest)
-    expect_true("@MIZER-AGENTS.md" %in% agents_content)
-    expect_true(any(grepl("Read `MIZER-AGENTS.md`", agents_content, fixed = TRUE)))
-    expect_true(any(grepl("mizerAgents: start", agents_content, fixed = TRUE)))
-    expect_true(any(grepl("mizerAgents: end", agents_content, fixed = TRUE)))
-
-    # CLAUDE.md should point to @AGENTS.md
-    claude_content <- readLines(claude_dest)
-    expect_identical(claude_content[1], "@AGENTS.md")
 
     # 2. Existing AGENTS.md with custom content and overwrite = FALSE
     # Overwrite AGENTS.md with custom notes
@@ -130,6 +134,63 @@ test_that("the unmarked shim written by 0.3.2 and earlier is upgraded", {
     content <- readLines(agents_dest)
     expect_identical(content[1], "My own wording about mizer.")
     expect_equal(sum(content == "@MIZER-AGENTS.md"), 1)
+})
+
+test_that("existing CLAUDE.md and GEMINI.md are updated like AGENTS.md", {
+    tmp_dir <- tempfile("mizer_agent_shims")
+    dir.create(tmp_dir)
+    on.exit(unlink(tmp_dir, recursive = TRUE))
+    claude_dest <- file.path(tmp_dir, "CLAUDE.md")
+    gemini_dest <- file.path(tmp_dir, "GEMINI.md")
+
+    # A user file that predates mizerAgents keeps its content and gains the
+    # block, rather than being skipped for existing
+    writeLines(c("# House rules", "", "Use tidyverse style."), claude_dest)
+    suppressMessages(setup_mizer_agent(path = tmp_dir))
+
+    claude_content <- readLines(claude_dest)
+    expect_true(any(grepl("mizerAgents: start", claude_content, fixed = TRUE)))
+    expect_true("@MIZER-AGENTS.md" %in% claude_content)
+    expect_identical(tail(claude_content, 3),
+                     c("# House rules", "", "Use tidyverse style."))
+    # No import of AGENTS.md is invented: what non-mizer context reaches Claude
+    # Code is exactly what it was before we ran
+    expect_false("@AGENTS.md" %in% claude_content)
+
+    # Re-running leaves the file byte-identical
+    before <- readLines(claude_dest)
+    suppressMessages(setup_mizer_agent(path = tmp_dir))
+    expect_identical(readLines(claude_dest), before)
+
+    # overwrite = TRUE discards the user's content in these files too
+    suppressMessages(setup_mizer_agent(path = tmp_dir, overwrite = TRUE))
+    claude_content <- readLines(claude_dest)
+    expect_false(any(grepl("House rules", claude_content, fixed = TRUE)))
+    expect_true("@MIZER-AGENTS.md" %in% claude_content)
+})
+
+test_that("a file that imports AGENTS.md is left alone", {
+    tmp_dir <- tempfile("mizer_agent_imports")
+    dir.create(tmp_dir)
+    on.exit(unlink(tmp_dir, recursive = TRUE))
+    claude_dest <- file.path(tmp_dir, "CLAUDE.md")
+    gemini_dest <- file.path(tmp_dir, "GEMINI.md")
+
+    # The one-line shim written by 0.3.2 and earlier, and a user file with the
+    # same import among their own notes. Removing that import would cut off
+    # instructions the agent was seeing, so both are left exactly as they are:
+    # the block reaches the agent through AGENTS.md.
+    writeLines("@AGENTS.md", gemini_dest)
+    writeLines(c("# House rules", "", "@AGENTS.md"), claude_dest)
+
+    suppressMessages(setup_mizer_agent(path = tmp_dir))
+
+    expect_identical(readLines(gemini_dest), "@AGENTS.md")
+    expect_identical(readLines(claude_dest), c("# House rules", "", "@AGENTS.md"))
+    # AGENTS.md itself carries the block, so the context still arrives
+    expect_true(any(grepl("mizerAgents: start",
+                          readLines(file.path(tmp_dir, "AGENTS.md")),
+                          fixed = TRUE)))
 })
 
 test_that("the r-mizer MCP server is configured in .mcp.json", {

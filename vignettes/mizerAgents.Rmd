@@ -38,12 +38,15 @@ This creates the following files in your working directory:
   descriptions, a species parameter table, and the path to the bundled API
   index. This file is package-managed and can be updated when mizer is
   upgraded.
-- **`AGENTS.md`** — your project-specific instruction file. It is created with a
-  short package-managed block at the top that points agents at
-  `MIZER-AGENTS.md`; the rest of the file is yours.
-- **`CLAUDE.md`** and **`GEMINI.md`** — one-line shims containing
-  `@AGENTS.md`, so that agent-specific tools that look for their own named
-  file also pick up the shared context.
+- **`AGENTS.md`**, **`CLAUDE.md`** and **`GEMINI.md`** — your project-specific
+  instruction files. Each is created with a short package-managed block at the
+  top that points agents at `MIZER-AGENTS.md`; the rest of each file is yours.
+  All three carry the same block, because none of them is a fallback for
+  another: Claude Code reads `CLAUDE.md` and not `AGENTS.md`, and Gemini CLI
+  reads `GEMINI.md`, so an agent that looks only for its own named file should
+  still find the mizer context. The block is the only thing added to these
+  files: no `@AGENTS.md` import is written or removed, so which of your own
+  instructions reach which agent stays exactly as you had it.
 - **MCP configuration** for a server named `r-mizer` that connects the agent to
   your R session, described in the next section. Every agent uses a different
   file for this, so all of them are written: `.mcp.json`,
@@ -51,12 +54,14 @@ This creates the following files in your working directory:
   `.cursor/mcp.json`, `.vscode/mcp.json` and
   `.posit/assistant/settings.json`.
 
-`MIZER-AGENTS.md` is always updated when you run `setup_mizer_agent()`.
-`CLAUDE.md` and `GEMINI.md` are only created if they do not already exist. In
-`AGENTS.md` only the block between the `<!-- mizerAgents: start -->` and
-`<!-- mizerAgents: end -->` comments is package-managed: it is refreshed each
-time you run `setup_mizer_agent()`, so improvements to it reach existing
-projects, while everything you write outside those markers is preserved.
+`MIZER-AGENTS.md` is always updated when you run `setup_mizer_agent()`. In the
+three instruction files only the block between the
+`<!-- mizerAgents: start -->` and `<!-- mizerAgents: end -->` comments is
+package-managed: it is refreshed each time you run `setup_mizer_agent()`, so
+improvements to it reach existing projects, while everything you write outside
+those markers is preserved. If a `CLAUDE.md` or `GEMINI.md` of yours already
+contains `@AGENTS.md`, it is left untouched, since the block reaches the agent
+through that import.
 
 
 ## Connecting the agent to your R session

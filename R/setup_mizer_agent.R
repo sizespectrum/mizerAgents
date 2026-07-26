@@ -23,9 +23,17 @@
     trimws(val)
 }
 
+# The instruction files agents read at startup. None of them is a fallback for
+# another: Claude Code reads `CLAUDE.md` and not `AGENTS.md`, and Gemini CLI
+# reads `GEMINI.md` unless `context.fileName` says otherwise. So each file gets
+# its own copy of the block rather than an import of a neighbouring one, and an
+# agent that reads only its own named file still finds the mizer context,
+# whether or not that file existed before we ran.
+.instruction_files <- c("AGENTS.md", "CLAUDE.md", "GEMINI.md")
+
 # Marker comments delimiting the package-managed block inside the user's
-# `AGENTS.md`. Everything between them is rewritten on each run; everything
-# outside belongs to the user.
+# instruction files. Everything between them is rewritten on each run;
+# everything outside belongs to the user.
 .shim_begin <- "<!-- mizerAgents: start - managed by setup_mizer_agent(), edits are overwritten -->"
 .shim_end   <- "<!-- mizerAgents: end -->"
 
@@ -44,14 +52,17 @@
     "@MIZER-AGENTS.md"
 )
 
-# Locate the package-managed block in an existing `AGENTS.md`, returning the
-# line range to replace or `NULL` if there is nothing to update.
+# Locate the package-managed block in an existing instruction file, returning
+# the line range to replace or `NULL` if there is nothing to update.
 #
 # Only two forms exist in the wild. The current one is delimited by the markers
 # above. The other is what 0.3.2 and earlier wrote: a bare `@MIZER-AGENTS.md`
 # import line with no note and no markers, which is upgraded in place. The note
 # and the markers were both added during 0.3.2.9000 and revised within it, so
 # intermediate forms of them were never released and are not recognised here.
+#
+# The one-line `@AGENTS.md` shims that 0.3.2 and earlier wrote into `CLAUDE.md`
+# and `GEMINI.md` are deliberately not matched: see `.write_instruction_file()`.
 # Internal helper.
 .shim_range <- function(lines) {
     b <- which(lines == .shim_begin)
@@ -62,6 +73,47 @@
     if (!length(at)) return(NULL)
     # Replace the import line alone: anything around it is the user's own prose.
     c(at[1], at[1])
+}
+
+# Write the package-managed block into one instruction file, leaving the user's
+# own content alone unless `overwrite` says otherwise.
+#
+# Which of a project's instructions reach which agent is the user's business,
+# not ours, so the block is the only thing we add and an `@` import is never
+# written or removed: adding one would feed an agent notes it was not seeing
+# before, and dropping one would cut off notes it was. `defers_to` names an
+# import that already carries our block into this file - `@AGENTS.md` for
+# `CLAUDE.md` and `GEMINI.md`, including the one-line shims written by 0.3.2 and
+# earlier. A file with that import is left untouched: the agent reading it gets
+# the mizer context through the import, so a second copy would be pure
+# duplication. Internal helper.
+.write_instruction_file <- function(dest, shim, overwrite, defers_to = NULL) {
+    if (!file.exists(dest) || isTRUE(overwrite)) {
+        writeLines(shim, dest)
+        message("Created ", dest, " with shim pointing to MIZER-AGENTS.md")
+        return(invisible(dest))
+    }
+
+    existing <- readLines(dest, warn = FALSE)
+    range <- .shim_range(existing)
+    if (is.null(range)) {
+        if (!is.null(defers_to) && any(trimws(existing) == defers_to)) {
+            return(invisible(dest))
+        }
+        updated <- c(shim, "", existing)
+        action <- "Prepended @MIZER-AGENTS.md shim to existing "
+    } else {
+        updated <- c(existing[seq_len(range[1] - 1)], shim,
+                     existing[-seq_len(range[2])])
+        action <- "Refreshed the mizer block in "
+    }
+    # Leave the file alone when nothing would change, so that re-running setup
+    # does not dirty a tracked file or bump its mtime.
+    if (!identical(updated, existing)) {
+        writeLines(updated, dest)
+        message(action, dest)
+    }
+    invisible(dest)
 }
 
 #' Set up an AI agent to help with your mizer project
@@ -75,19 +127,25 @@
 #' silently, so the card sends agents to the help pages of the mizer version you
 #' actually have installed.
 #'
-#' It also creates (or updates) an `AGENTS.md` file with a short note and a
+#' It also creates (or updates) the instruction files agents read at startup -
+#' `AGENTS.md`, `CLAUDE.md` and `GEMINI.md` - adding to each a short note and a
 #' `@MIZER-AGENTS.md` import, so that agents read both the project-specific
 #' instructions and the mizer reference. Agents that resolve `@` imports (Claude
 #' Code, Gemini CLI) pick the reference up automatically at startup; the note
-#' tells those that do not (Codex, Copilot) to read the file themselves. This
-#' block is delimited by `<!-- mizerAgents: start -->` and
+#' tells those that do not (Codex, Copilot) to read the file themselves. All
+#' three files are handled alike, because none of them is a fallback for
+#' another: Claude Code reads `CLAUDE.md` and not `AGENTS.md`, and Gemini CLI
+#' reads `GEMINI.md`, so an agent that looks only for its own named file still
+#' finds the block. The block is delimited by `<!-- mizerAgents: start -->` and
 #' `<!-- mizerAgents: end -->` comments and is refreshed in place on every run,
 #' so that improvements to it reach existing projects. Add your own project
 #' notes outside those markers, where they will be left untouched.
-#' It also creates `CLAUDE.md` and `GEMINI.md` shim files (each
-#' containing just `@AGENTS.md`) so that agent-specific tools that look for
-#' their own named file also pick up the shared context. These shims are only
-#' created if the files do not already exist.
+#'
+#' The block is the only thing added: no `@AGENTS.md` import is ever written or
+#' removed, so which of your own instructions reach which agent is unchanged. If
+#' one of these files already imports `AGENTS.md`, whether you wrote that
+#' yourself or an earlier version of this package did, it is left untouched -
+#' the block reaches the agent through the import.
 #'
 #' It also installs a set of bundled Claude Code *skills* into
 #' `.claude/skills/` (one sub-directory with a `SKILL.md` per skill, e.g.
@@ -126,11 +184,11 @@
 #'
 #' @param path Directory in which to create or update the agent files. Defaults
 #'   to the current working directory, which should be your R project root.
-#' @param overwrite If `TRUE`, replace an existing `AGENTS.md` entirely with a
-#'   clean shim, discarding your project notes. If `FALSE` (the default), keep
-#'   the rest of `AGENTS.md` and only refresh the marked mizer block, adding it
-#'   at the top if it is not there yet. `MIZER-AGENTS.md` is always overwritten
-#'   to ensure it stays up-to-date.
+#' @param overwrite If `TRUE`, replace existing `AGENTS.md`, `CLAUDE.md` and
+#'   `GEMINI.md` files entirely with a clean shim, discarding your project
+#'   notes. If `FALSE` (the default), keep the rest of each file and only
+#'   refresh the marked mizer block, adding it at the top if it is not there
+#'   yet. `MIZER-AGENTS.md` is always overwritten to ensure it stays up-to-date.
 #' @param r_session If `TRUE` (the default), configure the `r-mizer` MCP server
 #'   so that the agent can read mizer's documentation, your global environment
 #'   and the open RStudio document. Set to `FALSE` to write no MCP config at
@@ -272,41 +330,18 @@ setup_mizer_agent <- function(path = ".", overwrite = FALSE,
     writeLines(mizer_section, mizer_dest)
     message("Created ", mizer_dest)
 
-    # Handle AGENTS.md. Unlike MIZER-AGENTS.md this file belongs to the user, so
-    # only the marked block is package-managed: it is refreshed in place on every
-    # run, wherever in the file it sits, and the rest is left untouched.
+    # Handle the instruction files. Unlike MIZER-AGENTS.md these belong to the
+    # user, so only the marked block is package-managed: it is refreshed in
+    # place on every run, wherever in the file it sits, and the rest is left
+    # untouched. All three are treated alike, so that an agent reading only its
+    # own named file still finds the block.
     shim <- c(.shim_begin, .shim_note, .shim_end)
-    if (file.exists(agents_dest) && !overwrite) {
-        existing <- readLines(agents_dest, warn = FALSE)
-        range <- .shim_range(existing)
-        if (is.null(range)) {
-            updated <- c(shim, "", existing)
-            action <- "Prepended @MIZER-AGENTS.md shim to existing "
-        } else {
-            updated <- c(existing[seq_len(range[1] - 1)], shim,
-                         existing[-seq_len(range[2])])
-            action <- "Refreshed the mizer block in "
-        }
-        # Leave the file alone when nothing would change, so that re-running
-        # setup does not dirty a tracked file or bump its mtime.
-        if (!identical(updated, existing)) {
-            writeLines(updated, agents_dest)
-            message(action, agents_dest)
-        }
-    } else {
-        writeLines(shim, agents_dest)
-        message("Created ", agents_dest, " with shim pointing to MIZER-AGENTS.md")
-    }
-
-    # Create agent-specific shim files that forward to AGENTS.md.
-    # Only written if the file does not already exist (may contain custom content).
-    shims <- c("CLAUDE.md", "GEMINI.md")
-    for (shim in shims) {
-        shim_dest <- normalizePath(file.path(path, shim), mustWork = FALSE)
-        if (!file.exists(shim_dest)) {
-            writeLines("@AGENTS.md", shim_dest)
-            message("Created ", shim_dest)
-        }
+    for (f in .instruction_files) {
+        .write_instruction_file(
+            normalizePath(file.path(path, f), mustWork = FALSE),
+            shim, overwrite,
+            defers_to = if (f != "AGENTS.md") "@AGENTS.md"
+        )
     }
 
     # Deploy the bundled Claude skills into `.claude/skills/`. Each skill is a

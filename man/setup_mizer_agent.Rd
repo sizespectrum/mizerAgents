@@ -18,11 +18,11 @@ setup_mizer_agent(
 \item{path}{Directory in which to create or update the agent files. Defaults
 to the current working directory, which should be your R project root.}
 
-\item{overwrite}{If \code{TRUE}, replace an existing \code{AGENTS.md} entirely with a
-clean shim, discarding your project notes. If \code{FALSE} (the default), keep
-the rest of \code{AGENTS.md} and only refresh the marked mizer block, adding it
-at the top if it is not there yet. \code{MIZER-AGENTS.md} is always overwritten
-to ensure it stays up-to-date.}
+\item{overwrite}{If \code{TRUE}, replace existing \code{AGENTS.md}, \code{CLAUDE.md} and
+\code{GEMINI.md} files entirely with a clean shim, discarding your project
+notes. If \code{FALSE} (the default), keep the rest of each file and only
+refresh the marked mizer block, adding it at the top if it is not there
+yet. \code{MIZER-AGENTS.md} is always overwritten to ensure it stays up-to-date.}
 
 \item{r_session}{If \code{TRUE} (the default), configure the \code{r-mizer} MCP server
 so that the agent can read mizer's documentation, your global environment
@@ -83,19 +83,25 @@ silently, so the card sends agents to the help pages of the mizer version you
 actually have installed.
 }
 \details{
-It also creates (or updates) an \code{AGENTS.md} file with a short note and a
+It also creates (or updates) the instruction files agents read at startup -
+\code{AGENTS.md}, \code{CLAUDE.md} and \code{GEMINI.md} - adding to each a short note and a
 \verb{@MIZER-AGENTS.md} import, so that agents read both the project-specific
 instructions and the mizer reference. Agents that resolve \code{@} imports (Claude
 Code, Gemini CLI) pick the reference up automatically at startup; the note
-tells those that do not (Codex, Copilot) to read the file themselves. This
-block is delimited by \verb{<!-- mizerAgents: start -->} and
+tells those that do not (Codex, Copilot) to read the file themselves. All
+three files are handled alike, because none of them is a fallback for
+another: Claude Code reads \code{CLAUDE.md} and not \code{AGENTS.md}, and Gemini CLI
+reads \code{GEMINI.md}, so an agent that looks only for its own named file still
+finds the block. The block is delimited by \verb{<!-- mizerAgents: start -->} and
 \verb{<!-- mizerAgents: end -->} comments and is refreshed in place on every run,
 so that improvements to it reach existing projects. Add your own project
 notes outside those markers, where they will be left untouched.
-It also creates \code{CLAUDE.md} and \code{GEMINI.md} shim files (each
-containing just \verb{@AGENTS.md}) so that agent-specific tools that look for
-their own named file also pick up the shared context. These shims are only
-created if the files do not already exist.
+
+The block is the only thing added: no \verb{@AGENTS.md} import is ever written or
+removed, so which of your own instructions reach which agent is unchanged. If
+one of these files already imports \code{AGENTS.md}, whether you wrote that
+yourself or an earlier version of this package did, it is left untouched -
+the block reaches the agent through the import.
 
 It also installs a set of bundled Claude Code \emph{skills} into
 \verb{.claude/skills/} (one sub-directory with a \code{SKILL.md} per skill, e.g.

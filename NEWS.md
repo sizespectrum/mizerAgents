@@ -2,6 +2,21 @@
 
 ## New features
 
+* `AGENTS.md`, `CLAUDE.md` and `GEMINI.md` are now all handled the same way:
+  each gets the package-managed mizer block, refreshed in place on every run
+  with your own notes around it left alone. Previously only `AGENTS.md` was
+  managed, and `CLAUDE.md`/`GEMINI.md` were written as one-line `@AGENTS.md`
+  shims only when they did not already exist — so a project that already had a
+  `CLAUDE.md` got no mizer context in Claude Code at all. Neither tool falls
+  back to `AGENTS.md`: Claude Code reads `CLAUDE.md`, and Gemini CLI reads
+  `GEMINI.md` unless its `context.fileName` setting says otherwise.
+
+  The block is the only thing added. No `@AGENTS.md` import is written or
+  removed, so which of your own instructions reach which agent is unchanged: a
+  `CLAUDE.md` that did not import `AGENTS.md` still does not, and one that did
+  — including the one-line shims written by earlier versions — is left exactly
+  as it was, since the block reaches the agent through the import.
+
 * `setup_mizer_agent()` now connects the agent to your live R session, by
   configuring an MCP server named `r-mizer`. The server comes from the
   [btw](https://posit-dev.github.io/btw/) package (CRAN, from Posit), which you
