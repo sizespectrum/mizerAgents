@@ -102,6 +102,20 @@
 #' and added to `MIZER-AGENTS.md`. Those agents can then read the relevant
 #' `SKILL.md` on demand when a task matches.
 #'
+#' Finally, unless `r_session = FALSE`, it configures an MCP server named
+#' `r-mizer` in the project's `.mcp.json`, so that the agent can reach your live
+#' R session. The server is provided by the
+#' [btw](https://posit-dev.github.io/btw/) package, which you need to install
+#' separately. This gives the agent help pages and vignettes for the mizer
+#' version you actually have installed — rather than whatever mizer API it
+#' remembers — along with a view of the objects in your global environment and
+#' of the document open in RStudio, and it can run mizer code there and see the
+#' plots that come back. For the server to see your session you must run
+#' `btw::btw_mcp_session()` in the RStudio console; passing `rprofile = TRUE`
+#' adds that call to the project `.Rprofile` so that it happens automatically.
+#' Only the `r-mizer` entry of `.mcp.json` is package-managed; other servers you
+#' configure there are left alone.
+#'
 #' After running this function, start your AI coding agent
 #' (e.g. `claude`, `codex`, `copilot` or `gemini`) from the RStudio Terminal
 #' and it will immediately have the mizer context it needs.
@@ -113,6 +127,26 @@
 #'   the rest of `AGENTS.md` and only refresh the marked mizer block, adding it
 #'   at the top if it is not there yet. `MIZER-AGENTS.md` is always overwritten
 #'   to ensure it stays up-to-date.
+#' @param r_session If `TRUE` (the default), configure the `r-mizer` MCP server
+#'   in `.mcp.json` so that the agent can read mizer's documentation, your
+#'   global environment and the open RStudio document. Set to `FALSE` to leave
+#'   `.mcp.json` alone.
+#' @param run_r If `TRUE` (the default), let the agent *evaluate* R code in your
+#'   session, which is what allows it to project or calibrate a model and see
+#'   the resulting plots. The code runs in your global environment with no
+#'   sandboxing, so the agent can overwrite your objects; work under version
+#'   control, or set this to `FALSE` for a read-only connection. Ignored when
+#'   `r_session = FALSE`.
+#' @param pkg_dev If `TRUE`, also expose btw's package development tools
+#'   (`load_all()`, `document()`, `test()`, `check()` and test coverage), which
+#'   run against the package in your session's working directory. Set this when
+#'   the project is itself an R package, such as a mizer extension. `FALSE` by
+#'   default, since these tools do nothing useful in an ordinary modelling
+#'   project. Ignored when `r_session = FALSE`.
+#' @param rprofile If `TRUE`, append a guarded `btw::btw_mcp_session()` call to
+#'   the project `.Rprofile`, so that each new session hands itself to the MCP
+#'   server automatically. `FALSE` by default, in which case you call
+#'   `btw::btw_mcp_session()` yourself. Ignored when `r_session = FALSE`.
 #'
 #' @return Invisibly returns the path to the `AGENTS.md` file.
 #' @export
@@ -121,8 +155,17 @@
 #' \dontrun{
 #' # Run once in your mizer project to set up AI agent support
 #' setup_mizer_agent()
+#'
+#' # In a mizer extension package, add the package development tools and
+#' # connect the session automatically on startup
+#' setup_mizer_agent(pkg_dev = TRUE, rprofile = TRUE)
+#'
+#' # A read-only connection: documentation and inspection, but no execution
+#' setup_mizer_agent(run_r = FALSE)
 #' }
-setup_mizer_agent <- function(path = ".", overwrite = FALSE) {
+setup_mizer_agent <- function(path = ".", overwrite = FALSE,
+                              r_session = TRUE, run_r = TRUE,
+                              pkg_dev = FALSE, rprofile = FALSE) {
     agents_src    <- system.file("AGENTS.md",     package = "mizerAgents")
     llms_src      <- system.file("llms.txt",      package = "mizerAgents")
     llms_full_src <- system.file("llms-full.txt", package = "mizerAgents")
@@ -153,6 +196,15 @@ setup_mizer_agent <- function(path = ".", overwrite = FALSE) {
             "starting** such a task rather than working from memory. Triggers:\n\n",
             paste(index_lines, collapse = "\n"), "\n"
         )
+    }
+
+    # Tell the agent how to use the live session, before pointing it at the
+    # static documentation below: help pages from the installed mizer are more
+    # trustworthy than the bundled snapshots, which were taken at whatever
+    # version this package was last built against.
+    if (isTRUE(r_session)) {
+        mizer_section <- paste0(mizer_section,
+                                .r_session_section(run_r, pkg_dev))
     }
 
     # Append local paths to both documentation files
@@ -229,12 +281,32 @@ setup_mizer_agent <- function(path = ".", overwrite = FALSE) {
         }
     }
 
+    # Configure the MCP server that connects the agent to the user's R session.
+    # Like the block in `AGENTS.md`, only our own entry is managed; anything
+    # else in `.mcp.json` belongs to the user.
+    if (isTRUE(r_session)) {
+        mcp_dest <- normalizePath(file.path(path, ".mcp.json"), mustWork = FALSE)
+        if (.write_mcp_json(mcp_dest, run_r, pkg_dev)) {
+            message("Configured the ", .mcp_server_name, " MCP server in ", mcp_dest)
+        }
+        if (isTRUE(rprofile)) {
+            rprofile_dest <- normalizePath(file.path(path, ".Rprofile"),
+                                           mustWork = FALSE)
+            if (.write_rprofile(rprofile_dest)) {
+                message("Added btw::btw_mcp_session() to ", rprofile_dest)
+            }
+        }
+    }
+
     message(
         "\nMizer API documentation for AI agents:",
         "\n  Overview:  ", llms_src,
         if (nzchar(llms_full_src)) paste0("\n  Full docs: ", llms_full_src) else "",
         if (nzchar(skills_src) && dir.exists(skills_src)) {
             "\n  Skills:    .claude/skills/ (loaded automatically by Claude Code)"
+        } else "",
+        if (isTRUE(r_session)) {
+            .r_session_message(run_r, rprofile, pkg_dev)
         } else "",
         "\n\nStart your AI coding agent from the terminal, e.g.:\n",
         "  claude    (Claude Code)\n",

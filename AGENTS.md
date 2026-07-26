@@ -21,6 +21,8 @@ devtools::check()         # Full R CMD check
 ## Architecture
 
 - `R/setup_mizer_agent.R` — the sole exported function
+- `R/r_session.R` — `.mcp.json` / `.Rprofile` writers for the `btw` MCP server
+  that connects the agent to the user's live R session
 - `inst/AGENTS.md` — mizer reference card (deployed to user projects)
 - `inst/llms.txt` — concise mizer API index (deployed path appended to `MIZER-AGENTS.md`)
 - `inst/llms-full.txt` — full mizer API docs (deployed path appended to `MIZER-AGENTS.md`)

@@ -14,7 +14,10 @@ Authors@R: person("Gustav", "Delius", email="gustav.delius@york.ac.uk",
                   comment = c(ORCID = "0000-0003-4092-8228"))
 Version: 0.3.2
 License: GPL-3
+Imports:
+    jsonlite
 Suggests:
+    btw,
     mizer,
     testthat (>= 3.0.0),
     pkgdown,

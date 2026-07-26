@@ -146,3 +146,116 @@ test_that("unmarked shims from earlier versions are migrated", {
     content <- readLines(agents_dest)
     expect_identical(content[1], "My own wording about mizer.")
 })
+
+test_that("the r-mizer MCP server is configured in .mcp.json", {
+    tmp_dir <- tempfile("mizer_agent_mcp")
+    dir.create(tmp_dir)
+    on.exit(unlink(tmp_dir, recursive = TRUE))
+    mcp_dest <- file.path(tmp_dir, ".mcp.json")
+
+    suppressMessages(setup_mizer_agent(path = tmp_dir))
+    expect_true(file.exists(mcp_dest))
+
+    cfg <- jsonlite::fromJSON(mcp_dest, simplifyVector = FALSE)
+    entry <- cfg$mcpServers[["r-mizer"]]
+    expect_identical(entry$command, "Rscript")
+    expect_match(entry$args[[2]], "btw::btw_mcp_server", fixed = TRUE)
+    # Execution is on by default, and needs btw's own opt-in to work
+    expect_true(grepl("'run'", entry$args[[2]], fixed = TRUE))
+    expect_identical(entry$env$BTW_RUN_R_ENABLED, "true")
+    # Package development tools are not
+    expect_false(grepl("'pkg'", entry$args[[2]], fixed = TRUE))
+
+    # The live-session section reaches the always-loaded card
+    mizer_content <- readLines(file.path(tmp_dir, "MIZER-AGENTS.md"))
+    expect_true(any(grepl("live R session", mizer_content, ignore.case = TRUE)))
+
+    # run_r = FALSE drops the group and the opt-in environment variable
+    suppressMessages(setup_mizer_agent(path = tmp_dir, run_r = FALSE))
+    cfg <- jsonlite::fromJSON(mcp_dest, simplifyVector = FALSE)
+    entry <- cfg$mcpServers[["r-mizer"]]
+    expect_false(grepl("'run'", entry$args[[2]], fixed = TRUE))
+    expect_null(entry$env)
+
+    # r_session = FALSE leaves .mcp.json alone and drops the section
+    unlink(mcp_dest)
+    suppressMessages(setup_mizer_agent(path = tmp_dir, r_session = FALSE))
+    expect_false(file.exists(mcp_dest))
+    mizer_content <- readLines(file.path(tmp_dir, "MIZER-AGENTS.md"))
+    expect_false(any(grepl("r-mizer", mizer_content, fixed = TRUE)))
+})
+
+test_that("pkg_dev = TRUE exposes the package development tools", {
+    tmp_dir <- tempfile("mizer_agent_pkgdev")
+    dir.create(tmp_dir)
+    on.exit(unlink(tmp_dir, recursive = TRUE))
+    mcp_dest <- file.path(tmp_dir, ".mcp.json")
+
+    suppressMessages(setup_mizer_agent(path = tmp_dir, pkg_dev = TRUE))
+    entry <- jsonlite::fromJSON(mcp_dest,
+                                simplifyVector = FALSE)$mcpServers[["r-mizer"]]
+    expect_true(grepl("'pkg'", entry$args[[2]], fixed = TRUE))
+
+    # ... and tells the agent to prefer them over shelling out to devtools
+    mizer_content <- readLines(file.path(tmp_dir, "MIZER-AGENTS.md"))
+    expect_true(any(grepl("btw_tool_pkg_load_all", mizer_content, fixed = TRUE)))
+
+    # Turning it back off removes both again
+    suppressMessages(setup_mizer_agent(path = tmp_dir))
+    entry <- jsonlite::fromJSON(mcp_dest,
+                                simplifyVector = FALSE)$mcpServers[["r-mizer"]]
+    expect_false(grepl("'pkg'", entry$args[[2]], fixed = TRUE))
+    mizer_content <- readLines(file.path(tmp_dir, "MIZER-AGENTS.md"))
+    expect_false(any(grepl("btw_tool_pkg_load_all", mizer_content, fixed = TRUE)))
+})
+
+test_that("other MCP servers survive and an up-to-date file is not rewritten", {
+    tmp_dir <- tempfile("mizer_agent_mcp_merge")
+    dir.create(tmp_dir)
+    on.exit(unlink(tmp_dir, recursive = TRUE))
+    mcp_dest <- file.path(tmp_dir, ".mcp.json")
+
+    # A server the user configured themselves, plus a stale entry of ours
+    writeLines(jsonlite::toJSON(list(mcpServers = list(
+        mine = list(type = "stdio", command = "my-server"),
+        "r-mizer" = list(type = "stdio", command = "old")
+    )), auto_unbox = TRUE, pretty = TRUE), mcp_dest)
+
+    suppressMessages(setup_mizer_agent(path = tmp_dir))
+    cfg <- jsonlite::fromJSON(mcp_dest, simplifyVector = FALSE)
+    expect_identical(cfg$mcpServers$mine$command, "my-server")
+    expect_identical(cfg$mcpServers[["r-mizer"]]$command, "Rscript")
+
+    # Re-running changes nothing, so the file is left byte-identical
+    before <- readLines(mcp_dest)
+    suppressMessages(setup_mizer_agent(path = tmp_dir))
+    expect_identical(readLines(mcp_dest), before)
+
+    # An unparseable file is left alone rather than clobbered
+    writeLines("{ not json", mcp_dest)
+    expect_warning(suppressMessages(setup_mizer_agent(path = tmp_dir)),
+                   "Could not parse")
+    expect_identical(readLines(mcp_dest), "{ not json")
+})
+
+test_that("rprofile = TRUE adds the session hook exactly once", {
+    tmp_dir <- tempfile("mizer_agent_rprofile")
+    dir.create(tmp_dir)
+    on.exit(unlink(tmp_dir, recursive = TRUE))
+    rprofile_dest <- file.path(tmp_dir, ".Rprofile")
+
+    # Not written unless asked for
+    suppressMessages(setup_mizer_agent(path = tmp_dir))
+    expect_false(file.exists(rprofile_dest))
+
+    # An existing .Rprofile is appended to, not replaced
+    writeLines("options(stringsAsFactors = FALSE)", rprofile_dest)
+    suppressMessages(setup_mizer_agent(path = tmp_dir, rprofile = TRUE))
+    content <- readLines(rprofile_dest)
+    expect_identical(content[1], "options(stringsAsFactors = FALSE)")
+    expect_equal(sum(grepl("btw_mcp_session", content)), 1)
+
+    # Re-running does not add it a second time
+    suppressMessages(setup_mizer_agent(path = tmp_dir, rprofile = TRUE))
+    expect_equal(sum(grepl("btw_mcp_session", readLines(rprofile_dest))), 1)
+})

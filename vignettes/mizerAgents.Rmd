@@ -32,7 +32,7 @@ pak::pak("sizespectrum/mizerAgents")
 mizerAgents::setup_mizer_agent()
 ```
 
-This creates four files in your working directory:
+This creates the following files in your working directory:
 
 - **`MIZER-AGENTS.md`** — a concise mizer reference: core workflow, key object
   descriptions, a species parameter table, and the path to the full local
@@ -44,6 +44,8 @@ This creates four files in your working directory:
 - **`CLAUDE.md`** and **`GEMINI.md`** — one-line shims containing
   `@AGENTS.md`, so that agent-specific tools that look for their own named
   file also pick up the shared context.
+- **`.mcp.json`** — configuration for an MCP server named `r-mizer` that
+  connects the agent to your R session, described in the next section.
 
 `MIZER-AGENTS.md` is always updated when you run `setup_mizer_agent()`.
 `CLAUDE.md` and `GEMINI.md` are only created if they do not already exist. In
@@ -51,6 +53,82 @@ This creates four files in your working directory:
 `<!-- mizerAgents: end -->` comments is package-managed: it is refreshed each
 time you run `setup_mizer_agent()`, so improvements to it reach existing
 projects, while everything you write outside those markers is preserved.
+
+
+## Connecting the agent to your R session
+
+The bundled mizer documentation is a snapshot taken when `mizerAgents` was
+built, so it can drift from the mizer version you have installed. The
+[btw](https://posit-dev.github.io/btw/) package closes that gap: it provides an
+MCP server that lets the agent read the documentation of your *installed*
+packages, along with your R session. Install it once:
+
+```r
+install.packages("btw")
+```
+
+`setup_mizer_agent()` has already registered that server in `.mcp.json` under
+the name `r-mizer`. The server runs as its own R process, so it does not see
+your session until you hand it over. In the RStudio console, run:
+
+```r
+btw::btw_mcp_session()
+```
+
+The agent can now read help pages, vignettes and release notes for your
+installed mizer, list the objects in your global environment, and read the
+document you have open in the editor. That means it can *check* the argument
+names of `newMultispeciesParams()` or `setBevertonHolt()` instead of recalling
+them, which is the single most common source of mizer code that looks right and
+is not.
+
+To have every new session connect itself, run
+
+```r
+mizerAgents::setup_mizer_agent(rprofile = TRUE)
+```
+
+which adds the `btw_mcp_session()` call to your project's `.Rprofile`.
+
+### Letting the agent run mizer code
+
+The agent can also evaluate R code in your session, and does so by default. It
+can call `project()` or `steady()` on your `params` object and plot the result,
+and the plot comes back to it as an image — so it can look at a spectrum or a
+biomass trajectory and judge whether the model is behaving, rather than
+guessing from numbers. This is the mode in which an agent is most useful for
+calibration work.
+
+The trade-off is real: that code runs in your global environment with no
+sandboxing, so a careless assignment can overwrite an object you spent an hour
+building. `MIZER-AGENTS.md` tells the agent to assign to new names and to
+announce overwrites, but the safeguard you should rely on is version control.
+Commit your work before turning the agent loose on it. If you would rather have
+a read-only connection — documentation and inspection, but no execution — use
+
+```r
+mizerAgents::setup_mizer_agent(run_r = FALSE)
+```
+
+and `setup_mizer_agent(r_session = FALSE)` skips the MCP setup altogether.
+
+### If your project is a mizer extension package
+
+When you are writing an extension package rather than a model, add btw's
+package development tools:
+
+```r
+mizerAgents::setup_mizer_agent(pkg_dev = TRUE)
+```
+
+The agent can then run `load_all()`, `document()`, `test()`, `check()` and test
+coverage in your session instead of shelling out to `devtools` in a terminal.
+The gain is not just tidiness: after `load_all()` your new code is live in the
+same session, so the agent can immediately build a `MizerParams` object and try
+the rate function it has just written. Combined with the `extend-mizer` skill,
+this makes the write–load–test loop something the agent can close on its own.
+These tools are off by default, as they do nothing useful in an ordinary
+modelling project.
 
 
 ## Running an AI agent in the terminal

@@ -2,6 +2,45 @@
 
 ## New features
 
+* `setup_mizer_agent()` now connects the agent to your live R session, by
+  configuring an MCP server named `r-mizer` in the project's `.mcp.json`. The
+  server comes from the [btw](https://posit-dev.github.io/btw/) package (CRAN,
+  from Posit), which you install yourself; it is listed in `Suggests`. This
+  addresses the weakest point of the bundled documentation: `llms.txt` and
+  `llms-full.txt` are snapshots taken when this package was built, whereas
+  btw's docs tools read the mizer that is actually installed, so the agent can
+  check a signature rather than recall it. The agent also gains a view of the
+  objects in your global environment and of the document open in RStudio.
+  Only the `r-mizer` entry of `.mcp.json` is package-managed, so other servers
+  you have configured survive; an unparseable `.mcp.json` is left untouched
+  with a warning rather than overwritten.
+
+* For the server to see your session you must run `btw::btw_mcp_session()` in
+  the RStudio console. The new `rprofile = TRUE` argument appends a guarded
+  call to the project `.Rprofile` so that this happens on every startup.
+
+* The agent can evaluate R code in that session, which is what allows it to
+  project or calibrate a model and then *see* the resulting plots as images —
+  the mode in which it is most useful for calibration work. The code runs in
+  your global environment with no sandboxing and can overwrite your objects, so
+  keep your work under version control; `run_r = FALSE` gives a read-only
+  connection instead, and `r_session = FALSE` skips the MCP setup altogether.
+
+* New `pkg_dev = TRUE` argument for projects that are themselves R packages,
+  such as mizer extensions. It adds btw's package development tools, so the
+  agent can run `load_all()`, `document()`, `test()`, `check()` and test
+  coverage in your session rather than shelling out to `devtools`. Because
+  `load_all()` then leaves the new code live in the same session, the agent can
+  immediately exercise the rate function it has just written, closing the
+  write–load–test loop by itself. Off by default, as these tools do nothing
+  useful in an ordinary modelling project.
+
+* `MIZER-AGENTS.md` gains a "The user's live R session" section telling the
+  agent to look mizer functions up in the installed help pages before calling
+  them, to check what objects the user already has before rebuilding them, and
+  — when execution is enabled — to look at the plots it produces before
+  reporting success, and to avoid assigning over the user's work.
+
 * The reference card (`inst/AGENTS.md`) opens with a "Do not write mizer code
   from memory" section: mizer's API has moved on, most mizer code in the
   training data predates the installed version, and outdated calls often still

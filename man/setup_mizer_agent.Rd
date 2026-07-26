@@ -4,7 +4,14 @@
 \alias{setup_mizer_agent}
 \title{Set up an AI agent to help with your mizer project}
 \usage{
-setup_mizer_agent(path = ".", overwrite = FALSE)
+setup_mizer_agent(
+  path = ".",
+  overwrite = FALSE,
+  r_session = TRUE,
+  run_r = TRUE,
+  pkg_dev = FALSE,
+  rprofile = FALSE
+)
 }
 \arguments{
 \item{path}{Directory in which to create or update the agent files. Defaults
@@ -15,6 +22,30 @@ clean shim, discarding your project notes. If \code{FALSE} (the default), keep
 the rest of \code{AGENTS.md} and only refresh the marked mizer block, adding it
 at the top if it is not there yet. \code{MIZER-AGENTS.md} is always overwritten
 to ensure it stays up-to-date.}
+
+\item{r_session}{If \code{TRUE} (the default), configure the \code{r-mizer} MCP server
+in \code{.mcp.json} so that the agent can read mizer's documentation, your
+global environment and the open RStudio document. Set to \code{FALSE} to leave
+\code{.mcp.json} alone.}
+
+\item{run_r}{If \code{TRUE} (the default), let the agent \emph{evaluate} R code in your
+session, which is what allows it to project or calibrate a model and see
+the resulting plots. The code runs in your global environment with no
+sandboxing, so the agent can overwrite your objects; work under version
+control, or set this to \code{FALSE} for a read-only connection. Ignored when
+\code{r_session = FALSE}.}
+
+\item{pkg_dev}{If \code{TRUE}, also expose btw's package development tools
+(\code{load_all()}, \code{document()}, \code{test()}, \code{check()} and test coverage), which
+run against the package in your session's working directory. Set this when
+the project is itself an R package, such as a mizer extension. \code{FALSE} by
+default, since these tools do nothing useful in an ordinary modelling
+project. Ignored when \code{r_session = FALSE}.}
+
+\item{rprofile}{If \code{TRUE}, append a guarded \code{btw::btw_mcp_session()} call to
+the project \code{.Rprofile}, so that each new session hands itself to the MCP
+server automatically. \code{FALSE} by default, in which case you call
+\code{btw::btw_mcp_session()} yourself. Ignored when \code{r_session = FALSE}.}
 }
 \value{
 Invisibly returns the path to the \code{AGENTS.md} file.
@@ -54,6 +85,20 @@ one-line description, and path — is generated from the skills' own frontmatter
 and added to \code{MIZER-AGENTS.md}. Those agents can then read the relevant
 \code{SKILL.md} on demand when a task matches.
 
+Finally, unless \code{r_session = FALSE}, it configures an MCP server named
+\code{r-mizer} in the project's \code{.mcp.json}, so that the agent can reach your live
+R session. The server is provided by the
+\href{https://posit-dev.github.io/btw/}{btw} package, which you need to install
+separately. This gives the agent help pages and vignettes for the mizer
+version you actually have installed — rather than whatever mizer API it
+remembers — along with a view of the objects in your global environment and
+of the document open in RStudio, and it can run mizer code there and see the
+plots that come back. For the server to see your session you must run
+\code{btw::btw_mcp_session()} in the RStudio console; passing \code{rprofile = TRUE}
+adds that call to the project \code{.Rprofile} so that it happens automatically.
+Only the \code{r-mizer} entry of \code{.mcp.json} is package-managed; other servers you
+configure there are left alone.
+
 After running this function, start your AI coding agent
 (e.g. \code{claude}, \code{codex}, \code{copilot} or \code{gemini}) from the RStudio Terminal
 and it will immediately have the mizer context it needs.
@@ -62,5 +107,12 @@ and it will immediately have the mizer context it needs.
 \dontrun{
 # Run once in your mizer project to set up AI agent support
 setup_mizer_agent()
+
+# In a mizer extension package, add the package development tools and
+# connect the session automatically on startup
+setup_mizer_agent(pkg_dev = TRUE, rprofile = TRUE)
+
+# A read-only connection: documentation and inspection, but no execution
+setup_mizer_agent(run_r = FALSE)
 }
 }
