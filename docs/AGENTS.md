@@ -23,11 +23,19 @@ devtools::check()         # Full R CMD check
 ## Architecture
 
 - `R/setup_mizer_agent.R` — the sole exported function
-- `inst/AGENTS.md` — mizer reference card (deployed to user projects)
-- `inst/llms.txt` — concise mizer API index (deployed path appended to
-  `MIZER-AGENTS.md`)
-- `inst/llms-full.txt` — full mizer API docs (deployed path appended to
-  `MIZER-AGENTS.md`)
+- `R/r_session.R` — per-agent MCP config writers and the `.Rprofile`
+  hook, for the `btw` MCP server that connects the agent to the user’s
+  live R session. `.agent_configs` is the table of paths and schema
+  quirks (which top-level key, whether a `type` field is documented);
+  add new agents there, and extend the shape test in
+  `tests/testthat/test-setup_mizer_agent.R` — a config with the wrong
+  key parses fine and silently does nothing.
+- `inst/MIZER-AGENTS.md` — mizer reference card (deployed to user
+  projects as `MIZER-AGENTS.md`)
+- `inst/llms.txt` — curated mizer API index, grouped by workflow stage
+  (deployed path appended to `MIZER-AGENTS.md`). Names and descriptions
+  only: argument lists are intentionally not bundled, because they go
+  stale silently.
 
 ## Code conventions
 

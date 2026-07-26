@@ -81,28 +81,176 @@ mizer API. You only need to run this once in your R project:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">pak</span><span class="fu">::</span><span class="fu"><a href="https://pak.r-lib.org/reference/pak.html" class="external-link">pak</a></span><span class="op">(</span><span class="st">"sizespectrum/mizerAgents"</span><span class="op">)</span></span>
 <span><span class="fu">mizerAgents</span><span class="fu">::</span><span class="fu"><a href="../reference/setup_mizer_agent.html">setup_mizer_agent</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
-<p>This creates four files in your working directory:</p>
+<p>This creates the following files in your working directory:</p>
 <ul>
 <li>
 <strong><code>MIZER-AGENTS.md</code></strong> — a concise mizer
 reference: core workflow, key object descriptions, a species parameter
-table, and the path to the full local API documentation. This file is
+table, and the path to the bundled API index. This file is
 package-managed and can be updated when mizer is upgraded.</li>
 <li>
-<strong><code>AGENTS.md</code></strong> — a project-specific
-instruction file that is initially created with a
-<code>@MIZER-AGENTS.md</code> shim line at the start.</li>
-<li>
+<strong><code>AGENTS.md</code></strong>,
 <strong><code>CLAUDE.md</code></strong> and
-<strong><code>GEMINI.md</code></strong> — one-line shims containing
-<code>@AGENTS.md</code>, so that agent-specific tools that look for
-their own named file also pick up the shared context.</li>
+<strong><code>GEMINI.md</code></strong> — your project-specific
+instruction files. Each is created with a short package-managed block at
+the top that points agents at <code>MIZER-AGENTS.md</code>; the rest of
+each file is yours. All three carry the same block, because none of them
+is a fallback for another: Claude Code reads <code>CLAUDE.md</code> and
+not <code>AGENTS.md</code>, and Gemini CLI reads <code>GEMINI.md</code>,
+so an agent that looks only for its own named file should still find the
+mizer context. The block is the only thing added to these files: no
+<code>@AGENTS.md</code> import is written or removed, so which of your
+own instructions reach which agent stays exactly as you had it.</li>
+<li>
+<strong>MCP configuration</strong> for a server named
+<code>r-mizer</code> that connects the agent to your R session,
+described in the next section. Every agent uses a different file for
+this, so all of them are written: <code>.mcp.json</code>,
+<code>.codex/config.toml</code>, <code>.gemini/settings.json</code>,
+<code>.agents/mcp_config.json</code>, <code>.cursor/mcp.json</code>,
+<code>.vscode/mcp.json</code> and
+<code>.posit/assistant/settings.json</code>.</li>
 </ul>
 <p><code>MIZER-AGENTS.md</code> is always updated when you run
-<code><a href="../reference/setup_mizer_agent.html">setup_mizer_agent()</a></code>, but <code>AGENTS.md</code>,
-<code>CLAUDE.md</code>, and <code>GEMINI.md</code> are only created if
-they do not already exist (preserving your custom project notes and
-shims).</p>
+<code><a href="../reference/setup_mizer_agent.html">setup_mizer_agent()</a></code>. In the three instruction files only
+the block between the <code>&lt;!-- mizerAgents: start --&gt;</code> and
+<code>&lt;!-- mizerAgents: end --&gt;</code> comments is
+package-managed: it is refreshed each time you run
+<code><a href="../reference/setup_mizer_agent.html">setup_mizer_agent()</a></code>, so improvements to it reach existing
+projects, while everything you write outside those markers is preserved.
+If a <code>CLAUDE.md</code> or <code>GEMINI.md</code> of yours already
+contains <code>@AGENTS.md</code>, it is left untouched, since the block
+reaches the agent through that import.</p>
+</div>
+<div class="section level2">
+<h2 id="connecting-the-agent-to-your-r-session">Connecting the agent to your R session<a class="anchor" aria-label="anchor" href="#connecting-the-agent-to-your-r-session"></a>
+</h2>
+<p><code>mizerAgents</code> bundles an index of the mizer API — every
+exported function with a one-line description, grouped by workflow stage
+— but deliberately not the argument lists. A snapshot of those would
+drift from the mizer you have installed, and it would drift
+<em>quietly</em>: a call written against last year’s signature usually
+still runs and returns plausible numbers, which is the hardest kind of
+error to notice in a model.</p>
+<p>So the index tells the agent which function it needs, and the
+installed package tells it how to call that function. The <a href="https://posit-dev.github.io/btw/" class="external-link">btw</a> package supplies the
+second half: an MCP server that lets the agent read the documentation of
+your <em>installed</em> packages, along with your R session. Install it
+once:</p>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"btw"</span><span class="op">)</span></span></code></pre></div>
+<p><code><a href="../reference/setup_mizer_agent.html">setup_mizer_agent()</a></code> has already registered that server
+under the name <code>r-mizer</code>. Agents have not converged on a
+single place to configure MCP servers, nor even on a single schema, so
+it writes all of them:</p>
+<table class="table">
+<thead><tr class="header">
+<th>Agent</th>
+<th>File</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>Claude Code</td>
+<td><code>.mcp.json</code></td>
+</tr>
+<tr class="even">
+<td>Codex CLI</td>
+<td><code>.codex/config.toml</code></td>
+</tr>
+<tr class="odd">
+<td>Gemini CLI</td>
+<td><code>.gemini/settings.json</code></td>
+</tr>
+<tr class="even">
+<td>Antigravity CLI</td>
+<td><code>.agents/mcp_config.json</code></td>
+</tr>
+<tr class="odd">
+<td>Cursor</td>
+<td><code>.cursor/mcp.json</code></td>
+</tr>
+<tr class="even">
+<td>VS Code / Copilot</td>
+<td><code>.vscode/mcp.json</code></td>
+</tr>
+<tr class="odd">
+<td>Posit Assistant</td>
+<td><code>.posit/assistant/settings.json</code></td>
+</tr>
+</tbody>
+</table>
+<p>The files are small, they sit in different places, and each agent
+ignores the others’, so the effect is that whichever agent you or a
+collaborator reaches for, the connection is already there. Commit them
+along with <code>AGENTS.md</code>. If you would rather have fewer files,
+name the ones you use:</p>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu">mizerAgents</span><span class="fu">::</span><span class="fu"><a href="../reference/setup_mizer_agent.html">setup_mizer_agent</a></span><span class="op">(</span>agents <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"claude"</span>, <span class="st">"posit"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<p><code>"posit"</code> is worth knowing about if you would rather not
+leave the IDE at all: <a href="https://assistant.posit.co/" class="external-link">Posit
+Assistant</a> runs inside RStudio as well as Positron, and connects to
+the same R session this whole mechanism is built around.</p>
+<p>GitHub Copilot CLI is the exception: it reads MCP servers only from
+the user-wide <code>~/.copilot/mcp-config.json</code>, which is not a
+file a project setup function should be editing, so
+<code><a href="../reference/setup_mizer_agent.html">setup_mizer_agent()</a></code> prints the snippet to paste there
+instead.</p>
+<p>The server runs as its own R process, so it does not see your session
+until you hand it over. In the RStudio console, run:</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu">btw</span><span class="fu">::</span><span class="fu"><a href="https://posit-dev.github.io/btw/reference/mcp.html" class="external-link">btw_mcp_session</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<p>The agent can now read help pages, vignettes and release notes for
+your installed mizer, list the objects in your global environment, and
+read the document you have open in the editor. That means it can
+<em>check</em> the argument names of
+<code>newMultispeciesParams()</code> or <code>setBevertonHolt()</code>
+instead of recalling them, which is the single most common source of
+mizer code that looks right and is not.</p>
+<p>To have every new session connect itself, run</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu">mizerAgents</span><span class="fu">::</span><span class="fu"><a href="../reference/setup_mizer_agent.html">setup_mizer_agent</a></span><span class="op">(</span>rprofile <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
+<p>which adds the <code>btw_mcp_session()</code> call to your project’s
+<code>.Rprofile</code>.</p>
+<div class="section level3">
+<h3 id="letting-the-agent-run-mizer-code">Letting the agent run mizer code<a class="anchor" aria-label="anchor" href="#letting-the-agent-run-mizer-code"></a>
+</h3>
+<p>The agent can also evaluate R code in your session, and does so by
+default. It can call <code>project()</code> or <code>steady()</code> on
+your <code>params</code> object and plot the result, and the plot comes
+back to it as an image — so it can look at a spectrum or a biomass
+trajectory and judge whether the model is behaving, rather than guessing
+from numbers. This is the mode in which an agent is most useful for
+calibration work.</p>
+<p>The trade-off is real: that code runs in your global environment with
+no sandboxing, so a careless assignment can overwrite an object you
+spent an hour building. <code>MIZER-AGENTS.md</code> tells the agent to
+assign to new names and to announce overwrites, but the safeguard you
+should rely on is version control. Commit your work before turning the
+agent loose on it. If you would rather have a read-only connection —
+documentation and inspection, but no execution — use</p>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu">mizerAgents</span><span class="fu">::</span><span class="fu"><a href="../reference/setup_mizer_agent.html">setup_mizer_agent</a></span><span class="op">(</span>run_r <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
+<p>and <code>setup_mizer_agent(r_session = FALSE)</code> skips the MCP
+setup altogether.</p>
+</div>
+<div class="section level3">
+<h3 id="if-your-project-is-a-mizer-extension-package">If your project is a mizer extension package<a class="anchor" aria-label="anchor" href="#if-your-project-is-a-mizer-extension-package"></a>
+</h3>
+<p>When you are writing an extension package rather than a model, add
+btw’s package development tools:</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu">mizerAgents</span><span class="fu">::</span><span class="fu"><a href="../reference/setup_mizer_agent.html">setup_mizer_agent</a></span><span class="op">(</span>pkg_dev <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
+<p>The agent can then run <code>load_all()</code>,
+<code>document()</code>, <code>test()</code>, <code>check()</code> and
+test coverage in your session instead of shelling out to
+<code>devtools</code> in a terminal. The gain is not just tidiness:
+after <code>load_all()</code> your new code is live in the same session,
+so the agent can immediately build a <code>MizerParams</code> object and
+try the rate function it has just written. Combined with the
+<code>extend-mizer</code> skill, this makes the write–load–test loop
+something the agent can close on its own. These tools are off by
+default, as they do nothing useful in an ordinary modelling project.</p>
+</div>
 </div>
 <div class="section level2">
 <h2 id="running-an-ai-agent-in-the-terminal">Running an AI agent in the terminal<a class="anchor" aria-label="anchor" href="#running-an-ai-agent-in-the-terminal"></a>
@@ -150,31 +298,71 @@ numerical tuning.</p>
 <h2 id="giving-the-agent-context-about-your-project">Giving the agent context about your project<a class="anchor" aria-label="anchor" href="#giving-the-agent-context-about-your-project"></a>
 </h2>
 <p>After running <code><a href="../reference/setup_mizer_agent.html">setup_mizer_agent()</a></code> you will have an
-<code>AGENTS.md</code> in your project directory. It begins with the
-line <code>@MIZER-AGENTS.md</code>, which shims in the mizer package
-reference. Open <code>AGENTS.md</code> and add a short description of
-your own project below it. For example:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode markdown"><code class="sourceCode markdown"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a>@MIZER-AGENTS.md</span>
-<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a></span>
-<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a><span class="fu"># Celtic Sea mizer model</span></span>
-<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a></span>
-<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a>This project builds and analyses a mizer model for the Celtic Sea,</span>
-<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a>calibrated to ICES survey data for 2010–2020.</span>
-<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a></span>
-<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a><span class="fu">## Species</span></span>
-<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a>Cod, Haddock, Whiting, Herring, Sprat, Mackerel — 6 species.</span>
-<span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a></span>
-<span id="cb2-11"><a href="#cb2-11" tabindex="-1"></a><span class="fu">## Key files</span></span>
-<span id="cb2-12"><a href="#cb2-12" tabindex="-1"></a><span class="ss">- </span><span class="in">`species_params.csv`</span> — species parameter table</span>
-<span id="cb2-13"><a href="#cb2-13" tabindex="-1"></a><span class="ss">- </span><span class="in">`celtic_model.R`</span> — builds and saves the MizerParams object</span>
-<span id="cb2-14"><a href="#cb2-14" tabindex="-1"></a><span class="ss">- </span><span class="in">`scenarios.R`</span> — runs and compares fishing scenarios</span>
-<span id="cb2-15"><a href="#cb2-15" tabindex="-1"></a></span>
-<span id="cb2-16"><a href="#cb2-16" tabindex="-1"></a><span class="fu">## Workflow</span></span>
-<span id="cb2-17"><a href="#cb2-17" tabindex="-1"></a><span class="ss">1. </span>Build: <span class="in">`celtic_model.R`</span>, saves <span class="in">`celtic_params.rds`</span></span>
-<span id="cb2-18"><a href="#cb2-18" tabindex="-1"></a><span class="ss">2. </span>Load: <span class="in">`params &lt;- readRDS("celtic_params.rds")`</span></span>
-<span id="cb2-19"><a href="#cb2-19" tabindex="-1"></a><span class="ss">3. </span>Project and analyse in <span class="in">`scenarios.R`</span></span></code></pre></div>
+<code>AGENTS.md</code> in your project directory. It begins with a short
+block, marked off by <code>&lt;!-- mizerAgents: start --&gt;</code> and
+<code>&lt;!-- mizerAgents: end --&gt;</code> comments, that shims in the
+mizer package reference. Open <code>AGENTS.md</code> and add a short
+description of your own project <em>below</em> the closing marker — that
+part of the file is yours and is never overwritten, whereas anything you
+change inside the markers is replaced the next time you run
+<code><a href="../reference/setup_mizer_agent.html">setup_mizer_agent()</a></code>. For example:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode markdown"><code class="sourceCode markdown"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="co">&lt;!-- mizerAgents: start — managed by setup_mizer_agent(), edits are overwritten --&gt;</span></span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a>This project uses <span class="co">[</span><span class="ot">mizer</span><span class="co">](https://sizespectrum.org/mizer/)</span> for size-spectrum</span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a>modelling. Read <span class="in">`MIZER-AGENTS.md`</span> before writing or changing mizer code — it is</span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a>imported below if your tool resolves <span class="in">`@`</span> imports. It is generated by</span>
+<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a><span class="in">`mizerAgents::setup_mizer_agent()`</span>; don't edit it by hand.</span>
+<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a></span>
+<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a>@MIZER-AGENTS.md</span>
+<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a><span class="co">&lt;!-- mizerAgents: end --&gt;</span></span>
+<span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a></span>
+<span id="cb8-10"><a href="#cb8-10" tabindex="-1"></a><span class="fu"># Celtic Sea mizer model</span></span>
+<span id="cb8-11"><a href="#cb8-11" tabindex="-1"></a></span>
+<span id="cb8-12"><a href="#cb8-12" tabindex="-1"></a>This project builds and analyses a mizer model for the Celtic Sea,</span>
+<span id="cb8-13"><a href="#cb8-13" tabindex="-1"></a>calibrated to ICES survey data for 2010–2020.</span>
+<span id="cb8-14"><a href="#cb8-14" tabindex="-1"></a></span>
+<span id="cb8-15"><a href="#cb8-15" tabindex="-1"></a><span class="fu">## Species</span></span>
+<span id="cb8-16"><a href="#cb8-16" tabindex="-1"></a>Cod, Haddock, Whiting, Herring, Sprat, Mackerel — 6 species.</span>
+<span id="cb8-17"><a href="#cb8-17" tabindex="-1"></a></span>
+<span id="cb8-18"><a href="#cb8-18" tabindex="-1"></a><span class="fu">## Key files</span></span>
+<span id="cb8-19"><a href="#cb8-19" tabindex="-1"></a><span class="ss">- </span><span class="in">`species_params.csv`</span> — species parameter table</span>
+<span id="cb8-20"><a href="#cb8-20" tabindex="-1"></a><span class="ss">- </span><span class="in">`celtic_model.R`</span> — builds and saves the MizerParams object</span>
+<span id="cb8-21"><a href="#cb8-21" tabindex="-1"></a><span class="ss">- </span><span class="in">`scenarios.R`</span> — runs and compares fishing scenarios</span>
+<span id="cb8-22"><a href="#cb8-22" tabindex="-1"></a></span>
+<span id="cb8-23"><a href="#cb8-23" tabindex="-1"></a><span class="fu">## Workflow</span></span>
+<span id="cb8-24"><a href="#cb8-24" tabindex="-1"></a><span class="ss">1. </span>Build: <span class="in">`celtic_model.R`</span>, saves <span class="in">`celtic_params.rds`</span></span>
+<span id="cb8-25"><a href="#cb8-25" tabindex="-1"></a><span class="ss">2. </span>Load: <span class="in">`params &lt;- readRDS("celtic_params.rds")`</span></span>
+<span id="cb8-26"><a href="#cb8-26" tabindex="-1"></a><span class="ss">3. </span>Project and analyse in <span class="in">`scenarios.R`</span></span></code></pre></div>
 <p>This project-specific context costs ten minutes to write and saves
 re-explaining your setup at the start of every session.</p>
+<div class="section level3">
+<h3 id="what-the-agent-works-out-for-itself">What the agent works out for itself<a class="anchor" aria-label="anchor" href="#what-the-agent-works-out-for-itself"></a>
+</h3>
+<p>Most of what an agent learns about your model, it learns while
+working: that this model only settles with a smaller
+<code>steady()</code> tolerance, that one species’ <code>beta</code> is
+doing something odd, that a scenario has to be run a particular way. It
+will want to write that down, and it writes where it was reading — in
+the skill it was following, under <code>.claude/skills/</code>. Those
+skill files are installed by <code><a href="../reference/setup_mizer_agent.html">setup_mizer_agent()</a></code> and
+refreshed when you run it again, so that is the wrong place for it.</p>
+<p>Each skill therefore has a <code>NOTES.md</code> beside it that this
+package never writes. The skills tell agents to read it alongside the
+<code>SKILL.md</code>, to treat it as taking precedence where the two
+disagree, and to record project-specific findings there:</p>
+<pre><code><span><span class="va">.claude</span><span class="op">/</span><span class="va">skills</span><span class="op">/</span><span class="va">calibrate</span><span class="op">-</span><span class="va">model</span><span class="op">/</span><span class="va">SKILL.md</span>    <span class="co"># ours, refreshed</span></span>
+<span><span class="va">.claude</span><span class="op">/</span><span class="va">skills</span><span class="op">/</span><span class="va">calibrate</span><span class="op">-</span><span class="va">model</span><span class="op">/</span><span class="va">NOTES.md</span>    <span class="co"># yours, never touched</span></span></code></pre>
+<p>Commit those files. They are as much a part of the project as the
+code, and a collaborator’s agent picks them up too. If you or your agent
+do edit a <code>SKILL.md</code> directly, the edit is not lost either:
+<code><a href="../reference/setup_mizer_agent.html">setup_mizer_agent()</a></code> notices, keeps your version, and writes
+the new one beside it as <code>SKILL.md.new</code> for you to merge.</p>
+<p>Some of what an agent discovers is not about your project at all — a
+mizer function that behaves differently from how the skill describes it,
+a workflow that would work anywhere. That belongs upstream, in an <a href="https://github.com/sizespectrum/mizerAgents/issues" class="external-link">issue on the
+mizerAgents repository</a>, so that the next release carries it to every
+project instead of leaving it in yours. The skills tell agents to offer
+this, so you may find yourself asked.</p>
+</div>
 </div>
 <div class="section level2">
 <h2 id="example-prompts">Example prompts<a class="anchor" aria-label="anchor" href="#example-prompts"></a>

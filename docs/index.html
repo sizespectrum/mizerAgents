@@ -77,11 +77,11 @@
 <li>
 <strong><code>MIZER-AGENTS.md</code></strong> — a concise mizer reference card that AI agents read automatically on startup, including key objects, the core workflow, and links to the bundled API documentation.</li>
 <li>
-<strong><code>AGENTS.md</code></strong> — updated to include <code>@MIZER-AGENTS.md</code> (created fresh, or the shim is prepended to any existing content).</li>
+<strong><code>AGENTS.md</code></strong>, <strong><code>CLAUDE.md</code></strong> and <strong><code>GEMINI.md</code></strong> — your project instruction files, each updated to include a short package-managed block pointing agents at <code>MIZER-AGENTS.md</code>. All three are handled the same way, since Claude Code reads <code>CLAUDE.md</code> and Gemini CLI reads <code>GEMINI.md</code> rather than falling back to <code>AGENTS.md</code>. Only the block between the <code>&lt;!-- mizerAgents: start --&gt;</code> and <code>&lt;!-- mizerAgents: end --&gt;</code> markers is refreshed on each run; anything you add outside it is preserved, and no <code>@AGENTS.md</code> import is ever written or removed.</li>
 <li>
-<strong><code>CLAUDE.md</code></strong> / <strong><code>GEMINI.md</code></strong> — agent-specific shims pointing to <code>AGENTS.md</code> (only created if they do not already exist).</li>
+<strong><code>.claude/skills/</code></strong> — bundled Claude Code skills (<code>analyse-and-plot</code>, <code>build-multispecies-model</code>, <code>calibrate-model</code>, <code>run-simulation</code>, <code>set-up-fishing</code>, <code>change-parameters</code>, <code>extend-mizer</code>) that agents read automatically when a task matches, giving step-by-step guidance for common mizer workflows. They are refreshed on each run, but only file by file and only where nothing has edited them: see <a href="#what-your-project-learns">What your project learns</a>.</li>
 <li>
-<strong><code>.claude/skills/</code></strong> — bundled skills (<code>analyse-and-plot</code>, <code>build-multispecies-model</code>, <code>calibrate-model</code>, <code>run-simulation</code>, <code>set-up-fishing</code>, <code>change-parameters</code>, <code>extend-mizer</code>) that agents read automatically when a task matches, giving step-by-step guidance for common mizer workflows.</li>
+<strong>MCP configuration</strong> for an <code>r-mizer</code> server that connects the agent to your live R session (see below), written in each agent’s own format — Claude Code, Codex, Gemini CLI, Antigravity, Cursor, VS Code and Posit Assistant all keep it somewhere different. Only the <code>r-mizer</code> entry is package-managed; other servers you configure in those files are left alone. Commit them, and a collaborator using a different agent gets the same setup.</li>
 </ul>
 <p>Then open a terminal in your project directory and start your favourite coding agent CLI, for example:</p>
 <pre><code><span><span class="va">claude</span>    <span class="co"># Claude Code (Anthropic)</span></span>
@@ -89,6 +89,87 @@
 <span><span class="va">agy</span>       <span class="co"># Antigravity CLI (Google)</span></span>
 <span><span class="va">copilot</span>   <span class="co"># GitHub Copilot CLI</span></span></code></pre>
 <p>The agent will immediately have the mizer context it needs.</p>
+</div>
+<div class="section level2">
+<h2 id="connecting-the-agent-to-your-r-session">Connecting the agent to your R session<a class="anchor" aria-label="anchor" href="#connecting-the-agent-to-your-r-session"></a>
+</h2>
+<p>The package bundles an index of the mizer API, but not the argument lists — for those the agent needs the mizer you actually have installed. To give it that, install the <a href="https://posit-dev.github.io/btw/" class="external-link">btw</a> package:</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"btw"</span><span class="op">)</span></span></code></pre></div>
+<p><code><a href="reference/setup_mizer_agent.html">setup_mizer_agent()</a></code> has already registered btw’s MCP server under the name <code>r-mizer</code> — in every agent’s config format, so it does not matter which one you use:</p>
+<table class="table">
+<thead><tr>
+<th>Agent</th>
+<th>File</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>Claude Code</td>
+<td><code>.mcp.json</code></td>
+</tr>
+<tr>
+<td>Codex CLI</td>
+<td><code>.codex/config.toml</code></td>
+</tr>
+<tr>
+<td>Gemini CLI</td>
+<td><code>.gemini/settings.json</code></td>
+</tr>
+<tr>
+<td>Antigravity CLI</td>
+<td><code>.agents/mcp_config.json</code></td>
+</tr>
+<tr>
+<td>Cursor</td>
+<td><code>.cursor/mcp.json</code></td>
+</tr>
+<tr>
+<td>VS Code / Copilot</td>
+<td><code>.vscode/mcp.json</code></td>
+</tr>
+<tr>
+<td>Posit Assistant</td>
+<td><code>.posit/assistant/settings.json</code></td>
+</tr>
+<tr>
+<td>GitHub Copilot CLI</td>
+<td>
+<em>no project-level config</em> — see below</td>
+</tr>
+</tbody>
+</table>
+<p>Posit Assistant runs in RStudio as well as Positron, so you do not have to leave the IDE to use this.</p>
+<p>Copilot CLI reads MCP servers only from the user-wide <code>~/.copilot/mcp-config.json</code>, so nothing is written for it; <code><a href="reference/setup_mizer_agent.html">setup_mizer_agent()</a></code> prints the JSON snippet to paste there. Use the <code>agents</code> argument if you want fewer files, e.g. <code>setup_mizer_agent(agents = "claude")</code>.</p>
+<p>Then, in your RStudio console, hand your session to the server:</p>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu">btw</span><span class="fu">::</span><span class="fu"><a href="https://posit-dev.github.io/btw/reference/mcp.html" class="external-link">btw_mcp_session</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<p>The agent can now read help pages, vignettes and NEWS for your installed mizer, list the objects in your global environment, read the document you have open in RStudio, and run mizer code in your session — projecting or calibrating a model, plotting the result, and seeing that plot as an image. Use <code>setup_mizer_agent(rprofile = TRUE)</code> to add the <code>btw_mcp_session()</code> call to the project <code>.Rprofile</code> so that it happens on every startup.</p>
+<p>That code is evaluated in your global environment with no sandboxing, so the agent can overwrite your objects. Keep your work under version control. For a read-only connection — documentation and inspection, but no execution — use <code>setup_mizer_agent(run_r = FALSE)</code>, and <code>setup_mizer_agent(r_session = FALSE)</code> to skip the MCP setup entirely.</p>
+<div class="section level3">
+<h3 id="if-your-project-is-a-mizer-extension-package">If your project is a mizer extension package<a class="anchor" aria-label="anchor" href="#if-your-project-is-a-mizer-extension-package"></a>
+</h3>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="reference/setup_mizer_agent.html">setup_mizer_agent</a></span><span class="op">(</span>pkg_dev <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
+<p>adds btw’s package development tools, so the agent can run <code>load_all()</code>, <code>document()</code>, <code>test()</code>, <code>check()</code> and test coverage in your session rather than shelling out to <code>devtools</code>. After <code>load_all()</code> the new code is live in the session, so the agent can exercise it immediately. Off by default, since these tools do nothing useful in an ordinary modelling project.</p>
+</div>
+</div>
+<div class="section level2">
+<h2 id="what-your-project-learns">What your project learns<a class="anchor" aria-label="anchor" href="#what-your-project-learns"></a>
+</h2>
+<p>The files this package installs are refreshed on every run, so nothing you or your agent writes into them survives. But an agent that discovers something about your model wants to write it down, and it writes it where it was reading: in the skill it was following. So each skill has a home for that which the package never touches.</p>
+<ul>
+<li>
+<strong><code>.claude/skills/&lt;name&gt;/NOTES.md</code></strong> — findings about <em>this</em> project. Every bundled <code>SKILL.md</code> ends by telling agents to read this file alongside it, to treat it as taking precedence, and to record what they learn there rather than in <code>SKILL.md</code>. Nothing in this package ever writes it. Commit it: it is project knowledge, and your collaborators’ agents get it too.</li>
+<li>
+<strong><code>AGENTS.md</code> / <code>CLAUDE.md</code> / <code>GEMINI.md</code>, outside the markers</strong> — project notes that belong to no single skill.</li>
+<li>
+<strong><a href="https://github.com/sizespectrum/mizerAgents/issues" class="external-link">An issue on this repo</a></strong> — for a lesson that is true of mizer in general rather than of your project. The skills tell agents to offer this, so that the next release carries it to everyone rather than leaving it buried in one project.</li>
+</ul>
+<p>Skills are refreshed file by file, never by replacing whole directories, so a <code>NOTES.md</code> — or a skill of your own invention — is left alone. The hashes of the files installed are recorded in <code>.claude/skills/.mizerAgents.json</code>. If a <code>SKILL.md</code> has been edited since, it is recognised, kept, and reported, with the new version written beside it as <code>SKILL.md.new</code> for you to merge:</p>
+<pre><code>These skill files have been edited in this project, so they
+were kept and the new version of each was written beside it:
+  run-simulation/SKILL.md  -&gt;  SKILL.md.new</code></pre>
+<p>Delete the <code>.new</code> file when you are done and the skill goes back under package management. Skills that later versions stop shipping are removed, unless they were edited here.</p>
 </div>
 <div class="section level2">
 <h2 id="whats-included">What’s included<a class="anchor" aria-label="anchor" href="#whats-included"></a>
@@ -104,17 +185,13 @@
 </tr></thead>
 <tbody>
 <tr>
-<td><code>inst/AGENTS.md</code></td>
+<td><code>inst/MIZER-AGENTS.md</code></td>
 <td>Mizer reference card deployed by <code><a href="reference/setup_mizer_agent.html">setup_mizer_agent()</a></code>
 </td>
 </tr>
 <tr>
 <td><code>inst/llms.txt</code></td>
-<td>Concise mizer API overview (start here)</td>
-</tr>
-<tr>
-<td><code>inst/llms-full.txt</code></td>
-<td>Full documentation for every mizer function</td>
+<td>Curated index of the mizer API, grouped by workflow stage</td>
 </tr>
 <tr>
 <td><code>inst/skills/</code></td>
@@ -123,6 +200,7 @@
 </tr>
 </tbody>
 </table>
+<p>Argument lists are deliberately not bundled. A snapshot of them goes stale as soon as mizer moves on, and it fails quietly — an outdated call often still runs and returns plausible numbers. The index tells an agent <em>which</em> function it needs; <em>how to call it</em> comes from the help page of the mizer you have installed, which is what the R session connection above is for.</p>
 </div>
 <div class="section level2">
 <h2 id="documentation">Documentation<a class="anchor" aria-label="anchor" href="#documentation"></a>
@@ -164,6 +242,7 @@
 <h2 data-toc-skip>Dev status</h2>
 <ul class="list-unstyled">
 <li><a href="https://lifecycle.r-lib.org/articles/stages.html#experimental" class="external-link"><img src="https://img.shields.io/badge/lifecycle-experimental-orange.svg" alt="Lifecycle: experimental"></a></li>
+<li><a href="https://github.com/sizespectrum/mizerAgents/actions/workflows/R-CMD-check.yaml" class="external-link"><img src="https://github.com/sizespectrum/mizerAgents/actions/workflows/R-CMD-check.yaml/badge.svg" alt="R-CMD-check"></a></li>
 </ul>
 </div>
 

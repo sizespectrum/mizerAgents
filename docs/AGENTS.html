@@ -54,11 +54,11 @@
 <ul><li>
 <code>R/setup_mizer_agent.R</code> — the sole exported function</li>
 <li>
-<code>inst/AGENTS.md</code> — mizer reference card (deployed to user projects)</li>
+<code>R/r_session.R</code> — per-agent MCP config writers and the <code>.Rprofile</code> hook, for the <code>btw</code> MCP server that connects the agent to the user’s live R session. <code>.agent_configs</code> is the table of paths and schema quirks (which top-level key, whether a <code>type</code> field is documented); add new agents there, and extend the shape test in <code>tests/testthat/test-setup_mizer_agent.R</code> — a config with the wrong key parses fine and silently does nothing.</li>
 <li>
-<code>inst/llms.txt</code> — concise mizer API index (deployed path appended to <code>MIZER-AGENTS.md</code>)</li>
+<code>inst/MIZER-AGENTS.md</code> — mizer reference card (deployed to user projects as <code>MIZER-AGENTS.md</code>)</li>
 <li>
-<code>inst/llms-full.txt</code> — full mizer API docs (deployed path appended to <code>MIZER-AGENTS.md</code>)</li>
+<code>inst/llms.txt</code> — curated mizer API index, grouped by workflow stage (deployed path appended to <code>MIZER-AGENTS.md</code>). Names and descriptions only: argument lists are intentionally not bundled, because they go stale silently.</li>
 </ul></div>
 <div class="section level2">
 <h2 id="code-conventions">Code conventions<a class="anchor" aria-label="anchor" href="#code-conventions"></a></h2>

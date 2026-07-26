@@ -4,5 +4,6 @@
 .Ruserdata
 .positai
 mizerAgents.Rproj
-# Personal, machine-local runbook for the nightly skill-review job (never commit)
-/LOCAL-NIGHTLY-REVIEW.md
+# Personal, machine-local runbook for the nightly skill-review job (never commit).
+# Kept out of the package root so that pkgdown does not build a page from it.
+/.claude/

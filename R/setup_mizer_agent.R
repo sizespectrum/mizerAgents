@@ -56,10 +56,8 @@
 # the line range to replace or `NULL` if there is nothing to update.
 #
 # Only two forms exist in the wild. The current one is delimited by the markers
-# above. The other is what 0.3.2 and earlier wrote: a bare `@MIZER-AGENTS.md`
-# import line with no note and no markers, which is upgraded in place. The note
-# and the markers were both added during 0.3.2.9000 and revised within it, so
-# intermediate forms of them were never released and are not recognised here.
+# above. The other is from earlier versions: a bare `@MIZER-AGENTS.md`
+# import line with no note and no markers, which is upgraded in place.
 #
 # The one-line `@AGENTS.md` shims that 0.3.2 and earlier wrote into `CLAUDE.md`
 # and `GEMINI.md` are deliberately not matched: see `.write_instruction_file()`.
