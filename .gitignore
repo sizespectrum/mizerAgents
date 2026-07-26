@@ -4,3 +4,5 @@
 .Ruserdata
 .positai
 mizerAgents.Rproj
+# Personal, machine-local runbook for the nightly skill-review job (never commit)
+/LOCAL-NIGHTLY-REVIEW.md
