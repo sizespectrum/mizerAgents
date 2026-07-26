@@ -41,7 +41,7 @@
 # agents: Claude Code and Gemini CLI resolve `@` and inline the reference card
 # unconditionally at startup, while Codex and Copilot do not, so for them the
 # sentence is the only thing that gets the file read. Keep this short:
-# substantive guidance belongs in `inst/AGENTS.md`, which is the file agents
+# substantive guidance belongs in `inst/MIZER-AGENTS.md`, which is the file agents
 # read as a reference.
 .shim_note <- c(
     "This project uses [mizer](https://sizespectrum.org/mizer/) for size-spectrum",
@@ -250,13 +250,13 @@ setup_mizer_agent <- function(path = ".", overwrite = FALSE,
                               pkg_dev = FALSE, rprofile = FALSE,
                               agents = .agent_choices) {
     agents <- match.arg(agents, .agent_choices, several.ok = TRUE)
-    agents_src    <- system.file("AGENTS.md",     package = "mizerAgents")
+    mizer_src     <- system.file("MIZER-AGENTS.md", package = "mizerAgents")
     llms_src      <- system.file("llms.txt",      package = "mizerAgents")
     skills_src    <- system.file("skills",        package = "mizerAgents")
     mizer_dest    <- normalizePath(file.path(path, "MIZER-AGENTS.md"), mustWork = FALSE)
     agents_dest   <- normalizePath(file.path(path, "AGENTS.md"),       mustWork = FALSE)
 
-    mizer_section <- paste(readLines(agents_src, warn = FALSE), collapse = "\n")
+    mizer_section <- paste(readLines(mizer_src, warn = FALSE), collapse = "\n")
 
     # Add a "task skills" index to the always-loaded reference card, generated
     # from the bundled skills' own frontmatter. Claude Code discovers

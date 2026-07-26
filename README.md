@@ -139,7 +139,7 @@ tools do nothing useful in an ordinary modelling project.
 
 | File | Description |
 |------|-------------|
-| `inst/AGENTS.md` | Mizer reference card deployed by `setup_mizer_agent()` |
+| `inst/MIZER-AGENTS.md` | Mizer reference card deployed by `setup_mizer_agent()` |
 | `inst/llms.txt` | Curated index of the mizer API, grouped by workflow stage |
 | `inst/skills/` | Claude Code skills deployed to `.claude/skills/` |
 

@@ -27,7 +27,8 @@ devtools::check()         # Full R CMD check
   key, whether a `type` field is documented); add new agents there, and extend
   the shape test in `tests/testthat/test-setup_mizer_agent.R` — a config with
   the wrong key parses fine and silently does nothing.
-- `inst/AGENTS.md` — mizer reference card (deployed to user projects)
+- `inst/MIZER-AGENTS.md` — mizer reference card (deployed to user projects as
+  `MIZER-AGENTS.md`)
 - `inst/llms.txt` — curated mizer API index, grouped by workflow stage
   (deployed path appended to `MIZER-AGENTS.md`). Names and descriptions only:
   argument lists are intentionally not bundled, because they go stale silently.
