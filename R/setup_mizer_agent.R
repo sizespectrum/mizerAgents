@@ -71,9 +71,12 @@
 #'
 #' Creates (or updates) a `MIZER-AGENTS.md` file in your project directory
 #' containing a concise mizer reference that AI coding agents read
-#' automatically on startup. The file includes the core mizer workflow,
-#' key object descriptions, and the path to the full mizer API documentation
-#' bundled with the package.
+#' automatically on startup. The file includes the core mizer workflow, key
+#' object descriptions, and the path to the bundled API index — a curated list
+#' of every exported mizer function, grouped by workflow stage, for finding the
+#' right function. Argument lists are deliberately not bundled: those go stale
+#' silently, so the card sends agents to the help pages of the mizer version you
+#' actually have installed.
 #'
 #' It also creates (or updates) an `AGENTS.md` file with a short note and a
 #' `@MIZER-AGENTS.md` import, so that agents read both the project-specific
@@ -103,8 +106,12 @@
 #' `SKILL.md` on demand when a task matches.
 #'
 #' Finally, unless `r_session = FALSE`, it configures an MCP server named
-#' `r-mizer` in the project's `.mcp.json`, so that the agent can reach your live
-#' R session. The server is provided by the
+#' `r-mizer` so that the agent can reach your live R session. Agents have not
+#' converged on where MCP servers are configured, so by default every one that
+#' supports a project-level config gets its own file — Claude Code, Codex,
+#' Gemini CLI, Antigravity, Cursor, VS Code and Posit Assistant. See the
+#' `agents` argument for the paths and for how to narrow the list.
+#' The server is provided by the
 #' [btw](https://posit-dev.github.io/btw/) package, which you need to install
 #' separately. This gives the agent help pages and vignettes for the mizer
 #' version you actually have installed — rather than whatever mizer API it
@@ -128,9 +135,29 @@
 #'   at the top if it is not there yet. `MIZER-AGENTS.md` is always overwritten
 #'   to ensure it stays up-to-date.
 #' @param r_session If `TRUE` (the default), configure the `r-mizer` MCP server
-#'   in `.mcp.json` so that the agent can read mizer's documentation, your
-#'   global environment and the open RStudio document. Set to `FALSE` to leave
-#'   `.mcp.json` alone.
+#'   so that the agent can read mizer's documentation, your global environment
+#'   and the open RStudio document. Set to `FALSE` to write no MCP config at
+#'   all.
+#' @param agents Which agents to configure the server for. By default all of
+#'   them, since the config files are small, sit in different places and do not
+#'   interfere with each other — so a project set up on your machine works for a
+#'   collaborator using a different agent. Any of:
+#'
+#'   | Value | File written |
+#'   | --- | --- |
+#'   | `"claude"` | `.mcp.json` |
+#'   | `"codex"` | `.codex/config.toml` |
+#'   | `"gemini"` | `.gemini/settings.json` |
+#'   | `"antigravity"` | `.agents/mcp_config.json` |
+#'   | `"cursor"` | `.cursor/mcp.json` |
+#'   | `"vscode"` | `.vscode/mcp.json` |
+#'   | `"posit"` | `.posit/assistant/settings.json` |
+#'   | `"copilot"` | *(none — instructions printed)* |
+#'
+#'   `"posit"` covers Posit Assistant, which runs in RStudio as well as
+#'   Positron. Copilot CLI reads MCP config only from the user-wide
+#'   `~/.copilot/mcp-config.json`, so nothing is written for it; you get the
+#'   snippet to paste there instead. Ignored when `r_session = FALSE`.
 #' @param run_r If `TRUE` (the default), let the agent *evaluate* R code in your
 #'   session, which is what allows it to project or calibrate a model and see
 #'   the resulting plots. The code runs in your global environment with no
@@ -165,10 +192,11 @@
 #' }
 setup_mizer_agent <- function(path = ".", overwrite = FALSE,
                               r_session = TRUE, run_r = TRUE,
-                              pkg_dev = FALSE, rprofile = FALSE) {
+                              pkg_dev = FALSE, rprofile = FALSE,
+                              agents = .agent_choices) {
+    agents <- match.arg(agents, .agent_choices, several.ok = TRUE)
     agents_src    <- system.file("AGENTS.md",     package = "mizerAgents")
     llms_src      <- system.file("llms.txt",      package = "mizerAgents")
-    llms_full_src <- system.file("llms-full.txt", package = "mizerAgents")
     skills_src    <- system.file("skills",        package = "mizerAgents")
     mizer_dest    <- normalizePath(file.path(path, "MIZER-AGENTS.md"), mustWork = FALSE)
     agents_dest   <- normalizePath(file.path(path, "AGENTS.md"),       mustWork = FALSE)
@@ -207,21 +235,40 @@ setup_mizer_agent <- function(path = ".", overwrite = FALSE,
                                 .r_session_section(run_r, pkg_dev))
     }
 
-    # Append local paths to both documentation files
+    # Point at the bundled index, and be explicit about what it is *not*. The
+    # index is a curated map of the API grouped by workflow stage, which no tool
+    # can regenerate, and it ages gracefully: a function that has been renamed
+    # shows up as a lookup that fails, not as a call that quietly does the wrong
+    # thing. Signatures and defaults are the part that rots dangerously, so they
+    # are deliberately not bundled — they come from the installed mizer.
     mizer_section <- paste0(
         mizer_section,
-        "\n\n## API documentation (local copies)\n\n",
-        "Concise overview of the mizer API (start here):\n",
-        llms_src, "\n\n",
-        if (nzchar(llms_full_src)) {
+        "\n\n## Finding the right mizer function\n\n",
+        "Two steps, and they use different sources:\n\n",
+        "1. **Which function do I need?** Grep the bundled API index — every\n",
+        "   exported function with a one-line description, grouped by workflow\n",
+        "   stage (creating a model, tuning the steady state, projecting,\n",
+        "   plotting). Grep it for a keyword; do not read the whole file:\n",
+        "   ", llms_src, "\n",
+        "2. **How do I call it?** ",
+        if (isTRUE(r_session)) {
             paste0(
-                "Full API documentation with complete details on every function:\n",
-                llms_full_src, "\n",
-                "Grep or search this file for specific function names - do not read the whole file.\n"
+                "Read the help page for the *installed* mizer with\n",
+                "   `btw_tool_docs_help_page`. The index above deliberately carries no\n",
+                "   argument lists, and this card is not a reference either.\n"
             )
         } else {
-            "Full API documentation: see https://sizespectrum.org/mizer/reference/\n"
-        }
+            paste0(
+                "Read the help page for the *installed* mizer:\n",
+                "   `Rscript -e 'help(name, package = \"mizer\")'`. The index above\n",
+                "   deliberately carries no argument lists, and this card is not a\n",
+                "   reference either.\n"
+            )
+        },
+        "\nNever supply arguments from memory for a function you have not looked up\n",
+        "in this session. Rendered documentation for the current release is at\n",
+        "<https://sizespectrum.org/mizer/reference/>, but the installed version is\n",
+        "what your code will run against, so prefer the local help page.\n"
     )
 
     # Always write/overwrite the package-managed MIZER-AGENTS.md file
@@ -281,13 +328,15 @@ setup_mizer_agent <- function(path = ".", overwrite = FALSE,
         }
     }
 
-    # Configure the MCP server that connects the agent to the user's R session.
-    # Like the block in `AGENTS.md`, only our own entry is managed; anything
-    # else in `.mcp.json` belongs to the user.
+    # Configure the MCP server that connects the agent to the user's R session,
+    # in each agent's own project-level config format. Like the block in
+    # `AGENTS.md`, only our own entry is managed; anything else in those files
+    # belongs to the user.
     if (isTRUE(r_session)) {
-        mcp_dest <- normalizePath(file.path(path, ".mcp.json"), mustWork = FALSE)
-        if (.write_mcp_json(mcp_dest, run_r, pkg_dev)) {
-            message("Configured the ", .mcp_server_name, " MCP server in ", mcp_dest)
+        written <- .write_agent_configs(path, agents, run_r, pkg_dev)
+        for (i in seq_along(written)) {
+            message("Configured the ", .mcp_server_name, " MCP server for ",
+                    names(written)[i], " in ", written[i])
         }
         if (isTRUE(rprofile)) {
             rprofile_dest <- normalizePath(file.path(path, ".Rprofile"),
@@ -300,13 +349,13 @@ setup_mizer_agent <- function(path = ".", overwrite = FALSE,
 
     message(
         "\nMizer API documentation for AI agents:",
-        "\n  Overview:  ", llms_src,
-        if (nzchar(llms_full_src)) paste0("\n  Full docs: ", llms_full_src) else "",
+        "\n  API index: ", llms_src,
         if (nzchar(skills_src) && dir.exists(skills_src)) {
             "\n  Skills:    .claude/skills/ (loaded automatically by Claude Code)"
         } else "",
         if (isTRUE(r_session)) {
-            .r_session_message(run_r, rprofile, pkg_dev)
+            paste0(.r_session_message(run_r, rprofile, pkg_dev, agents),
+                   if ("copilot" %in% agents) .copilot_snippet(run_r, pkg_dev))
         } else "",
         "\n\nStart your AI coding agent from the terminal, e.g.:\n",
         "  claude    (Claude Code)\n",

@@ -20,10 +20,14 @@ test_that("setup_mizer_agent works as expected", {
     expect_true(file.exists(claude_dest))
     expect_true(file.exists(gemini_dest))
 
-    # MIZER-AGENTS.md should contain mizer documentation
+    # MIZER-AGENTS.md should contain mizer documentation and point at the
+    # bundled API index, but never at a bundled argument reference
     mizer_content <- readLines(mizer_dest)
     expect_true(any(grepl("Mizer", mizer_content)))
-    expect_true(any(grepl("Full API documentation", mizer_content)))
+    expect_true(any(grepl("Finding the right mizer function", mizer_content,
+                          fixed = TRUE)))
+    expect_true(any(grepl("llms.txt", mizer_content, fixed = TRUE)))
+    expect_false(any(grepl("llms-full", mizer_content, fixed = TRUE)))
 
     # AGENTS.md should contain the marked block: a note plus the `@` import
     agents_content <- readLines(agents_dest)
@@ -166,9 +170,12 @@ test_that("the r-mizer MCP server is configured in .mcp.json", {
     # Package development tools are not
     expect_false(grepl("'pkg'", entry$args[[2]], fixed = TRUE))
 
-    # The live-session section reaches the always-loaded card
+    # The live-session section reaches the always-loaded card, and the
+    # "how do I call it?" step routes through btw rather than a shell
     mizer_content <- readLines(file.path(tmp_dir, "MIZER-AGENTS.md"))
     expect_true(any(grepl("live R session", mizer_content, ignore.case = TRUE)))
+    expect_true(any(grepl("btw_tool_docs_help_page", mizer_content,
+                          fixed = TRUE)))
 
     # run_r = FALSE drops the group and the opt-in environment variable
     suppressMessages(setup_mizer_agent(path = tmp_dir, run_r = FALSE))
@@ -183,6 +190,128 @@ test_that("the r-mizer MCP server is configured in .mcp.json", {
     expect_false(file.exists(mcp_dest))
     mizer_content <- readLines(file.path(tmp_dir, "MIZER-AGENTS.md"))
     expect_false(any(grepl("r-mizer", mizer_content, fixed = TRUE)))
+    # Without the session, the lookup step falls back to a shell command, but
+    # still sends the agent to the installed mizer rather than to a snapshot
+    expect_false(any(grepl("btw_tool_docs_help_page", mizer_content,
+                           fixed = TRUE)))
+    expect_true(any(grepl("help(name, package = \"mizer\")", mizer_content,
+                          fixed = TRUE)))
+})
+
+test_that("every agent with a project-level config gets one", {
+    tmp_dir <- tempfile("mizer_agent_agents")
+    dir.create(tmp_dir)
+    on.exit(unlink(tmp_dir, recursive = TRUE))
+
+    suppressMessages(setup_mizer_agent(path = tmp_dir))
+    for (f in c(".mcp.json", ".codex/config.toml", ".gemini/settings.json",
+                ".agents/mcp_config.json", ".cursor/mcp.json",
+                ".vscode/mcp.json", ".posit/assistant/settings.json")) {
+        expect_true(file.exists(file.path(tmp_dir, f)), info = f)
+    }
+
+    # Claude labels stdio servers; Gemini and Antigravity document no `type`
+    # field, so we must not invent one for them
+    claude <- jsonlite::fromJSON(file.path(tmp_dir, ".mcp.json"),
+                                 simplifyVector = FALSE)
+    expect_identical(claude$mcpServers[["r-mizer"]]$type, "stdio")
+    gemini <- jsonlite::fromJSON(file.path(tmp_dir, ".gemini/settings.json"),
+                                 simplifyVector = FALSE)
+    expect_null(gemini$mcpServers[["r-mizer"]]$type)
+    expect_identical(gemini$mcpServers[["r-mizer"]]$command, "Rscript")
+
+    # Narrowing the selection writes only what was asked for
+    unlink(list.files(tmp_dir, all.files = TRUE, full.names = TRUE,
+                      pattern = "^[.](mcp|codex|gemini|agents|cursor|vscode|posit)"),
+           recursive = TRUE)
+    suppressMessages(setup_mizer_agent(path = tmp_dir, agents = "claude"))
+    expect_true(file.exists(file.path(tmp_dir, ".mcp.json")))
+    expect_false(file.exists(file.path(tmp_dir, ".gemini/settings.json")))
+
+    # Copilot has no project scope, so it is reported rather than written
+    expect_message(
+        setup_mizer_agent(path = tmp_dir, agents = "copilot"),
+        "~/.copilot/mcp-config.json", fixed = TRUE
+    ) |> suppressMessages()
+    expect_false(dir.exists(file.path(tmp_dir, ".copilot")))
+
+    # An unknown agent is rejected rather than silently ignored
+    expect_error(setup_mizer_agent(path = tmp_dir, agents = "emacs"))
+})
+
+test_that("each agent's config matches the shape its schema documents", {
+    # Seven formats is seven things that can change under us, and a config with
+    # the wrong top-level key parses cleanly and silently does nothing. Pin the
+    # shape of each so that a drifting format fails here rather than in a user's
+    # project.
+    tmp_dir <- tempfile("mizer_agent_shapes")
+    dir.create(tmp_dir)
+    on.exit(unlink(tmp_dir, recursive = TRUE))
+    suppressMessages(setup_mizer_agent(path = tmp_dir))
+
+    read_key <- function(file, key) {
+        cfg <- jsonlite::fromJSON(file.path(tmp_dir, file),
+                                  simplifyVector = FALSE)
+        expect_named(cfg, key)
+        cfg[[key]][["r-mizer"]]
+    }
+
+    # VS Code is the odd one out: `servers`, not `mcpServers`, and it wants an
+    # explicit transport
+    vscode <- read_key(".vscode/mcp.json", "servers")
+    expect_identical(vscode$type, "stdio")
+    expect_identical(vscode$command, "Rscript")
+
+    # Cursor and Posit Assistant take the common shape, with no `type`
+    for (f in c(".cursor/mcp.json", ".posit/assistant/settings.json")) {
+        entry <- read_key(f, "mcpServers")
+        expect_null(entry$type)
+        expect_identical(entry$command, "Rscript")
+        expect_match(entry$args[[2]], "btw::btw_mcp_server", fixed = TRUE)
+    }
+
+    # Every agent must end up invoking the same server, whatever the wrapper
+    calls <- vapply(names(.agent_configs), function(a) {
+        spec <- .agent_configs[[a]]
+        txt <- readLines(file.path(tmp_dir, spec$path), warn = FALSE)
+        grep("btw_mcp_server", txt, value = TRUE)[1]
+    }, character(1))
+    expect_true(all(grepl("'docs', 'env', 'sessioninfo', 'ide', 'run'",
+                          calls, fixed = TRUE)))
+})
+
+test_that("the Codex TOML block is merged and refreshed in place", {
+    tmp_dir <- tempfile("mizer_agent_codex")
+    dir.create(tmp_dir)
+    on.exit(unlink(tmp_dir, recursive = TRUE))
+    dir.create(file.path(tmp_dir, ".codex"))
+    codex_dest <- file.path(tmp_dir, ".codex", "config.toml")
+
+    # Config the user wrote themselves, including their own MCP server
+    user_config <- c('model = "gpt-5"', '',
+                     '[mcp_servers.other]', 'command = "other-server"')
+    writeLines(user_config, codex_dest)
+
+    suppressMessages(setup_mizer_agent(path = tmp_dir, agents = "codex"))
+    content <- readLines(codex_dest)
+    # Their config survives, and ours goes below it: a TOML table header claims
+    # every key beneath it, so our block must come last
+    expect_identical(content[seq_along(user_config)], user_config)
+    expect_true(any(grepl('[mcp_servers."r-mizer"]', content, fixed = TRUE)))
+    expect_identical(tail(content, 1), .codex_end)
+
+    # Re-running leaves the file byte-identical rather than appending again
+    before <- content
+    suppressMessages(setup_mizer_agent(path = tmp_dir, agents = "codex"))
+    expect_identical(readLines(codex_dest), before)
+
+    # A changed option refreshes the block in place without duplicating it
+    suppressMessages(setup_mizer_agent(path = tmp_dir, agents = "codex",
+                                       run_r = FALSE))
+    content <- readLines(codex_dest)
+    expect_equal(sum(content == .codex_begin), 1)
+    expect_identical(content[seq_along(user_config)], user_config)
+    expect_false(any(grepl("BTW_RUN_R_ENABLED", content, fixed = TRUE)))
 })
 
 test_that("pkg_dev = TRUE exposes the package development tools", {

@@ -35,17 +35,21 @@ mizerAgents::setup_mizer_agent()
 This creates the following files in your working directory:
 
 - **`MIZER-AGENTS.md`** — a concise mizer reference: core workflow, key object
-  descriptions, a species parameter table, and the path to the full local
-  API documentation. This file is package-managed and can be updated when
-  mizer is upgraded.
+  descriptions, a species parameter table, and the path to the bundled API
+  index. This file is package-managed and can be updated when mizer is
+  upgraded.
 - **`AGENTS.md`** — your project-specific instruction file. It is created with a
   short package-managed block at the top that points agents at
   `MIZER-AGENTS.md`; the rest of the file is yours.
 - **`CLAUDE.md`** and **`GEMINI.md`** — one-line shims containing
   `@AGENTS.md`, so that agent-specific tools that look for their own named
   file also pick up the shared context.
-- **`.mcp.json`** — configuration for an MCP server named `r-mizer` that
-  connects the agent to your R session, described in the next section.
+- **MCP configuration** for a server named `r-mizer` that connects the agent to
+  your R session, described in the next section. Every agent uses a different
+  file for this, so all of them are written: `.mcp.json`,
+  `.codex/config.toml`, `.gemini/settings.json`, `.agents/mcp_config.json`,
+  `.cursor/mcp.json`, `.vscode/mcp.json` and
+  `.posit/assistant/settings.json`.
 
 `MIZER-AGENTS.md` is always updated when you run `setup_mizer_agent()`.
 `CLAUDE.md` and `GEMINI.md` are only created if they do not already exist. In
@@ -57,9 +61,16 @@ projects, while everything you write outside those markers is preserved.
 
 ## Connecting the agent to your R session
 
-The bundled mizer documentation is a snapshot taken when `mizerAgents` was
-built, so it can drift from the mizer version you have installed. The
-[btw](https://posit-dev.github.io/btw/) package closes that gap: it provides an
+`mizerAgents` bundles an index of the mizer API — every exported function with
+a one-line description, grouped by workflow stage — but deliberately not the
+argument lists. A snapshot of those would drift from the mizer you have
+installed, and it would drift *quietly*: a call written against last year's
+signature usually still runs and returns plausible numbers, which is the
+hardest kind of error to notice in a model.
+
+So the index tells the agent which function it needs, and the installed package
+tells it how to call that function. The
+[btw](https://posit-dev.github.io/btw/) package supplies the second half: an
 MCP server that lets the agent read the documentation of your *installed*
 packages, along with your R session. Install it once:
 
@@ -67,9 +78,41 @@ packages, along with your R session. Install it once:
 install.packages("btw")
 ```
 
-`setup_mizer_agent()` has already registered that server in `.mcp.json` under
-the name `r-mizer`. The server runs as its own R process, so it does not see
-your session until you hand it over. In the RStudio console, run:
+`setup_mizer_agent()` has already registered that server under the name
+`r-mizer`. Agents have not converged on a single place to configure MCP
+servers, nor even on a single schema, so it writes all of them:
+
+| Agent | File |
+|---|---|
+| Claude Code | `.mcp.json` |
+| Codex CLI | `.codex/config.toml` |
+| Gemini CLI | `.gemini/settings.json` |
+| Antigravity CLI | `.agents/mcp_config.json` |
+| Cursor | `.cursor/mcp.json` |
+| VS Code / Copilot | `.vscode/mcp.json` |
+| Posit Assistant | `.posit/assistant/settings.json` |
+
+The files are small, they sit in different places, and each agent ignores the
+others', so the effect is that whichever agent you or a collaborator reaches
+for, the connection is already there. Commit them along with `AGENTS.md`. If
+you would rather have fewer files, name the ones you use:
+
+```r
+mizerAgents::setup_mizer_agent(agents = c("claude", "posit"))
+```
+
+`"posit"` is worth knowing about if you would rather not leave the IDE at all:
+[Posit Assistant](https://assistant.posit.co/) runs inside RStudio as well as
+Positron, and connects to the same R session this whole mechanism is built
+around.
+
+GitHub Copilot CLI is the exception: it reads MCP servers only from the
+user-wide `~/.copilot/mcp-config.json`, which is not a file a project setup
+function should be editing, so `setup_mizer_agent()` prints the snippet to
+paste there instead.
+
+The server runs as its own R process, so it does not see your session until you
+hand it over. In the RStudio console, run:
 
 ```r
 btw::btw_mcp_session()

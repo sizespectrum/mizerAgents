@@ -10,9 +10,14 @@ individual-level physiology.
 Mizer's API has moved on, and most mizer code in your training data predates
 the version installed here — recollection that feels solid is often a version
 or two stale. Before calling any function you have not looked up in this
-session, grep for it in `llms-full.txt` (path at the end of this file) and
-check the real signature. This failure is quiet: outdated calls often still
-run and return plausible numbers.
+session, read its help page from the installed mizer and check the real
+signature. This failure is quiet: outdated calls often still run and return
+plausible numbers.
+
+Nothing in this repository is a substitute for that. The bundled API index
+(path at the end of this file) tells you which functions exist, not how to call
+them, and this card is a summary rather than a reference. Argument lists come
+from the installed package or they come from a guess.
 
 Memory is most often stale on:
 
@@ -132,9 +137,9 @@ plotGrowthCurves(sim)  # growth curves
 plotFMort(sim)         # fishing mortality
 ```
 
-Grep for "plot" in `llms-full.txt` to discover the full list of available
-plots before writing any custom code. Grep for a specific function name to
-look up its documentation — do not read the whole file.
+Grep for "plot" in the bundled API index (path at the end of this file) to
+discover the full list of available plots before writing any custom code, then
+read the help page of the one you pick for its arguments.
 
 ## Extending mizer
 

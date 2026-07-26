@@ -3,17 +3,62 @@
 ## New features
 
 * `setup_mizer_agent()` now connects the agent to your live R session, by
-  configuring an MCP server named `r-mizer` in the project's `.mcp.json`. The
-  server comes from the [btw](https://posit-dev.github.io/btw/) package (CRAN,
-  from Posit), which you install yourself; it is listed in `Suggests`. This
-  addresses the weakest point of the bundled documentation: `llms.txt` and
-  `llms-full.txt` are snapshots taken when this package was built, whereas
-  btw's docs tools read the mizer that is actually installed, so the agent can
-  check a signature rather than recall it. The agent also gains a view of the
-  objects in your global environment and of the document open in RStudio.
-  Only the `r-mizer` entry of `.mcp.json` is package-managed, so other servers
-  you have configured survive; an unparseable `.mcp.json` is left untouched
-  with a warning rather than overwritten.
+  configuring an MCP server named `r-mizer`. The server comes from the
+  [btw](https://posit-dev.github.io/btw/) package (CRAN, from Posit), which you
+  install yourself; it is listed in `Suggests`. Its docs tools read the mizer
+  that is actually installed, so the agent can check a signature rather than
+  recall it, and it also gains a view of the objects in your global environment
+  and of the document open in RStudio.
+
+* The server is registered for **every agent that supports project-level MCP
+  configuration**, each of which uses a different file: `.mcp.json` (Claude
+  Code), `.codex/config.toml` (Codex), `.gemini/settings.json` (Gemini CLI),
+  `.agents/mcp_config.json` (Antigravity), `.cursor/mcp.json` (Cursor),
+  `.vscode/mcp.json` (VS Code and Copilot in the editor) and
+  `.posit/assistant/settings.json` (Posit Assistant, which runs in RStudio as
+  well as Positron). All seven are written by default — they are small, they
+  sit in different places, and each agent ignores the others' — so a project
+  set up on your machine works for a collaborator using a different agent. The
+  new `agents` argument narrows this, e.g. `agents = c("claude", "posit")`.
+
+  The schemas are not interchangeable: VS Code nests servers under `servers`
+  where everyone else uses `mcpServers`, and only Claude Code and VS Code
+  document a `type` field, so it is omitted for the rest rather than guessed
+  at. A config with the wrong top-level key parses cleanly and silently does
+  nothing, so there is a test pinning the shape of each generated file.
+
+  GitHub Copilot CLI is the exception: it reads MCP servers only from the
+  user-wide `~/.copilot/mcp-config.json`, which a project setup function has no
+  business editing, so the snippet to paste there is printed instead.
+
+  Only the `r-mizer` entry of each file is package-managed, so other servers you
+  have configured survive. The JSON files are parsed and merged; an unparseable
+  one is left untouched with a warning rather than overwritten. Codex's TOML is
+  managed as a marked block instead, to avoid taking on a TOML parser, and that
+  block is always written at the end of the file — a TOML table header claims
+  every key below it, so anywhere else it would swallow config written after
+  it.
+
+* **`inst/llms-full.txt` has been removed** (173 KB of the package's 227 KB of
+  bundled documentation). Its reference pages and articles were a snapshot of
+  what `?help` and `vignette()` already return from the installed mizer, so
+  they duplicated btw's docs tools while being pinned to whatever mizer was
+  current when this package was last built. That is the same failure the
+  reference card warns about: an argument list that has moved on does not
+  announce itself, it just produces a call that runs and returns plausible
+  numbers.
+
+  `inst/llms.txt` stays. It is a curated index — every exported function with a
+  one-line description, grouped by workflow stage — which no tool can
+  regenerate, and it carries no argument lists, so it ages gracefully: a
+  renamed function shows up as a lookup that fails rather than a call that
+  quietly does the wrong thing.
+
+  `MIZER-AGENTS.md` now sets the two apart explicitly, under a "Finding the
+  right mizer function" heading: grep the index for *which* function you need,
+  then read the installed help page for *how to call it* — via
+  `btw_tool_docs_help_page` when the R session is connected, and
+  `Rscript -e 'help(...)'` when it is not.
 
 * For the server to see your session you must run `btw::btw_mcp_session()` in
   the RStudio console. The new `rprofile = TRUE` argument appends a guarded

@@ -50,9 +50,12 @@ This creates:
   `set-up-fishing`, `change-parameters`, `extend-mizer`) that agents read
   automatically when a task matches, giving step-by-step guidance for common
   mizer workflows.
-- **`.mcp.json`** — an MCP server named `r-mizer` that connects the agent to
-  your live R session (see below). Only this entry is package-managed; other
-  servers you configure there are left alone.
+- **MCP configuration** for an `r-mizer` server that connects the agent to your
+  live R session (see below), written in each agent's own format — Claude Code,
+  Codex, Gemini CLI, Antigravity, Cursor, VS Code and Posit Assistant all keep
+  it somewhere different. Only the `r-mizer` entry is package-managed; other
+  servers you configure in those files are left alone. Commit them, and a
+  collaborator using a different agent gets the same setup.
 
 Then open a terminal in your project directory and start your favourite
 coding agent CLI, for example:
@@ -68,18 +71,38 @@ The agent will immediately have the mizer context it needs.
 
 ## Connecting the agent to your R session
 
-The bundled documentation is a snapshot taken when this package was built, and
-it will drift from whatever mizer version you have installed. To let the agent
-read the *installed* mizer instead, install the
-[btw](https://posit-dev.github.io/btw/) package:
+The package bundles an index of the mizer API, but not the argument lists — for
+those the agent needs the mizer you actually have installed. To give it that,
+install the [btw](https://posit-dev.github.io/btw/) package:
 
 ```r
 install.packages("btw")
 ```
 
-`setup_mizer_agent()` configures btw's MCP server in your project's `.mcp.json`
-under the name `r-mizer`. Then, in your RStudio console, hand your session to
-it:
+`setup_mizer_agent()` has already registered btw's MCP server under the name
+`r-mizer` — in every agent's config format, so it does not matter which one you
+use:
+
+| Agent | File |
+|---|---|
+| Claude Code | `.mcp.json` |
+| Codex CLI | `.codex/config.toml` |
+| Gemini CLI | `.gemini/settings.json` |
+| Antigravity CLI | `.agents/mcp_config.json` |
+| Cursor | `.cursor/mcp.json` |
+| VS Code / Copilot | `.vscode/mcp.json` |
+| Posit Assistant | `.posit/assistant/settings.json` |
+| GitHub Copilot CLI | *no project-level config* — see below |
+
+Posit Assistant runs in RStudio as well as Positron, so you do not have to
+leave the IDE to use this.
+
+Copilot CLI reads MCP servers only from the user-wide
+`~/.copilot/mcp-config.json`, so nothing is written for it; `setup_mizer_agent()`
+prints the JSON snippet to paste there. Use the `agents` argument if you want
+fewer files, e.g. `setup_mizer_agent(agents = "claude")`.
+
+Then, in your RStudio console, hand your session to the server:
 
 ```r
 btw::btw_mcp_session()
@@ -115,9 +138,14 @@ tools do nothing useful in an ordinary modelling project.
 | File | Description |
 |------|-------------|
 | `inst/AGENTS.md` | Mizer reference card deployed by `setup_mizer_agent()` |
-| `inst/llms.txt` | Concise mizer API overview (start here) |
-| `inst/llms-full.txt` | Full documentation for every mizer function |
+| `inst/llms.txt` | Curated index of the mizer API, grouped by workflow stage |
 | `inst/skills/` | Claude Code skills deployed to `.claude/skills/` |
+
+Argument lists are deliberately not bundled. A snapshot of them goes stale as
+soon as mizer moves on, and it fails quietly — an outdated call often still
+runs and returns plausible numbers. The index tells an agent *which* function
+it needs; *how to call it* comes from the help page of the mizer you have
+installed, which is what the R session connection above is for.
 
 ## Documentation
 

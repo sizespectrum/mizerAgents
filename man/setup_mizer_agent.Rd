@@ -10,7 +10,8 @@ setup_mizer_agent(
   r_session = TRUE,
   run_r = TRUE,
   pkg_dev = FALSE,
-  rprofile = FALSE
+  rprofile = FALSE,
+  agents = .agent_choices
 )
 }
 \arguments{
@@ -24,9 +25,9 @@ at the top if it is not there yet. \code{MIZER-AGENTS.md} is always overwritten
 to ensure it stays up-to-date.}
 
 \item{r_session}{If \code{TRUE} (the default), configure the \code{r-mizer} MCP server
-in \code{.mcp.json} so that the agent can read mizer's documentation, your
-global environment and the open RStudio document. Set to \code{FALSE} to leave
-\code{.mcp.json} alone.}
+so that the agent can read mizer's documentation, your global environment
+and the open RStudio document. Set to \code{FALSE} to write no MCP config at
+all.}
 
 \item{run_r}{If \code{TRUE} (the default), let the agent \emph{evaluate} R code in your
 session, which is what allows it to project or calibrate a model and see
@@ -46,6 +47,27 @@ project. Ignored when \code{r_session = FALSE}.}
 the project \code{.Rprofile}, so that each new session hands itself to the MCP
 server automatically. \code{FALSE} by default, in which case you call
 \code{btw::btw_mcp_session()} yourself. Ignored when \code{r_session = FALSE}.}
+
+\item{agents}{Which agents to configure the server for. By default all of
+them, since the config files are small, sit in different places and do not
+interfere with each other — so a project set up on your machine works for a
+collaborator using a different agent. Any of:\tabular{ll}{
+   Value \tab File written \cr
+   \code{"claude"} \tab \code{.mcp.json} \cr
+   \code{"codex"} \tab \code{.codex/config.toml} \cr
+   \code{"gemini"} \tab \code{.gemini/settings.json} \cr
+   \code{"antigravity"} \tab \code{.agents/mcp_config.json} \cr
+   \code{"cursor"} \tab \code{.cursor/mcp.json} \cr
+   \code{"vscode"} \tab \code{.vscode/mcp.json} \cr
+   \code{"posit"} \tab \code{.posit/assistant/settings.json} \cr
+   \code{"copilot"} \tab \emph{(none — instructions printed)} \cr
+}
+
+
+\code{"posit"} covers Posit Assistant, which runs in RStudio as well as
+Positron. Copilot CLI reads MCP config only from the user-wide
+\verb{~/.copilot/mcp-config.json}, so nothing is written for it; you get the
+snippet to paste there instead. Ignored when \code{r_session = FALSE}.}
 }
 \value{
 Invisibly returns the path to the \code{AGENTS.md} file.
@@ -53,9 +75,12 @@ Invisibly returns the path to the \code{AGENTS.md} file.
 \description{
 Creates (or updates) a \code{MIZER-AGENTS.md} file in your project directory
 containing a concise mizer reference that AI coding agents read
-automatically on startup. The file includes the core mizer workflow,
-key object descriptions, and the path to the full mizer API documentation
-bundled with the package.
+automatically on startup. The file includes the core mizer workflow, key
+object descriptions, and the path to the bundled API index — a curated list
+of every exported mizer function, grouped by workflow stage, for finding the
+right function. Argument lists are deliberately not bundled: those go stale
+silently, so the card sends agents to the help pages of the mizer version you
+actually have installed.
 }
 \details{
 It also creates (or updates) an \code{AGENTS.md} file with a short note and a
@@ -86,8 +111,12 @@ and added to \code{MIZER-AGENTS.md}. Those agents can then read the relevant
 \code{SKILL.md} on demand when a task matches.
 
 Finally, unless \code{r_session = FALSE}, it configures an MCP server named
-\code{r-mizer} in the project's \code{.mcp.json}, so that the agent can reach your live
-R session. The server is provided by the
+\code{r-mizer} so that the agent can reach your live R session. Agents have not
+converged on where MCP servers are configured, so by default every one that
+supports a project-level config gets its own file — Claude Code, Codex,
+Gemini CLI, Antigravity, Cursor, VS Code and Posit Assistant. See the
+\code{agents} argument for the paths and for how to narrow the list.
+The server is provided by the
 \href{https://posit-dev.github.io/btw/}{btw} package, which you need to install
 separately. This gives the agent help pages and vignettes for the mizer
 version you actually have installed — rather than whatever mizer API it

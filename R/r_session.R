@@ -21,28 +21,39 @@
       if (run_r) "run", if (pkg_dev) "pkg")
 }
 
-# Build the `.mcp.json` server entry. `args` is a list rather than a character
-# vector so that the value survives a round trip through `jsonlite` unchanged,
-# which is what lets `.write_mcp_json()` recognise an up-to-date file and leave
-# it alone.
-.mcp_entry <- function(run_r, pkg_dev) {
-    groups <- .btw_groups(run_r, pkg_dev)
-    call <- sprintf("btw::btw_mcp_server(c(%s))",
-                    paste0("'", groups, "'", collapse = ", "))
-    entry <- list(type = "stdio",
+# The `Rscript -e` invocation that starts the server. Every agent's config
+# format ultimately wraps this same command.
+.btw_call <- function(run_r, pkg_dev) {
+    sprintf("btw::btw_mcp_server(c(%s))",
+            paste0("'", .btw_groups(run_r, pkg_dev), "'", collapse = ", "))
+}
+
+# Build the server entry for a JSON-based config. `args` is a list rather than a
+# character vector so that the value survives a round trip through `jsonlite`
+# unchanged, which is what lets `.write_mcp_json()` recognise an up-to-date file
+# and leave it alone. `type` varies by agent: Claude Code labels stdio servers
+# `"stdio"`, Copilot CLI calls them `"local"`, and Gemini CLI and Antigravity
+# document no `type` field at all, so it is omitted for them rather than
+# guessed at.
+.mcp_entry <- function(run_r, pkg_dev, type = "stdio") {
+    entry <- list(type = type,
                   command = "Rscript",
-                  args = list("-e", call))
+                  args = list("-e", .btw_call(run_r, pkg_dev)))
+    entry <- entry[!vapply(entry, is.null, logical(1))]
     # `btw_tool_run_r()` executes in the global environment with no sandboxing,
     # so `btw` requires it to be switched on explicitly.
     if (run_r) entry$env <- list(BTW_RUN_R_ENABLED = "true")
     entry
 }
 
-# Add (or refresh) our server in the project's `.mcp.json`, leaving any other
-# servers the user has configured untouched. Returns TRUE if the file changed.
-# Internal helper.
-.write_mcp_json <- function(dest, run_r, pkg_dev) {
-    entry <- .mcp_entry(run_r, pkg_dev)
+# Add (or refresh) our server in a JSON config file, leaving any other servers
+# the user has configured untouched. Most agents nest servers under
+# `mcpServers`, but VS Code uses `servers` instead, so the key is a parameter:
+# writing the wrong one leaves a file that parses cleanly and does nothing.
+# Returns TRUE if the file changed. Internal helper.
+.write_mcp_json <- function(dest, run_r, pkg_dev, type = "stdio",
+                            key = "mcpServers") {
+    entry <- .mcp_entry(run_r, pkg_dev, type)
     cfg <- list()
     if (file.exists(dest)) {
         cfg <- tryCatch(
@@ -58,12 +69,121 @@
             return(FALSE)
         }
     }
-    if (!is.list(cfg$mcpServers)) cfg$mcpServers <- list()
-    if (identical(cfg$mcpServers[[.mcp_server_name]], entry)) return(FALSE)
+    if (!is.list(cfg[[key]])) cfg[[key]] <- list()
+    if (identical(cfg[[key]][[.mcp_server_name]], entry)) return(FALSE)
 
-    cfg$mcpServers[[.mcp_server_name]] <- entry
+    cfg[[key]][[.mcp_server_name]] <- entry
+    dir.create(dirname(dest), recursive = TRUE, showWarnings = FALSE)
     writeLines(jsonlite::toJSON(cfg, auto_unbox = TRUE, pretty = TRUE), dest)
     TRUE
+}
+
+# Codex is the one agent whose project config is TOML rather than JSON. Rather
+# than take on a TOML parser to merge into it, manage a marked block, as
+# `AGENTS.md` does. The block goes at the *end* of the file because a TOML table
+# header claims every key below it until the next header: anywhere else, config
+# the user has written afterwards would silently be absorbed into our table.
+.codex_begin <- "# mizerAgents: start - managed by setup_mizer_agent(), edits are overwritten"
+.codex_end   <- "# mizerAgents: end - add your own config above this block, not below"
+
+.codex_block <- function(run_r, pkg_dev) {
+    c(.codex_begin,
+      sprintf('[mcp_servers."%s"]', .mcp_server_name),
+      'command = "Rscript"',
+      sprintf('args = ["-e", "%s"]', .btw_call(run_r, pkg_dev)),
+      if (run_r) 'env = { BTW_RUN_R_ENABLED = "true" }',
+      .codex_end)
+}
+
+# Write (or refresh in place) our block in `.codex/config.toml`. Returns TRUE if
+# the file changed. Internal helper.
+.write_codex_toml <- function(dest, run_r, pkg_dev) {
+    block <- .codex_block(run_r, pkg_dev)
+    existing <- if (file.exists(dest)) readLines(dest, warn = FALSE) else character(0)
+    b <- which(existing == .codex_begin)
+    e <- which(existing == .codex_end)
+    if (length(b) && length(e) && e[1] > b[1]) {
+        updated <- c(existing[seq_len(b[1] - 1)], block, existing[-seq_len(e[1])])
+    } else {
+        updated <- c(existing, if (length(existing)) "", block)
+    }
+    if (identical(updated, existing)) return(FALSE)
+    dir.create(dirname(dest), recursive = TRUE, showWarnings = FALSE)
+    writeLines(updated, dest)
+    TRUE
+}
+
+# Where each agent keeps its project-level MCP config, and the schema quirks it
+# expects. `type` is the transport label: Claude Code and VS Code want
+# `"stdio"`, the rest document no such field, so it is omitted rather than
+# guessed at. `key` is the top-level JSON key holding the servers — `mcpServers`
+# everywhere except VS Code, which uses `servers`.
+#
+# Copilot CLI and Windsurf are absent because they have no project scope at all
+# (`~/.copilot/mcp-config.json`, `~/.codeium/windsurf/mcp_config.json` are
+# user-wide, and a project setup function has no business writing there);
+# Copilot gets printed instructions instead. Zed is absent because it uses a
+# `context_servers` schema of its own.
+.agent_configs <- list(
+    claude      = list(path = ".mcp.json",
+                       type = "stdio", key = "mcpServers",
+                       label = "Claude Code"),
+    codex       = list(path = file.path(".codex", "config.toml"),
+                       type = NULL,    key = NULL,
+                       label = "Codex CLI"),
+    gemini      = list(path = file.path(".gemini", "settings.json"),
+                       type = NULL,    key = "mcpServers",
+                       label = "Gemini CLI"),
+    antigravity = list(path = file.path(".agents", "mcp_config.json"),
+                       type = NULL,    key = "mcpServers",
+                       label = "Antigravity CLI"),
+    cursor      = list(path = file.path(".cursor", "mcp.json"),
+                       type = NULL,    key = "mcpServers",
+                       label = "Cursor"),
+    vscode      = list(path = file.path(".vscode", "mcp.json"),
+                       type = "stdio", key = "servers",
+                       label = "VS Code / Copilot"),
+    posit       = list(path = file.path(".posit", "assistant", "settings.json"),
+                       type = NULL,    key = "mcpServers",
+                       label = "Posit Assistant")
+)
+
+# Every agent `setup_mizer_agent()` knows about. `copilot` is a valid choice
+# even though it has no entry above; asking for it gets you the snippet to
+# paste into your user config.
+.agent_choices <- c(names(.agent_configs), "copilot")
+
+# Write the project-level MCP config for each requested agent. Returns the
+# paths actually written, so that the caller can report them. Internal helper.
+.write_agent_configs <- function(path, agents, run_r, pkg_dev) {
+    written <- character(0)
+    for (agent in intersect(agents, names(.agent_configs))) {
+        spec <- .agent_configs[[agent]]
+        dest <- normalizePath(file.path(path, spec$path), mustWork = FALSE)
+        changed <- if (identical(agent, "codex")) {
+            .write_codex_toml(dest, run_r, pkg_dev)
+        } else {
+            .write_mcp_json(dest, run_r, pkg_dev, spec$type, spec$key)
+        }
+        if (changed) written <- c(written, stats::setNames(dest, spec$label))
+    }
+    written
+}
+
+# Copilot CLI reads MCP config only from `~/.copilot/mcp-config.json`, which is
+# user-wide rather than per-project, so we print the snippet instead of writing
+# it. Internal helper.
+.copilot_snippet <- function(run_r, pkg_dev) {
+    entry <- .mcp_entry(run_r, pkg_dev, type = "local")
+    entry$tools <- list("*")
+    json <- jsonlite::toJSON(list(mcpServers = stats::setNames(
+        list(entry), .mcp_server_name)), auto_unbox = TRUE, pretty = TRUE)
+    paste0(
+        "\n\nCopilot CLI has no per-project MCP config, so add this to\n",
+        "~/.copilot/mcp-config.json yourself (merge into any `mcpServers` you\n",
+        "already have):\n\n",
+        paste0("  ", strsplit(as.character(json), "\n")[[1]], collapse = "\n")
+    )
 }
 
 # The line added to the project `.Rprofile` to hand the running session to the
@@ -86,9 +206,17 @@
 # The part of the setup summary covering the live session. Spells out the two
 # things that are easy to miss: `btw` is not installed for you, and the server
 # sees nothing until the session registers itself. Internal helper.
-.r_session_message <- function(run_r, rprofile, pkg_dev) {
+.r_session_message <- function(run_r, rprofile, pkg_dev, agents) {
     paste0(
         "\n\nLive R session for the agent (MCP server `", .mcp_server_name, "`):",
+        {
+            configured <- intersect(agents, names(.agent_configs))
+            if (length(configured)) {
+                paste0("\n  Configured for: ",
+                       paste(vapply(.agent_configs[configured], `[[`,
+                                    character(1), "label"), collapse = ", "))
+            } else ""
+        },
         if (!requireNamespace("btw", quietly = TRUE)) {
             # `requireNamespace()` also fails when btw is installed but cannot
             # be loaded (typically an out-of-date dependency), so do not claim

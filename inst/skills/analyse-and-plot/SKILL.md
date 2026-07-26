@@ -32,8 +32,9 @@ getMeanMaxWeight(sim)[idxFinalT(sim), ]     # older equivalent
 ```
 
 If you need a function you don't see here, `grep` for `"plot"` or the specific
-name in the bundled `llms-full.txt` before writing custom code — don't read the
-whole file.
+name in the bundled API index (path at the end of `MIZER-AGENTS.md`) before
+writing custom code — don't read the whole file. The index gives you the name;
+read the help page for the arguments.
 
 ## 1. Accessing raw arrays
 
