@@ -11,7 +11,7 @@
 
 # `btw` tool groups to expose. Deliberately narrow: `files`, `git`, `github`,
 # `web` and `cran` duplicate capabilities every coding agent already has. What
-# is left is what the agent cannot get any other way — documentation for the
+# is left is what the agent cannot get any other way: documentation for the
 # *installed* mizer, the user's live objects, and the file they are looking at
 # in the IDE. `pkg` is off unless asked for: it only makes sense when the
 # project is itself a package, and `btw_tool_pkg_check()` on a project that is
@@ -116,7 +116,7 @@
 # Where each agent keeps its project-level MCP config, and the schema quirks it
 # expects. `type` is the transport label: Claude Code and VS Code want
 # `"stdio"`, the rest document no such field, so it is omitted rather than
-# guessed at. `key` is the top-level JSON key holding the servers — `mcpServers`
+# guessed at. `key` is the top-level JSON key holding the servers: `mcpServers`
 # everywhere except VS Code, which uses `servers`.
 #
 # Copilot CLI and Windsurf are absent because they have no project scope at all
@@ -254,7 +254,7 @@
         "- **Look up mizer functions before calling them.** The docs tools\n",
         "  (`btw_tool_docs_help_page`, `btw_tool_docs_available_vignettes`,\n",
         "  `btw_tool_docs_vignette`, `btw_tool_docs_package_news`) read the *installed*\n",
-        "  mizer. That is the authority on argument names and defaults — above this\n",
+        "  mizer. That is the authority on argument names and defaults, above this\n",
         "  card, and far above your own recollection, which is very likely stale.\n",
         "- **Inspect what the user already has.** `btw_tool_env_describe_environment`\n",
         "  lists the objects in their global environment; do not rebuild a\n",
@@ -279,7 +279,7 @@
             "  `setup_mizer_agent(run_r = TRUE)`.\n"
         ),
         if (pkg_dev) paste0(
-            "- **This project is an R package** — most likely a mizer extension. Use the\n",
+            "- **This project is an R package**, most likely a mizer extension. Use the\n",
             "  package tools (`btw_tool_pkg_load_all`, `btw_tool_pkg_document`,\n",
             "  `btw_tool_pkg_test`, `btw_tool_pkg_check`, `btw_tool_pkg_coverage`) rather\n",
             "  than shelling out to `R CMD` or `devtools`: they run in the user's session,\n",
@@ -288,6 +288,6 @@
             "  calculated.\n"
         ) else "",
         "\nIf these tools are missing, the user has not run `btw::btw_mcp_session()` in\n",
-        "their RStudio console — ask them to, rather than working around it.\n"
+        "their RStudio console; ask them to, rather than working around it.\n"
     )
 }

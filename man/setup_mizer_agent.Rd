@@ -50,7 +50,7 @@ server automatically. \code{FALSE} by default, in which case you call
 
 \item{agents}{Which agents to configure the server for. By default all of
 them, since the config files are small, sit in different places and do not
-interfere with each other — so a project set up on your machine works for a
+interfere with each other, so a project set up on your machine works for a
 collaborator using a different agent. Any of:\tabular{ll}{
    Value \tab File written \cr
    \code{"claude"} \tab \code{.mcp.json} \cr
@@ -60,7 +60,7 @@ collaborator using a different agent. Any of:\tabular{ll}{
    \code{"cursor"} \tab \code{.cursor/mcp.json} \cr
    \code{"vscode"} \tab \code{.vscode/mcp.json} \cr
    \code{"posit"} \tab \code{.posit/assistant/settings.json} \cr
-   \code{"copilot"} \tab \emph{(none — instructions printed)} \cr
+   \code{"copilot"} \tab \emph{(none; instructions printed)} \cr
 }
 
 
@@ -76,7 +76,7 @@ Invisibly returns the path to the \code{AGENTS.md} file.
 Creates (or updates) a \code{MIZER-AGENTS.md} file in your project directory
 containing a concise mizer reference that AI coding agents read
 automatically on startup. The file includes the core mizer workflow, key
-object descriptions, and the path to the bundled API index — a curated list
+object descriptions, and the path to the bundled API index: a curated list
 of every exported mizer function, grouped by workflow stage, for finding the
 right function. Argument lists are deliberately not bundled: those go stale
 silently, so the card sends agents to the help pages of the mizer version you
@@ -105,22 +105,22 @@ mizer workflows. Like \code{MIZER-AGENTS.md}, the skills are package-managed and
 refreshed on every call so they stay up to date.
 
 So that agents other than Claude Code (which do not discover \verb{.claude/skills/}
-natively) can use the skills too, an index of them — each skill's name,
-one-line description, and path — is generated from the skills' own frontmatter
+natively) can use the skills too, an index of them (each skill's
+name, one-line description, and path) is generated from the skills' own frontmatter
 and added to \code{MIZER-AGENTS.md}. Those agents can then read the relevant
 \code{SKILL.md} on demand when a task matches.
 
 Finally, unless \code{r_session = FALSE}, it configures an MCP server named
 \code{r-mizer} so that the agent can reach your live R session. Agents have not
 converged on where MCP servers are configured, so by default every one that
-supports a project-level config gets its own file — Claude Code, Codex,
+supports a project-level config gets its own file: Claude Code, Codex,
 Gemini CLI, Antigravity, Cursor, VS Code and Posit Assistant. See the
 \code{agents} argument for the paths and for how to narrow the list.
 The server is provided by the
 \href{https://posit-dev.github.io/btw/}{btw} package, which you need to install
 separately. This gives the agent help pages and vignettes for the mizer
-version you actually have installed — rather than whatever mizer API it
-remembers — along with a view of the objects in your global environment and
+version you actually have installed, rather than whatever mizer API it
+remembers, along with a view of the objects in your global environment and
 of the document open in RStudio, and it can run mizer code there and see the
 plots that come back. For the server to see your session you must run
 \code{btw::btw_mcp_session()} in the RStudio console; passing \code{rprofile = TRUE}
