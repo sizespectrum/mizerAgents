@@ -24,7 +24,7 @@
 
     <a class="navbar-brand me-2" href="index.html">mizerAgents</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -63,14 +63,15 @@
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># install.packages("pak")</span></span>
 <span><span class="fu">pak</span><span class="fu">::</span><span class="fu"><a href="https://pak.r-lib.org/reference/pak.html" class="external-link">pak</a></span><span class="op">(</span><span class="st">"sizespectrum/mizerAgents"</span><span class="op">)</span></span></code></pre></div>
+<p>If you are running the development version of mizer from GitHub instead of the version from CRAN then you need the alternative</p>
+<pre><code><span><span class="fu">pak</span><span class="fu">::</span><span class="fu"><a href="https://pak.r-lib.org/reference/pak.html" class="external-link">pak</a></span><span class="op">(</span><span class="st">"sizespectrum/mizerAgents@dev"</span><span class="op">)</span></span></code></pre>
 </div>
 <div class="section level2">
 <h2 id="usage">Usage<a class="anchor" aria-label="anchor" href="#usage"></a>
 </h2>
 <p>Run once in the root of your mizer project:</p>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://sizespectrum.github.io/mizerAgents/">mizerAgents</a></span><span class="op">)</span></span>
-<span><span class="fu"><a href="reference/setup_mizer_agent.html">setup_mizer_agent</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu">mizerAgents</span><span class="fu">::</span><span class="fu"><a href="reference/setup_mizer_agent.html">setup_mizer_agent</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <p>This creates:</p>
 <ul>
 <li>
@@ -79,6 +80,8 @@
 <strong><code>AGENTS.md</code></strong> — updated to include <code>@MIZER-AGENTS.md</code> (created fresh, or the shim is prepended to any existing content).</li>
 <li>
 <strong><code>CLAUDE.md</code></strong> / <strong><code>GEMINI.md</code></strong> — agent-specific shims pointing to <code>AGENTS.md</code> (only created if they do not already exist).</li>
+<li>
+<strong><code>.claude/skills/</code></strong> — bundled skills (<code>analyse-and-plot</code>, <code>build-multispecies-model</code>, <code>calibrate-model</code>, <code>run-simulation</code>, <code>set-up-fishing</code>, <code>change-parameters</code>, <code>extend-mizer</code>) that agents read automatically when a task matches, giving step-by-step guidance for common mizer workflows.</li>
 </ul>
 <p>Then open a terminal in your project directory and start your favourite coding agent CLI, for example:</p>
 <pre><code><span><span class="va">claude</span>    <span class="co"># Claude Code (Anthropic)</span></span>
@@ -112,6 +115,11 @@
 <tr>
 <td><code>inst/llms-full.txt</code></td>
 <td>Full documentation for every mizer function</td>
+</tr>
+<tr>
+<td><code>inst/skills/</code></td>
+<td>Claude Code skills deployed to <code>.claude/skills/</code>
+</td>
 </tr>
 </tbody>
 </table>
@@ -156,7 +164,6 @@
 <h2 data-toc-skip>Dev status</h2>
 <ul class="list-unstyled">
 <li><a href="https://lifecycle.r-lib.org/articles/stages.html#experimental" class="external-link"><img src="https://img.shields.io/badge/lifecycle-experimental-orange.svg" alt="Lifecycle: experimental"></a></li>
-<li><a href="https://github.com/sizespectrum/mizerAgents/actions/workflows/R-CMD-check.yaml" class="external-link"><img src="https://github.com/sizespectrum/mizerAgents/actions/workflows/R-CMD-check.yaml/badge.svg" alt="R-CMD-check"></a></li>
 </ul>
 </div>
 

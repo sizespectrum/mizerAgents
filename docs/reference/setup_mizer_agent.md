@@ -40,6 +40,19 @@ agent-specific tools that look for their own named file also pick up the
 shared context. These shims are only created if the files do not already
 exist.
 
+It also installs a set of bundled Claude Code *skills* into
+`.claude/skills/` (one sub-directory with a `SKILL.md` per skill, e.g.
+`analyse-and-plot` and `build-multispecies-model`). Claude Code loads
+these automatically when a task matches, giving step-by-step guidance
+for common mizer workflows. Like `MIZER-AGENTS.md`, the skills are
+package-managed and refreshed on every call so they stay up to date.
+
+So that agents other than Claude Code (which do not discover
+`.claude/skills/` natively) can use the skills too, an index of them —
+each skill's name, one-line description, and path — is generated from
+the skills' own frontmatter and added to `MIZER-AGENTS.md`. Those agents
+can then read the relevant `SKILL.md` on demand when a task matches.
+
 After running this function, start your AI coding agent (e.g. `claude`,
 `codex`, `copilot` or `gemini`) from the RStudio Terminal and it will
 immediately have the mizer context it needs.

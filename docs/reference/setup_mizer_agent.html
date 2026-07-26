@@ -15,7 +15,7 @@ bundled with the package."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">mizerAgents</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -85,6 +85,17 @@ reference. It also creates <code>CLAUDE.md</code> and <code>GEMINI.md</code> shi
 containing just <code>@AGENTS.md</code>) so that agent-specific tools that look for
 their own named file also pick up the shared context. These shims are only
 created if the files do not already exist.</p>
+<p>It also installs a set of bundled Claude Code <em>skills</em> into
+<code>.claude/skills/</code> (one sub-directory with a <code>SKILL.md</code> per skill, e.g.
+<code>analyse-and-plot</code> and <code>build-multispecies-model</code>). Claude Code loads these
+automatically when a task matches, giving step-by-step guidance for common
+mizer workflows. Like <code>MIZER-AGENTS.md</code>, the skills are package-managed and
+refreshed on every call so they stay up to date.</p>
+<p>So that agents other than Claude Code (which do not discover <code>.claude/skills/</code>
+natively) can use the skills too, an index of them — each skill's name,
+one-line description, and path — is generated from the skills' own frontmatter
+and added to <code>MIZER-AGENTS.md</code>. Those agents can then read the relevant
+<code>SKILL.md</code> on demand when a task matches.</p>
 <p>After running this function, start your AI coding agent
 (e.g. <code>claude</code>, <code>codex</code>, <code>copilot</code> or <code>gemini</code>) from the RStudio Terminal
 and it will immediately have the mizer context it needs.</p>

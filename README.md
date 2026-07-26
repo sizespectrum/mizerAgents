@@ -2,7 +2,6 @@
 
 <!-- badges: start -->
 [![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
-[![R-CMD-check](https://github.com/sizespectrum/mizerAgents/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/sizespectrum/mizerAgents/actions/workflows/R-CMD-check.yaml)
 <!-- badges: end -->
 
 `mizerAgents` is an R package that makes it easy to set up AI coding agents
@@ -21,13 +20,18 @@ with a single function call.
 pak::pak("sizespectrum/mizerAgents")
 ```
 
+If you are running the development version of mizer from GitHub instead of the
+version from CRAN then you need the alternative
+```
+pak::pak("sizespectrum/mizerAgents@dev")
+```
+
 ## Usage
 
 Run once in the root of your mizer project:
 
 ```r
-library(mizerAgents)
-setup_mizer_agent()
+mizerAgents::setup_mizer_agent()
 ```
 
 This creates:
@@ -39,9 +43,9 @@ This creates:
   the shim is prepended to any existing content).
 - **`CLAUDE.md`** / **`GEMINI.md`** — agent-specific shims pointing to
   `AGENTS.md` (only created if they do not already exist).
-- **`.claude/skills/`** — bundled Claude Code skills (`analyse-and-plot`,
+- **`.claude/skills/`** — bundled skills (`analyse-and-plot`,
   `build-multispecies-model`, `calibrate-model`, `run-simulation`,
-  `set-up-fishing`, `change-parameters`, `extend-mizer`) that Claude loads
+  `set-up-fishing`, `change-parameters`, `extend-mizer`) that agents read
   automatically when a task matches, giving step-by-step guidance for common
   mizer workflows.
 

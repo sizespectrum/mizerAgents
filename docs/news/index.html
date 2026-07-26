@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">mizerAgents</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -35,10 +35,30 @@
     </div>
 
     <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.3.2" id="mizeragents-032">mizerAgents 0.3.2<a class="anchor" aria-label="anchor" href="#mizeragents-032"></a></h2>
+<div class="section level3">
+<h3 id="new-features-0-3-2">New features<a class="anchor" aria-label="anchor" href="#new-features-0-3-2"></a></h3>
+<ul><li>
+<code><a href="../reference/setup_mizer_agent.html">setup_mizer_agent()</a></code> now adds a “Task skills” index to <code>MIZER-AGENTS.md</code>, generated from the bundled skills’ own frontmatter (name, one-line description, and path). This makes the skills usable by agents other than Claude Code, which do not discover <code>.claude/skills/</code> natively: they read the index from the always-loaded reference card and open the relevant <code>SKILL.md</code> on demand, mirroring Claude Code’s lazy loading. No skill content is duplicated, so the index cannot drift from the skills.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="updated-for-mizer-0-3-2">Updated for mizer 3.2<a class="anchor" aria-label="anchor" href="#updated-for-mizer-0-3-2"></a></h3>
+<ul><li><p>The reference card (<code>inst/AGENTS.md</code>) and the <code>change-parameters</code> skill now recommend <code>species_params(params) &lt;-</code> as the setter for scripts. As of mizer 3.2 it records the change in <code>given_species_params</code> and triggers recalculation of dependent rates, so the old advice to avoid it (and use only <code>given_species_params(params) &lt;-</code>) no longer applies; <code>given_species_params()</code> is now framed as the interactive alternative that warns about overrides. A version note points users on mizer &lt; 3.2 back to the old rule.</p></li>
+<li><p>Species-parameter documentation now distinguishes <code>w_max</code> (the purely computational size-grid boundary) from <code>w_repro_max</code> (mizer 3.2’s name for the asymptotic size, i.e. the old <code>w_inf</code>).</p></li>
+<li><p>Replaced the stale <code>matchYields()</code> reference with <code>calibrateYield()</code>.</p></li>
+</ul></div>
+<div class="section level3">
+<h3 id="skills-0-3-2">Skills<a class="anchor" aria-label="anchor" href="#skills-0-3-2"></a></h3>
+<ul><li>Captured lessons from dynamics/limit-cycle work: <code>inst/AGENTS.md</code> gains “Numerical scheme for dynamics” and “Gotchas” sections; <code>run-simulation</code> gains a “Numerical scheme: watch for numerical diffusion” section (upwind scheme silently damping real oscillations, the <code>second_order_w</code> / <code>tr_bdf2</code> fix, and freezing the resource to isolate the phantom-jam feedback); <code>change-parameters</code> gains “The feeding level is set by <code>f0</code>, not <code>h</code>”.</li>
+</ul></div>
+</div>
+    <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.1.0" id="mizeragents-010">mizerAgents 0.1.0<a class="anchor" aria-label="anchor" href="#mizeragents-010"></a></h2>
 <div class="section level3">
 <h3 id="new-features-0-1-0">New features<a class="anchor" aria-label="anchor" href="#new-features-0-1-0"></a></h3>
 <ul><li><p><code><a href="../reference/setup_mizer_agent.html">setup_mizer_agent()</a></code> creates or updates agent context files (<code>MIZER-AGENTS.md</code>, <code>AGENTS.md</code>, <code>CLAUDE.md</code>, <code>GEMINI.md</code>) in a mizer project directory so that AI coding agents pick up the mizer reference card and API documentation automatically on startup.</p></li>
+<li><p><code><a href="../reference/setup_mizer_agent.html">setup_mizer_agent()</a></code> also installs bundled Claude Code skills into <code>.claude/skills/</code> — <code>analyse-and-plot</code>, <code>build-multispecies-model</code>, <code>calibrate-model</code>, <code>run-simulation</code>, <code>set-up-fishing</code>, <code>change-parameters</code>, and <code>extend-mizer</code> — giving task-triggered, step-by-step guidance for common mizer workflows. The skills are refreshed on every call.</p></li>
+<li><p>Bundled <code>inst/skills/</code> — one sub-directory with a <code>SKILL.md</code> per skill, deployed by <code><a href="../reference/setup_mizer_agent.html">setup_mizer_agent()</a></code>.</p></li>
 <li><p>Bundled <code>inst/AGENTS.md</code> — concise mizer reference card covering the core workflow, key objects, species parameters, plotting, and extending mizer.</p></li>
 <li><p>Bundled <code>inst/llms.txt</code> — concise index of the full mizer API, with links to online reference pages.</p></li>
 <li><p>Bundled <code>inst/llms-full.txt</code> — full prose documentation for every exported mizer function, intended for agent <code>grep</code> searches.</p></li>
