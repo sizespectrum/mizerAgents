@@ -254,6 +254,39 @@ Cod, Haddock, Whiting, Herring, Sprat, Mackerel — 6 species.
 This project-specific context costs ten minutes to write and saves
 re-explaining your setup at the start of every session.
 
+### What the agent works out for itself
+
+Most of what an agent learns about your model, it learns while working: that
+this model only settles with a smaller `steady()` tolerance, that one species'
+`beta` is doing something odd, that a scenario has to be run a particular way.
+It will want to write that down, and it writes where it was reading — in the
+skill it was following, under `.claude/skills/`. Those skill files are installed
+by `setup_mizer_agent()` and refreshed when you run it again, so that is the
+wrong place for it.
+
+Each skill therefore has a `NOTES.md` beside it that this package never writes.
+The skills tell agents to read it alongside the `SKILL.md`, to treat it as
+taking precedence where the two disagree, and to record project-specific
+findings there:
+
+```
+.claude/skills/calibrate-model/SKILL.md    # ours, refreshed
+.claude/skills/calibrate-model/NOTES.md    # yours, never touched
+```
+
+Commit those files. They are as much a part of the project as the code, and a
+collaborator's agent picks them up too. If you or your agent do edit a
+`SKILL.md` directly, the edit is not lost either: `setup_mizer_agent()` notices,
+keeps your version, and writes the new one beside it as `SKILL.md.new` for you
+to merge.
+
+Some of what an agent discovers is not about your project at all — a mizer
+function that behaves differently from how the skill describes it, a workflow
+that would work anywhere. That belongs upstream, in an
+[issue on the mizerAgents repository](https://github.com/sizespectrum/mizerAgents/issues),
+so that the next release carries it to every project instead of leaving it in
+yours. The skills tell agents to offer this, so you may find yourself asked.
+
 
 ## Example prompts
 

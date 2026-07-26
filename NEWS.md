@@ -2,6 +2,36 @@
 
 ## New features
 
+* **What a project learns about mizer now has somewhere to go.** Previously
+  `setup_mizer_agent()` deleted each bundled skill's directory and copied a
+  fresh one over it, so anything an agent had added there — the very thing it
+  had just learned about your model — vanished on the next run, silently.
+
+  Three changes, one per kind of finding:
+
+  - Every deployed `SKILL.md` now ends by pointing at a `NOTES.md` beside it:
+    read it too, treat it as taking precedence, and record what you learn about
+    *this* project there rather than in `SKILL.md`. That file is never written
+    by this package. The same pointer goes into the skills index in
+    `MIZER-AGENTS.md`, for agents that do not discover `.claude/skills/`
+    themselves.
+  - Skills are refreshed **file by file**, so a `NOTES.md` — or a skill of your
+    own — is left alone. The MD5 sums of the files installed are recorded in
+    `.claude/skills/.mizerAgents.json`, which is what makes a file you have
+    edited distinguishable from one an older version of the package installed.
+    An edited file is kept and reported, with the new version written beside it
+    as `<file>.new` to merge by hand; delete the `.new` file and the skill goes
+    back under package management. Without the record, the choice would be
+    between clobbering your edits and freezing the skills at whatever shipped
+    first. A project set up by 0.3.2 or earlier has no record, so the first run
+    after upgrading refreshes the skills as it always did, and starts keeping
+    one. Skills that later versions stop shipping are now removed rather than
+    lingering, unless they have been edited here.
+  - A lesson that is true of mizer in general rather than of one project
+    belongs upstream, where every project gets it in the next release, so the
+    skills tell agents to say so and offer to report it at
+    <https://github.com/sizespectrum/mizerAgents/issues>.
+
 * `AGENTS.md`, `CLAUDE.md` and `GEMINI.md` are now all handled the same way:
   each gets the package-managed mizer block, refreshed in place on every run
   with your own notes around it left alone. Previously only `AGENTS.md` was

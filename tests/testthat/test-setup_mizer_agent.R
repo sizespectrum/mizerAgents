@@ -193,6 +193,134 @@ test_that("a file that imports AGENTS.md is left alone", {
                           fixed = TRUE)))
 })
 
+test_that("skills are installed with a manifest and a NOTES.md pointer", {
+    tmp_dir <- tempfile("mizer_agent_skills")
+    dir.create(tmp_dir)
+    on.exit(unlink(tmp_dir, recursive = TRUE))
+    skills_dest <- file.path(tmp_dir, ".claude", "skills")
+
+    suppressMessages(setup_mizer_agent(path = tmp_dir))
+    skill <- file.path(skills_dest, "calibrate-model", "SKILL.md")
+    expect_true(file.exists(skill))
+
+    # Every SKILL.md carries the footer sending project-specific findings to
+    # NOTES.md and general ones upstream
+    content <- readLines(skill)
+    expect_true(any(grepl("`NOTES.md`", content, fixed = TRUE)))
+    expect_true(any(grepl("sizespectrum/mizerAgents/issues", content,
+                          fixed = TRUE)))
+
+    # ... and so does the index in the always-loaded card, for agents that do
+    # not discover .claude/skills/ themselves
+    mizer_content <- readLines(file.path(tmp_dir, "MIZER-AGENTS.md"))
+    expect_true(any(grepl("NOTES.md", mizer_content, fixed = TRUE)))
+    expect_true(any(grepl("sizespectrum/mizerAgents/issues", mizer_content,
+                          fixed = TRUE)))
+
+    # The manifest records what was installed, keyed by relative path
+    manifest <- file.path(skills_dest, .skill_manifest)
+    expect_true(file.exists(manifest))
+    hashes <- .read_skill_manifest(manifest)
+    expect_true("calibrate-model/SKILL.md" %in% names(hashes))
+    expect_identical(unname(hashes["calibrate-model/SKILL.md"]),
+                     unname(tools::md5sum(skill)))
+
+    # Re-running leaves an up-to-date file untouched, mtime included
+    before <- file.mtime(skill)
+    suppressMessages(setup_mizer_agent(path = tmp_dir))
+    expect_identical(file.mtime(skill), before)
+})
+
+test_that("local edits inside .claude/skills/ survive a re-run", {
+    tmp_dir <- tempfile("mizer_agent_skill_edits")
+    dir.create(tmp_dir)
+    on.exit(unlink(tmp_dir, recursive = TRUE))
+    skills_dest <- file.path(tmp_dir, ".claude", "skills")
+    suppressMessages(setup_mizer_agent(path = tmp_dir))
+
+    # Notes an agent wrote next to a bundled skill, and a skill of the user's own
+    notes <- file.path(skills_dest, "calibrate-model", "NOTES.md")
+    writeLines(c("# Notes", "", "This model needs steady(tol = 1e-4)."), notes)
+    own <- file.path(skills_dest, "my-own-skill")
+    dir.create(own)
+    writeLines("# Mine", file.path(own, "SKILL.md"))
+
+    # An edit to a bundled SKILL.md itself
+    skill <- file.path(skills_dest, "run-simulation", "SKILL.md")
+    edited <- c(readLines(skill), "", "A hard-won lesson.")
+    writeLines(edited, skill)
+
+    expect_message(setup_mizer_agent(path = tmp_dir),
+                   "run-simulation/SKILL.md") |> suppressMessages()
+
+    # Nothing of the project's is lost
+    expect_identical(readLines(notes)[3], "This model needs steady(tol = 1e-4).")
+    expect_identical(readLines(file.path(own, "SKILL.md")), "# Mine")
+    # The edited skill is kept, with the new version alongside for merging
+    expect_identical(readLines(skill), edited)
+    side <- paste0(skill, ".new")
+    expect_true(file.exists(side))
+    expect_false(any(grepl("hard-won", readLines(side), fixed = TRUE)))
+
+    # The edit is still recognised as an edit on the next run, rather than
+    # adopted and then overwritten
+    suppressMessages(setup_mizer_agent(path = tmp_dir))
+    expect_identical(readLines(skill), edited)
+
+    # Reverting it puts the file back under package management, and the .new
+    # copy is cleared away
+    unlink(skill)
+    suppressMessages(setup_mizer_agent(path = tmp_dir))
+    expect_false(any(grepl("hard-won", readLines(skill), fixed = TRUE)))
+    expect_false(file.exists(side))
+})
+
+test_that("a project set up before the manifest existed is refreshed once", {
+    tmp_dir <- tempfile("mizer_agent_skill_legacy")
+    dir.create(tmp_dir)
+    on.exit(unlink(tmp_dir, recursive = TRUE))
+    skills_dest <- file.path(tmp_dir, ".claude", "skills")
+    suppressMessages(setup_mizer_agent(path = tmp_dir))
+
+    # 0.3.2 and earlier kept no record of what they installed, so a stale skill
+    # is indistinguishable from an edited one and must be refreshed, as it was
+    # then. Simulate that: stale content, no manifest.
+    skill <- file.path(skills_dest, "calibrate-model", "SKILL.md")
+    writeLines("stale", skill)
+    unlink(file.path(skills_dest, .skill_manifest))
+
+    suppressMessages(setup_mizer_agent(path = tmp_dir))
+    expect_false(identical(readLines(skill), "stale"))
+    expect_true(file.exists(file.path(skills_dest, .skill_manifest)))
+})
+
+test_that("a skill that is no longer bundled is removed unless edited", {
+    tmp_dir <- tempfile("mizer_agent_skill_dropped")
+    dir.create(tmp_dir)
+    on.exit(unlink(tmp_dir, recursive = TRUE))
+    skills_dest <- file.path(tmp_dir, ".claude", "skills")
+    suppressMessages(setup_mizer_agent(path = tmp_dir))
+
+    # Two skills a previous version shipped and this one does not: one
+    # untouched since, one edited here
+    manifest <- file.path(skills_dest, .skill_manifest)
+    hashes <- .read_skill_manifest(manifest)
+    for (name in c("dropped-skill", "dropped-edited")) {
+        dir.create(file.path(skills_dest, name))
+        f <- file.path(skills_dest, name, "SKILL.md")
+        writeLines("# Was bundled once", f)
+        hashes[paste0(name, "/SKILL.md")] <- unname(tools::md5sum(f))
+    }
+    writeLines("# Edited here", file.path(skills_dest, "dropped-edited",
+                                          "SKILL.md"))
+    .write_skill_manifest(manifest, hashes)
+
+    suppressMessages(setup_mizer_agent(path = tmp_dir))
+    expect_false(dir.exists(file.path(skills_dest, "dropped-skill")))
+    expect_identical(readLines(file.path(skills_dest, "dropped-edited",
+                                         "SKILL.md")), "# Edited here")
+})
+
 test_that("the r-mizer MCP server is configured in .mcp.json", {
     tmp_dir <- tempfile("mizer_agent_mcp")
     dir.create(tmp_dir)

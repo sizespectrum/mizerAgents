@@ -110,6 +110,25 @@ automatically when a task matches, giving step-by-step guidance for common
 mizer workflows. Like \code{MIZER-AGENTS.md}, the skills are package-managed and
 refreshed on every call so they stay up to date.
 
+What a project learns about mizer is kept separate from them, so that neither
+overwrites the other. Each skill's directory may hold a \code{NOTES.md}, which this
+package never writes and which the \code{SKILL.md} tells agents to read alongside
+it and to treat as taking precedence: that is where an agent should record
+what it discovers about \emph{your} model. Findings that are true of mizer in
+general belong upstream instead, and the skills tell agents to offer to report
+them at \url{https://github.com/sizespectrum/mizerAgents/issues}, so that every
+project gets them in the next release.
+
+Refreshing works file by file rather than by replacing whole directories, so
+a \code{NOTES.md}, or a skill of your own, is left alone. The hashes of the files
+installed are recorded in \code{.claude/skills/.mizerAgents.json}; a file that has
+since been edited is recognised, kept, and reported, with the new version
+written beside it as \verb{<file>.new} for you to merge, rather than silently
+overwritten. (A project set up by version 0.3.2 or earlier has no such record,
+so the first run after upgrading refreshes the skills as it always did and
+starts keeping one.) Files that later versions stop shipping are removed if
+they are unmodified.
+
 So that agents other than Claude Code (which do not discover \verb{.claude/skills/}
 natively) can use the skills too, an index of them (each skill's
 name, one-line description, and path) is generated from the skills' own frontmatter

@@ -15,7 +15,8 @@ Authors@R: person("Gustav", "Delius", email="gustav.delius@york.ac.uk",
 Version: 0.3.2
 License: GPL-3
 Imports:
-    jsonlite
+    jsonlite,
+    tools
 Suggests:
     btw,
     mizer,

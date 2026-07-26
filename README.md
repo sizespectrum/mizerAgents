@@ -51,7 +51,8 @@ This creates:
   `build-multispecies-model`, `calibrate-model`, `run-simulation`,
   `set-up-fishing`, `change-parameters`, `extend-mizer`) that agents read
   automatically when a task matches, giving step-by-step guidance for common
-  mizer workflows.
+  mizer workflows. They are refreshed on each run, but only file by file and
+  only where nothing has edited them: see [What your project learns](#what-your-project-learns).
 - **MCP configuration** for an `r-mizer` server that connects the agent to your
   live R session (see below), written in each agent's own format — Claude Code,
   Codex, Gemini CLI, Antigravity, Cursor, VS Code and Posit Assistant all keep
@@ -134,6 +135,42 @@ adds btw's package development tools, so the agent can run `load_all()`,
 shelling out to `devtools`. After `load_all()` the new code is live in the
 session, so the agent can exercise it immediately. Off by default, since these
 tools do nothing useful in an ordinary modelling project.
+
+## What your project learns
+
+The files this package installs are refreshed on every run, so nothing you or
+your agent writes into them survives. But an agent that discovers something
+about your model wants to write it down, and it writes it where it was reading:
+in the skill it was following. So each skill has a home for that which the
+package never touches.
+
+- **`.claude/skills/<name>/NOTES.md`** — findings about *this* project. Every
+  bundled `SKILL.md` ends by telling agents to read this file alongside it, to
+  treat it as taking precedence, and to record what they learn there rather than
+  in `SKILL.md`. Nothing in this package ever writes it. Commit it: it is
+  project knowledge, and your collaborators' agents get it too.
+- **`AGENTS.md` / `CLAUDE.md` / `GEMINI.md`, outside the markers** — project
+  notes that belong to no single skill.
+- **[An issue on this repo](https://github.com/sizespectrum/mizerAgents/issues)**
+  — for a lesson that is true of mizer in general rather than of your project.
+  The skills tell agents to offer this, so that the next release carries it to
+  everyone rather than leaving it buried in one project.
+
+Skills are refreshed file by file, never by replacing whole directories, so a
+`NOTES.md` — or a skill of your own invention — is left alone. The hashes of the
+files installed are recorded in `.claude/skills/.mizerAgents.json`. If a
+`SKILL.md` has been edited since, it is recognised, kept, and reported, with the
+new version written beside it as `SKILL.md.new` for you to merge:
+
+```
+These skill files have been edited in this project, so they
+were kept and the new version of each was written beside it:
+  run-simulation/SKILL.md  ->  SKILL.md.new
+```
+
+Delete the `.new` file when you are done and the skill goes back under package
+management. Skills that later versions stop shipping are removed, unless they
+were edited here.
 
 ## What's included
 
