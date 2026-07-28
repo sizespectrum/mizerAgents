@@ -450,6 +450,27 @@ test_that("each agent's config matches the shape its schema documents", {
                           calls, fixed = TRUE)))
 })
 
+test_that("the groups reach btw_mcp_server() as tools, not a character vector", {
+    # A bare vector of group names makes `btw_mcp_server()` fail at startup:
+    # its `is.character(tools) && file.exists(tools)` guard is an error for
+    # length > 1 under R >= 4.3, and the agent sees only a dead pipe. The
+    # wrapper is what keeps `is.character()` FALSE, so it is load-bearing.
+    call <- .btw_call(run_r = TRUE, pkg_dev = TRUE)
+    expect_match(call, "btw::btw_mcp_server(btw::btw_tools(", fixed = TRUE)
+    expect_false(grepl("btw_mcp_server(c(", call, fixed = TRUE))
+
+    # The call must be valid R, with the groups inside the wrapper rather than
+    # alongside it
+    parsed <- parse(text = call)[[1]]
+    expect_length(parsed, 2L)
+    expect_identical(as.list(parsed[[2]])[-1],
+                     as.list(.btw_groups(run_r = TRUE, pkg_dev = TRUE)))
+
+    # ...and the group names must be ones this btw actually knows
+    skip_if_not_installed("btw")
+    expect_no_error(eval(parsed[[2]]))
+})
+
 test_that("the Codex TOML block is merged and refreshed in place", {
     tmp_dir <- tempfile("mizer_agent_codex")
     dir.create(tmp_dir)

@@ -23,8 +23,18 @@
 
 # The `Rscript -e` invocation that starts the server. Every agent's config
 # format ultimately wraps this same command.
+#
+# The groups go through `btw_tools()` rather than being handed to
+# `btw_mcp_server()` as a bare character vector. `btw_mcp_server()` starts by
+# testing whether its argument names an R file, with
+# `is.character(tools) && file.exists(tools) && ...`; since R 4.3 an `&&` whose
+# operand has length > 1 is an error, so a vector of two or more group names
+# kills the server process at startup. The agent then sees only a closed pipe
+# and reports a transport error, with the R message going nowhere. Passing a
+# list of tool objects makes `is.character()` FALSE and short-circuits the test
+# before `file.exists()` is reached.
 .btw_call <- function(run_r, pkg_dev) {
-    sprintf("btw::btw_mcp_server(c(%s))",
+    sprintf("btw::btw_mcp_server(btw::btw_tools(%s))",
             paste0("'", .btw_groups(run_r, pkg_dev), "'", collapse = ", "))
 }
 
