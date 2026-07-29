@@ -98,7 +98,10 @@ params <- setBevertonHolt(params, reproduction_level = 0.25)
 
 Alternatively pass `R_max`, `erepro`, or a per-species named vector. This does
 not change the steady state itself — it sets how the model responds to
-perturbations away from it.
+perturbations away from it. Fishing is one such perturbation: the level is the
+main control on where F_MSY lies, so it is the parameter to reach for when the
+peak of a species' yield-vs-F curve is in the wrong place (see the
+`set-up-fishing` skill).
 
 Read the current values back with `getReproductionLevel(params)`, which returns
 the realised reproduction level per species — useful to check what a model was

@@ -5,6 +5,13 @@
   analysing whether a steady state is stable, and characterising the limit cycle
   when it is not. The `calibrate-model` skill documents the fuller
   `steadyNewton()` behaviour and points to the new skill.
+* The `set-up-fishing` skill now covers yield-vs-F curves: that `getYieldVsF()`
+  and `plotYieldVsF()` live in mizerExperimental rather than core mizer, that
+  F_MSY is set mainly by `reproduction_level` and moves up with it (bisect in
+  `-log(1 - reproduction_level)`, where the sensitivity is), the two cases the
+  reproduction level cannot fix, and the two-projection test for which side of
+  the peak the current F is on. The `calibrate-model` skill points at it from
+  `setBevertonHolt()`.
 
 # mizerAgents 0.3.2
 

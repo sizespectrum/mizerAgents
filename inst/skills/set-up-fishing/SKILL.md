@@ -161,6 +161,38 @@ Either way, if you rescale catchability you must rescale effort inversely to kee
 the same `F`. This is why yield calibration (`calibrateYield`) depends on the
 fishing setup being fixed first.
 
+## Yield vs fishing mortality
+
+`getYieldVsF()` and `plotYieldVsF()` — in **mizerExperimental**, not core mizer —
+vary F for one species while holding the other species' fishing fixed. Each point
+on the curve runs the model to steady state, so a curve is expensive:
+
+```r
+library(mizerExperimental)
+y <- getYieldVsF(params, "Cod", F_range = seq(0.1, 1.2, 0.1))  # data frame: F, yield
+```
+
+Where the peak (F_MSY) sits is governed mainly by **density dependence in
+reproduction**, not by the fishing setup. A higher `reproduction_level` (see the
+`calibrate-model` skill) makes recruitment less sensitive to spawning stock, so
+the species tolerates more fishing and the peak moves to higher F. The dependence
+is monotonic, with nearly all of the movement happening as the level approaches
+1 — so when tuning the level to place the peak, bisect in
+`u = -log(1 - reproduction_level)`, not in the level itself.
+
+Two limits to recognise before spending projections on a search:
+
+- F_MSY is bounded above, reached at `reproduction_level` → 1. If the peak is
+  still below the current F there, the model is saying the species is fished
+  above F_MSY; reproduction is not what will fix it.
+- For a species whose catchability is near zero (effectively unfished) the peak
+  lies far above the current F at *every* reproduction level, and barely moves
+  as the level changes.
+
+To find only which side of the peak the current F lies on, compare the yield at
+`F/1.25` and `F*1.25` — two projections instead of a whole curve. Tuning one
+species shifts the other species' curves slightly, so re-check after a sweep.
+
 ## Checking the setup
 
 ```r
