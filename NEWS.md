@@ -6,6 +6,13 @@
   when it is not. The `calibrate-model` skill documents the fuller
   `steadyNewton()` behaviour and points to the new skill.
 
+* The `change-parameters` skill now warns against assigning to the
+  `params@species_params` slot directly — the value is not recorded as given, so
+  the next recalculation silently discards it — and documents mizer's new
+  `record_given_species_params()` helper for the case where the caller has
+  already updated the dependent rate array itself. `MIZER-AGENTS.md` carries the
+  one-line warning too.
+
 # mizerAgents 0.3.2
 
 ## New features

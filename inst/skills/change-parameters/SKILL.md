@@ -65,6 +65,34 @@ already given.
 Columns come back as named vectors: `species_params(params)$w_mat` is named by
 species; `given_species_params(params)$gamma` is `NA` where the user never set it.
 
+### Never write into `params@species_params` directly
+
+Assigning to the slot does **not** record the value as *given*, so the next
+recalculation — any `setParams()`, including the one every later
+`species_params<-()` triggers — derives the parameter afresh from the given ones
+and your value is silently gone. This bites code that computes a parameter
+itself: optimisers, calibration helpers, tuning gadgets.
+
+Normally just use `species_params(params) <-`. The exception is code that has
+*already* updated the rate array the parameter determines, where recalculating
+would be wasted work or would undo that adjustment. Then record the change on
+its own with `record_given_species_params()` (mizer ≥ 3.2.0.9000):
+
+```r
+sp_before <- species_params(params)
+params@species_params$ks[1] <- 2 * species_params(params)$ks[1]
+params@metab[1, ] <- 2 * params@metab[1, ]        # the rate it determines
+params@given_species_params <-
+    record_given_species_params(given_species_params(params),
+                                species_params(params), sp_before)
+```
+
+Assign the result to the `params@given_species_params` slot — going through
+`given_species_params(params) <-` would recalculate, which is what you were
+avoiding. Only entries that actually changed are recorded, per species; that
+matters, because recording an unchanged value would turn a calculated parameter
+into a given one and stop it responding to what it is derived from.
+
 ## How a species-parameter change propagates
 
 Many species parameters exist only to set up a rate array; changing one re-runs
@@ -201,6 +229,7 @@ instead.
 | To change… | Use |
 |---|---|
 | a per-species value | `species_params(params) <- …` (mizer ≥ 3.2; `given_species_params(params) <-` interactively or on older mizer) |
+| a per-species value whose dependent rate you have updated yourself | write the slot, then `record_given_species_params()` |
 | a rate, keeping it tied to the parameters | change the underlying species parameter |
 | a rate to a bespoke array (freezing it) | `metab(params) <- …` (direct) or the matching `set…(params, array)` |
 | a frozen rate back to its default form | `set…(params, reset = TRUE)` |

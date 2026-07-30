@@ -73,8 +73,9 @@ species × size), `NResource(sim)`.
 The `species_params` data frame must have `species` (name) and the
 von Bertalanffy asymptotic weight `w_inf`. Everything else has defaults.
 Change species parameters with `species_params(params) <- value`, which records
-the change and triggers recalculation of dependent quantities. See the
-`change-parameters` skill.
+the change and triggers recalculation of dependent quantities. Never assign to
+`params@species_params` directly — the value is not recorded as given and the
+next recalculation discards it. See the `change-parameters` skill.
 
 | Column | Meaning |
 |--------|---------|
