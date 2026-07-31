@@ -65,6 +65,32 @@ already given.
 Columns come back as named vectors: `species_params(params)$w_mat` is named by
 species; `given_species_params(params)$gamma` is `NA` where the user never set it.
 
+### Sizes given as lengths
+
+Where the model supplies the weight–length parameters `a`, `b` (`w = a·l^b`),
+every size parameter has a length twin: `w_max`/`l_max`, `w_inf`/`l_inf`,
+`w_mat`/`l_mat`, `w_mat25`/`l_mat25`, `w_repro_max`/`l_repro_max`,
+`w_min`/`l_min`. mizer keeps each pair consistent by one rule (mizer ≥ 3.2):
+**the one given last wins, and if both are given at the same time the weight
+wins.** The other is rewritten to match, per species, and mizer warns — naming
+the species — when a supplied length and weight disagree.
+
+So on a model specified by lengths, `species_params(params)$w_mat[1] <- 100`
+now sticks. On older mizer the length always won, so that assignment was
+silently replaced by the value derived from the unchanged `l_mat` — if a user
+reports that a weight parameter "will not change", check for a length twin.
+
+### Setting a parameter without recalculating
+
+`species_params(params, recalculate = FALSE) <- sp` records the changed values
+as given and stores them, but does **not** re-derive the calculated species
+parameters, fill in defaults, or rebuild any rate array. Use it only when you
+have worked out a species parameter *together with* the rate array it
+determines — an optimiser fitting `ks` and the matching `metab`, or `z_ext` and
+the matching `mu_b` — where the normal recalculation would overwrite the array
+you just set. Keeping the object consistent is then your responsibility.
+Everywhere else use the default `recalculate = TRUE`.
+
 ## How a species-parameter change propagates
 
 Many species parameters exist only to set up a rate array; changing one re-runs
@@ -201,6 +227,7 @@ instead.
 | To change… | Use |
 |---|---|
 | a per-species value | `species_params(params) <- …` (mizer ≥ 3.2; `given_species_params(params) <-` interactively or on older mizer) |
+| a per-species value *together with* the rate array it determines | `species_params(params, recalculate = FALSE) <- …` |
 | a rate, keeping it tied to the parameters | change the underlying species parameter |
 | a rate to a bespoke array (freezing it) | `metab(params) <- …` (direct) or the matching `set…(params, array)` |
 | a frozen rate back to its default form | `set…(params, reset = TRUE)` |

@@ -6,6 +6,15 @@
   when it is not. The `calibrate-model` skill documents the fuller
   `steadyNewton()` behaviour and points to the new skill.
 
+* The `change-parameters` skill now covers size parameters given as lengths:
+  the rule that the one given last wins, with the weight winning when both are
+  given at once, and the symptom to recognise when a weight parameter appears
+  not to change because it has a length twin.
+
+* The `change-parameters` skill documents
+  `species_params(params, recalculate = FALSE) <-`, for code that sets a
+  species parameter together with the rate array it determines.
+
 # mizerAgents 0.3.2
 
 ## New features
