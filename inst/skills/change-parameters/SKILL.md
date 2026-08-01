@@ -65,6 +65,38 @@ already given.
 Columns come back as named vectors: `species_params(params)$w_mat` is named by
 species; `given_species_params(params)$gamma` is `NA` where the user never set it.
 
+Editing a `species_params` or `gear_params` data frame on its own does no
+checking or conversion (mizer ≥ 3.2.1) — it is a plain data frame and may be
+left inconsistent while you work on it. Validation happens when you assign it
+back into the model.
+
+## Sizes given as weights or lengths
+
+Six sizes can be given either way, and mizer keeps the pair in step via the
+length–weight parameters `a`, `b`: `w_mat`/`l_mat`, `w_mat25`/`l_mat25`,
+`w_repro_max`/`l_repro_max`, `w_inf`/`l_inf`, `w_max`/`l_max`, `w_min`/`l_min`.
+
+**Rule (mizer ≥ 3.2.1): the one you gave last wins; if both change at once the
+weight wins.** The other is then set to match, per species, so the two never
+disagree. mizer warns, naming the species, when it changes a length to follow a
+weight.
+
+```r
+species_params(params)$w_mat[1] <- 100   # l_mat[1] follows
+species_params(params)$l_mat[1] <- 25    # w_mat[1] follows
+```
+
+Two consequences to keep in mind:
+
+- A data frame you edited on its own carries no history of *which* column you
+  touched, so if a length and its weight both differ from the model's they count
+  as given at the same time and the weight wins. To set a length that way, edit
+  the length and leave the weight for mizer to recompute.
+- On mizer **< 3.2.1** the length always won, whenever it had been supplied.
+  Setting a weight on a length-specified model was silently reverted to the value
+  derived from the unchanged length. If a weight assignment appears to have no
+  effect, check the mizer version.
+
 ## How a species-parameter change propagates
 
 Many species parameters exist only to set up a rate array; changing one re-runs
@@ -143,6 +175,33 @@ manually-set (frozen) rate array — recompute it with `set…(params, reset = T
 The `reset` argument works the same way for every rate setter, including
 `setFishing()` and `setResource()`.
 
+## Setting a species parameter and its rate array together
+
+Only the *given* species parameters are protected; the calculated ones are
+re-derived from them on every recalculation. So a value written straight into
+`params@species_params` is **silently undone** by the next thing that triggers a
+recalculation. Code that computes a species parameter together with the rate
+array it determines — an optimiser fitting `ks` and the matching `metab`, say —
+must therefore record its change, but must *not* let mizer recalculate, which
+would overwrite the rate array it just set. Two entry points (mizer ≥ 3.2.1):
+
+```r
+# You have a species parameter data frame: record it and store it, no rebuild
+species_params(params, recalculate = FALSE) <- sp
+
+# You wrote into the slot yourself: record the change on its own
+params@given_species_params <-
+    record_given_species_params(given_species_params(params),
+                                species_params(params), sp_before)
+```
+
+Both record only the entries that actually *changed* (compared per species, with
+`NA` treated as a value), because recording an unchanged value would freeze a
+calculated parameter and stop it tracking what it is derived from. Neither
+re-derives the calculated parameters, fills in defaults, or recalculates any
+rate — keeping the object consistent is then yours to do. Unless you are setting
+the affected rates yourself, use the default `recalculate = TRUE`.
+
 ## Fishing
 
 Gears, selectivity, and catchability live in `gear_params(params)`, one row per
@@ -201,6 +260,7 @@ instead.
 | To change… | Use |
 |---|---|
 | a per-species value | `species_params(params) <- …` (mizer ≥ 3.2; `given_species_params(params) <-` interactively or on older mizer) |
+| a per-species value alongside the rate array you set yourself | `species_params(params, recalculate = FALSE) <- …` / `record_given_species_params()` |
 | a rate, keeping it tied to the parameters | change the underlying species parameter |
 | a rate to a bespoke array (freezing it) | `metab(params) <- …` (direct) or the matching `set…(params, array)` |
 | a frozen rate back to its default form | `set…(params, reset = TRUE)` |

@@ -5,6 +5,19 @@
   analysing whether a steady state is stable, and characterising the limit cycle
   when it is not. The `calibrate-model` skill documents the fuller
   `steadyNewton()` behaviour and points to the new skill.
+* The `change-parameters` skill covers the mizer 3.2.1 rule for sizes that can be
+  given as a weight or as a length (`w_mat`/`l_mat` and the five other pairs):
+  the one given last wins, the weight wins when both change at once, and on
+  mizer < 3.2.1 setting a weight on a length-specified model silently did
+  nothing. `MIZER-AGENTS.md` gains a one-line gotcha pointing at it.
+* The `change-parameters` skill explains how to set a species parameter together
+  with the rate array it determines: a value written into `params@species_params`
+  is silently undone by the next recalculation unless it is recorded, so use
+  `species_params(params, recalculate = FALSE) <-` or
+  `record_given_species_params()` (both mizer 3.2.1).
+* The `change-parameters` skill notes that editing a `species_params` or
+  `gear_params` data frame on its own no longer validates it on every assignment
+  (mizer 3.2.1); checks happen when it is assigned back into the model.
 
 # mizerAgents 0.3.2
 

@@ -111,6 +111,10 @@ build the model with `second_order_w = TRUE` (van Leer flux) and project with
 - The steady-state feeding level is set by the `f0` species parameter (from which
   the default `gamma` is derived), **not** by `h`; `h = Inf` makes `gamma`
   non-finite. See the `change-parameters` skill.
+- Sizes given as a weight or as a length (`w_mat`/`l_mat`, `w_inf`/`l_inf`, …)
+  are kept in step: the one given last wins, and the weight wins when both change
+  at once. On mizer < 3.2.1 the length always won, so setting a weight on a
+  length-specified model silently did nothing. See the `change-parameters` skill.
 - With growth diffusion on (`D_ext > 0`), set `w_max` well above the sizes you
   analyse so abundance at the boundary stays negligible; the default
   `1.5 * w_inf` is usually enough, raise it if `D_ext` is large.
