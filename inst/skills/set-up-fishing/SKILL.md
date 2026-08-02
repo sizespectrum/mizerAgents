@@ -71,7 +71,7 @@ Every selectivity function takes `w` as its first argument and returns a value i
 
 | `sel_func` | Parameter column(s) | Shape |
 |---|---|---|
-| `knife_edge` (default) | `knife_edge_size` | 0 below the size, 1 above (default size = `w_mat`) |
+| `knife_edge` (default) | `knife_edge_size` | 0 below that **weight**, 1 above (default `w_mat`) |
 | `sigmoid_length` | `l50`, `l25` | smooth; lengths (cm) at 50% and 25% selection |
 | `double_sigmoid_length` | `l50`, `l25`, `l50_right`, `l25_right` | dome-shaped (selects a length band) |
 | `sigmoid_weight` | `sigmoidal_weight`, `sigmoidal_sigma` | smooth transition in weight |
@@ -86,6 +86,14 @@ gp$l50 <- 25            # 50% selected at 25 cm
 gp$l25 <- 20            # 25% selected at 20 cm
 gear_params(params) <- gp
 ```
+
+**A knife edge at a *length*.** `knife_edge` cuts on weight, so a cut-off stated
+as a length (a survey that takes everything above 20 cm, say) is expressed with
+`sigmoid_length` and `l25` just below `l50`: `l50 = 20, l25 = 19.9` gives 0.4%
+selection at 19.5 cm and 99.6% at 20.5 cm — a knife edge as far as 1 cm data
+bins are concerned. Do not close the gap much further; the logistic exponent
+scales like `1 / (l50 - l25)` and overflows to `Inf` at small sizes, which
+breaks gradient-based fits that differentiate through the selectivity.
 
 ## The selectivity and catchability arrays
 
@@ -171,3 +179,8 @@ initial_effort(params)              # baseline effort per gear
 plotFMort(params)                   # realised fishing mortality at size
 getFMortGear(params)                # F by gear × species × size
 ```
+
+`getFMort()` and `plotFMort()` **sum over gears**, so a gear with a tiny
+catchability — a survey gear you fit against but do not want to fish with — is
+invisible in them. Diagnose that gear with `getFMortGear()`, or with a plotting
+function that takes a `gear` argument.

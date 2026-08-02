@@ -31,6 +31,15 @@ Memory is most often stale on:
 If the installed mizer disagrees with this file, the installed mizer wins.
 Check with `?name` and say so rather than quietly working around it.
 
+## Running code in the user's R session
+
+When you are connected to the user's R session (the `r-mizer` MCP server), you
+run in *their* global environment. `load()`, `rm()` and top-level assignment
+overwrite objects they have been working on, and nothing warns you. Do
+exploratory work in a throwaway environment or a separate `Rscript`, keep the
+session for reading help pages and for the steps whose result the user wants to
+keep, and say so whenever you do change a global.
+
 ## Core workflow
 
 ```r

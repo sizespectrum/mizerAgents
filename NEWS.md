@@ -5,6 +5,15 @@
   analysing whether a steady state is stable, and characterising the limit cycle
   when it is not. The `calibrate-model` skill documents the fuller
   `steadyNewton()` behaviour and points to the new skill.
+* The `set-up-fishing` skill now says that `knife_edge` cuts on weight, and shows
+  how to place a knife edge at a *length* with `sigmoid_length`, including how
+  small the `l50 - l25` gap can safely get.
+* The `set-up-fishing` skill now warns that `getFMort()` and `plotFMort()` sum
+  over gears, so a near-zero-catchability gear has to be inspected with
+  `getFMortGear()`.
+* `MIZER-AGENTS.md` now warns that code run through the `r-mizer` MCP server
+  executes in the user's global environment, where `load()` and top-level
+  assignment silently overwrite their objects.
 
 # mizerAgents 0.3.2
 
