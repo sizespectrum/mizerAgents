@@ -1,4 +1,4 @@
-# mizerAgents 0.3.3
+# mizerAgents 0.3.2.2
 
 ## New features
 
