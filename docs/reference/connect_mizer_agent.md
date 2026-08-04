@@ -4,9 +4,9 @@ Hands the R session you are working in to the `r-mizer` MCP server that
 [`setup_mizer_agent()`](https://sizespectrum.github.io/mizerAgents/reference/setup_mizer_agent.md)
 configured, so that your AI coding agent can read the help pages of the
 mizer you actually have installed, see the objects in your global
-environment and the document open in your IDE, and - unless the project
-was set up with `run_r = FALSE` - run mizer code here and see the plots
-that come back.
+environment and - in RStudio or Positron - the document open in the
+editor, and, unless the project was set up with `run_r = FALSE`, run
+mizer code here and see the plots that come back.
 
 ## Usage
 
@@ -30,9 +30,11 @@ or `NULL` if this session was already connected and nothing was done.
 
 ## Details
 
-Run it in your RStudio (or Positron) console at the start of a session,
-then start your agent. Until you do, the server has no session to work
-in and the agent's `btw_tool_*` tools will be missing or will run
+Run it in your R console at the start of a session, then start your
+agent. Any R session will do - RStudio, Positron, a terminal, ESS, the
+VS Code R extension - since the connection is a socket rather than
+anything the editor provides. Until you do, the server has no session to
+work in and the agent's `btw_tool_*` tools will be missing or will run
 against an empty R process of their own. The connection lasts as long as
 the R session does, so it is needed once per session;
 `setup_mizer_agent(rprofile = TRUE)` puts the call in the project
@@ -80,7 +82,11 @@ Two sessions in the same directory are ambiguous under rule 2 and, being
 two, cannot be resolved by rule 3 either, so neither is picked. Every
 agent can list the sessions and choose between them (`list_r_sessions`
 and `select_r_session`); ask yours to do so when the automatic choice is
-wrong. To check which session an agent is working in, have it evaluate
+wrong. Each session is listed as its working directory and the command
+that started R, so RStudio and Positron sessions are named as such and
+one started from a shell carries the path to the R executable instead.
+All of them are equally connectable; only the label differs. To check
+which session an agent is working in, have it evaluate
 [`Sys.getpid()`](https://rdrr.io/r/base/Sys.getpid.html) and compare
 that with [`Sys.getpid()`](https://rdrr.io/r/base/Sys.getpid.html) in
 your console.
@@ -109,7 +115,7 @@ which configures the server this connects to.
 
 ``` r
 if (FALSE) { # \dontrun{
-# In the RStudio console, once per session
+# In the R console, once per session
 connect_mizer_agent()
 } # }
 ```

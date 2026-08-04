@@ -93,8 +93,8 @@ yet. <code>MIZER-AGENTS.md</code> is always overwritten to ensure it stays up-to
 <dt id="arg-r-session">r_session<a class="anchor" aria-label="anchor" href="#arg-r-session"></a></dt>
 <dd><p>If <code>TRUE</code> (the default), configure the <code>r-mizer</code> MCP server
 so that the agent can read mizer's documentation, your global environment
-and the open RStudio document. Set to <code>FALSE</code> to write no MCP config at
-all.</p></dd>
+and, in RStudio or Positron, the open document. Set to <code>FALSE</code> to write no
+MCP config at all.</p></dd>
 
 
 <dt id="arg-run-r">run_r<a class="anchor" aria-label="anchor" href="#arg-run-r"></a></dt>
@@ -121,7 +121,11 @@ the project <code>.Rprofile</code>, so that each new session hands itself to the
 server automatically. <code>FALSE</code> by default, in which case you call
 <code><a href="connect_mizer_agent.html">connect_mizer_agent()</a></code> yourself. The <code>.Rprofile</code> calls btw directly rather
 than going through this package, so that a project still starts cleanly
-without mizerAgents installed. Ignored when <code>r_session = FALSE</code>.</p></dd>
+without mizerAgents installed. R reads a project <code>.Rprofile</code> only when it
+starts in that directory, which RStudio and Positron guarantee for a
+project and starting R from a shell does not, so from a terminal either
+start R in the project root or call <code><a href="connect_mizer_agent.html">connect_mizer_agent()</a></code> yourself.
+Ignored when <code>r_session = FALSE</code>.</p></dd>
 
 
 <dt id="arg-agents">agents<a class="anchor" aria-label="anchor" href="#arg-agents"></a></dt>
@@ -202,17 +206,25 @@ The server is provided by the
 <a href="https://posit-dev.github.io/btw/" class="external-link">btw</a> package, which you need to install
 separately. This gives the agent help pages and vignettes for the mizer
 version you actually have installed, rather than whatever mizer API it
-remembers, along with a view of the objects in your global environment and
-of the document open in RStudio, and it can run mizer code there and see the
-plots that come back. For the server to see your session you must run
-<code><a href="connect_mizer_agent.html">connect_mizer_agent()</a></code> in the RStudio console once per session; passing
-<code>rprofile = TRUE</code> adds the underlying <code><a href="https://posit-dev.github.io/btw/reference/mcp.html" class="external-link">btw::btw_mcp_session()</a></code> call to the
-project <code>.Rprofile</code> so that it happens automatically.
+remembers, along with a view of the objects in your global environment, and
+it can run mizer code there and see the plots that come back. For the server
+to see your session you must run <code><a href="connect_mizer_agent.html">connect_mizer_agent()</a></code> in the R console
+once per session; passing <code>rprofile = TRUE</code> adds the underlying
+<code><a href="https://posit-dev.github.io/btw/reference/mcp.html" class="external-link">btw::btw_mcp_session()</a></code> call to the project <code>.Rprofile</code> so that it happens
+automatically - which needs R to be started in the project directory, as
+RStudio and Positron do for you and a shell does not.
 Only the <code>r-mizer</code> entry of <code>.mcp.json</code> is package-managed; other servers you
 configure there are left alone.</p>
 <p>After running this function, start your AI coding agent
-(e.g. <code>claude</code>, <code>codex</code>, <code>copilot</code> or <code>gemini</code>) from the RStudio Terminal
-and it will immediately have the mizer context it needs.</p>
+(e.g. <code>claude</code>, <code>codex</code>, <code>copilot</code> or <code>gemini</code>) from a terminal in the
+project directory - the RStudio or Positron Terminal pane, or any other
+terminal - and it will immediately have the mizer context it needs.</p>
+<p>Nothing here is tied to a particular editor. The files are read by agents
+running in a terminal, and the session connection is a socket, so a project
+set up this way works the same from RStudio, Positron, a bare R console, ESS
+or the VS Code R extension. The one exception is the agent's ability to read
+the document you have open, which needs <code>rstudioapi</code> and so works only in
+RStudio and Positron; everything else does not.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

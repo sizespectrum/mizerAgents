@@ -79,6 +79,33 @@
   Skills arrived in mizer 3.2.2. Against an older mizer, `setup_mizer_agent()`
   still writes everything else and reports that it installed no skills.
 
+## Documentation
+
+* **The documentation no longer assumes RStudio.** Almost nothing here ever
+  depended on it: the agent runs in a terminal and reads files in the project
+  directory, and `connect_mizer_agent()` hands over the session through a
+  socket, which works from RStudio, Positron, a bare R console, Emacs/ESS, the
+  VS Code R extension or R over SSH alike. But the README, the vignette and the
+  help pages said "in your RStudio console" throughout, which invited readers
+  using anything else to conclude the package was not for them. They now say
+  what is actually required, and the README and the vignette each carry a short
+  section saying that the editor does not matter.
+
+  The one genuine exception is named where it applies rather than assumed
+  everywhere: reading the document you have open goes through `rstudioapi`, so
+  it works only in RStudio and Positron. `MIZER-AGENTS.md` now tells the agent
+  this, and tells it that the failure says nothing about the rest of the
+  session and that it should ask which file you mean — previously it was
+  instructed to read the open document with no hint that the call could fail by
+  editor rather than by mistake. The tool is still requested unconditionally,
+  since these config files get committed and the editor a collaborator uses is
+  not knowable when they are written.
+
+  Also documented: `rprofile = TRUE` depends on R starting in the project
+  directory, which RStudio and Positron guarantee for a project and a shell
+  does not; and the IDE name shown by `list_r_sessions` is just the command
+  that started R, not a requirement.
+
 # mizerAgents 0.3.2
 
 ## New features

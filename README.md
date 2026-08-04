@@ -79,6 +79,21 @@ copilot   # GitHub Copilot CLI
 
 The agent will immediately have the mizer context it needs.
 
+## Which editor you use
+
+Any. The agent runs in a terminal and reads files in your project directory,
+and it reaches your R session over a socket, so this works the same from
+RStudio, Positron, a bare R console, Emacs/ESS, the VS Code R extension, or R
+over SSH on a server. The examples say "RStudio" because something has to be
+named.
+
+The single exception is the agent's ability to read the document you have open
+in the editor: that goes through the `rstudioapi` package and so works only in
+RStudio and Positron. Everywhere else the agent is told to ask you which file
+you mean. Nothing else — the reference card, the skills, documentation lookups
+against your installed mizer, your global environment, running mizer code and
+seeing the plots — depends on the editor.
+
 ## Connecting the agent to your R session
 
 The package bundles an index of the mizer API, but not the argument lists — for
@@ -112,7 +127,7 @@ Copilot CLI reads MCP servers only from the user-wide
 prints the JSON snippet to paste there. Use the `agents` argument if you want
 fewer files, e.g. `setup_mizer_agent(agents = "claude")`.
 
-Then, in your RStudio console, hand your session to the server:
+Then, in your R console, hand your session to the server:
 
 ```r
 mizerAgents::connect_mizer_agent()
@@ -124,11 +139,13 @@ session and whether they may run code in it — warning you if none are, since
 connecting to nothing otherwise looks exactly like connecting to something.
 
 The agent can now read help pages, vignettes and NEWS for your installed mizer,
-list the objects in your global environment, read the document you have open in
-RStudio, and run mizer code in your session — projecting or calibrating a
-model, plotting the result, and seeing that plot as an image. Use
-`setup_mizer_agent(rprofile = TRUE)` to add the `btw_mcp_session()` call to the
-project `.Rprofile` so that it happens on every startup.
+list the objects in your global environment, and run mizer code in your session
+— projecting or calibrating a model, plotting the result, and seeing that plot
+as an image. In RStudio and Positron it can also read the document you have
+open. Use `setup_mizer_agent(rprofile = TRUE)` to add the `btw_mcp_session()`
+call to the project `.Rprofile` so that it happens on every startup — R reads
+that file only when it starts in the project directory, which RStudio and
+Positron do for you and a shell does not.
 
 That code is evaluated in your global environment with no sandboxing, so the
 agent can overwrite your objects. Keep your work under version control. For a

@@ -8,8 +8,19 @@ static manual, an agent can read your actual data and scripts, suggest
 specific parameter changes, write R snippets for your situation, and
 explain what functions do in plain language.
 
-This article explains how to get an agent working inside RStudio and
-shows a range of example tasks where one can save you significant time.
+This article explains how to get an agent working alongside your R
+session and shows a range of example tasks where one can save you
+significant time.
+
+The examples say “RStudio” where they need to name something, but very
+little here depends on it. The agent runs in a terminal and reads files
+in your project directory, and it reaches your R session over a socket,
+so the setup works the same from RStudio, Positron, a bare R console,
+ESS or the VS Code R extension. The one thing that does need RStudio or
+Positron is the agent’s ability to read the document you have open in
+the editor; everything else — the reference card, the skills, the
+documentation lookups, your global environment, running mizer code and
+seeing the plots — works in any R session.
 
 ## Quick start: one-line setup
 
@@ -17,6 +28,7 @@ mizerAgents bundles everything an AI agent needs to understand the mizer
 API. You only need to run this once in your R project:
 
 ``` r
+
 pak::pak("sizespectrum/mizerAgents")
 mizerAgents::setup_mizer_agent()
 ```
@@ -72,6 +84,7 @@ half: an MCP server that lets the agent read the documentation of your
 *installed* packages, along with your R session. Install it once:
 
 ``` r
+
 install.packages("btw")
 ```
 
@@ -97,6 +110,7 @@ along with `AGENTS.md`. If you would rather have fewer files, name the
 ones you use:
 
 ``` r
+
 mizerAgents::setup_mizer_agent(agents = c("claude", "posit"))
 ```
 
@@ -112,9 +126,11 @@ setup function should be editing, so
 prints the snippet to paste there instead.
 
 The server runs as its own R process, so it does not see your session
-until you hand it over. In the RStudio console, run:
+until you hand it over. In your R console — RStudio’s, or whichever one
+you work in — run:
 
 ``` r
+
 mizerAgents::connect_mizer_agent()
 ```
 
@@ -126,22 +142,28 @@ since handing over a session that nothing is set up to reach otherwise
 looks exactly like success.
 
 The agent can now read help pages, vignettes and release notes for your
-installed mizer, list the objects in your global environment, and read
-the document you have open in the editor. That means it can *check* the
-argument names of `newMultispeciesParams()` or `setBevertonHolt()`
-instead of recalling them, which is the single most common source of
-mizer code that looks right and is not.
+installed mizer, list the objects in your global environment, and — in
+RStudio or Positron — read the document you have open in the editor.
+That means it can *check* the argument names of
+`newMultispeciesParams()` or `setBevertonHolt()` instead of recalling
+them, which is the single most common source of mizer code that looks
+right and is not.
 
 To have every new session connect itself, run
 
 ``` r
+
 mizerAgents::setup_mizer_agent(rprofile = TRUE)
 ```
 
 which adds the `btw_mcp_session()` call to your project’s `.Rprofile`.
 Your sessions then connect themselves, and you no longer call
 [`connect_mizer_agent()`](https://sizespectrum.github.io/mizerAgents/reference/connect_mizer_agent.md)
-at all.
+at all. R reads that file only when it starts in the project directory:
+RStudio and Positron guarantee that when you open the project, but if
+you start R from a shell you have to be in the project root, or else
+keep calling
+[`connect_mizer_agent()`](https://sizespectrum.github.io/mizerAgents/reference/connect_mizer_agent.md).
 
 ### Which R session does the agent use?
 
@@ -154,9 +176,9 @@ directory, and the rest of this section will never come up.
 
 Here is what happens when it does.
 
-**Two projects open at the same time.** Each RStudio session connects
-itself, each agent is started from its own project directory, and each
-agent gets its own session. Directory matching is exactly the case this
+**Two projects open at the same time.** Each R session connects itself,
+each agent is started from its own project directory, and each agent
+gets its own session. Directory matching is exactly the case this
 handles, so nothing special is needed.
 
 **An agent started where nothing is connected.** If just one session is
@@ -176,7 +198,10 @@ identify a session, and the agent picks neither. Ask it to run
 `list_r_sessions` — it will show something like
 `2: celtic-sea (RStudio)` — and then to select the one you want with
 `select_r_session`. Every agent has these two tools, and the choice
-sticks until the agent stops.
+sticks until the agent stops. The parenthesis is the command that
+started R, so RStudio and Positron sessions are named as such and one
+started from a shell shows the path to the R executable instead. That is
+a label, not a requirement: any of them can be connected and selected.
 
 **Not sure which session an agent is in.** Ask it to run
 [`Sys.getpid()`](https://rdrr.io/r/base/Sys.getpid.html) and compare the
@@ -213,6 +238,7 @@ it. If you would rather have a read-only connection — documentation and
 inspection, but no execution — use
 
 ``` r
+
 mizerAgents::setup_mizer_agent(run_r = FALSE)
 ```
 
@@ -225,6 +251,7 @@ When you are writing an extension package rather than a model, add btw’s
 package development tools:
 
 ``` r
+
 mizerAgents::setup_mizer_agent(pkg_dev = TRUE)
 ```
 
@@ -239,14 +266,29 @@ default, as they do nothing useful in an ordinary modelling project.
 
 ## Running an AI agent in the terminal
 
-The **Terminal** tab in RStudio (open it with **Tools → Terminal → New
-Terminal**) runs a real shell in your project directory. AI coding
-agents can run here alongside your normal R session and can read and
-edit the same files.
+The agent itself is a command-line program. All it needs is a shell
+whose working directory is your project root: that is where it finds
+`AGENTS.md`, `MIZER-AGENTS.md`, the skills and the MCP configuration,
+and it is the directory the MCP server matches against your connected R
+session.
 
-Alternatively, you may want to open a terminal in a separate window from
-the RStudio window, for example if you work with multiple monitors. Then
-start the agent there in the working directory of your project.
+Any terminal will do. In RStudio, the **Terminal** tab (**Tools →
+Terminal → New Terminal**) already opens in the project directory;
+Positron and VS Code have the same thing. Or open a terminal window of
+your own, `cd` to the project, and start the agent there — worth doing
+if you work across multiple monitors, and the normal arrangement if you
+do not use an IDE with a terminal pane at all. Either way the agent
+reads and edits the same files your R session sees.
+
+If you work in Emacs with ESS, in vim, in a plain R console, or over SSH
+on a server, nothing changes: run
+[`setup_mizer_agent()`](https://sizespectrum.github.io/mizerAgents/reference/setup_mizer_agent.md)
+once in the project,
+[`connect_mizer_agent()`](https://sizespectrum.github.io/mizerAgents/reference/connect_mizer_agent.md)
+in each R session, and start the agent from a shell in the project
+directory. The only capability you give up is the agent reading the file
+you currently have open, which needs the `rstudioapi` package and so
+works only in RStudio and Positron. Tell it which file you mean instead.
 
 ## What an AI agent can help with
 

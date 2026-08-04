@@ -1,8 +1,10 @@
 # Support for giving the agent access to the user's live R session, via the
 # `btw` package's MCP server (<https://posit-dev.github.io/btw/>). `btw` is a
 # pure-R, CRAN package from Posit built on `mcptools`/`ellmer`; the server runs
-# as a separate `Rscript` process and gains access to the user's RStudio session
-# only once `btw::btw_mcp_session()` has been called there.
+# as a separate `Rscript` process and gains access to the user's R session only
+# once `btw::btw_mcp_session()` has been called there. That call, and every tool
+# group below except `ide`, works in any R session - a terminal, ESS, the VS
+# Code R extension - not just RStudio and Positron.
 
 # Name of the server entry written into the project's `.mcp.json`. Namespaced so
 # that it does not collide with a `btw` server the user has configured
@@ -16,6 +18,13 @@
 # in the IDE. `pkg` is off unless asked for: it only makes sense when the
 # project is itself a package, and `btw_tool_pkg_check()` on a project that is
 # not one is a slow way to get an error.
+#
+# `ide` is the one group that needs a particular editor: it is a single tool,
+# `btw_tool_ide_read_current_editor`, which requires `rstudioapi` and so errors
+# anywhere but RStudio and Positron. It is still requested unconditionally,
+# because these config files are committed and shared, and the editor a
+# collaborator uses is not knowable when they are written. The card tells the
+# agent when to expect the failure and what it does and does not mean.
 .btw_groups <- function(run_r, pkg_dev) {
     c("docs", "env", "sessioninfo", "ide",
       if (run_r) "run", if (pkg_dev) "pkg")
@@ -270,8 +279,10 @@
         "  lists the objects in their global environment; do not rebuild a\n",
         "  `MizerParams` or re-run a simulation that is already sitting there.\n",
         "- **Read what they are looking at.** `btw_tool_ide_read_current_editor`\n",
-        "  returns the document open in RStudio, which is usually the thing a vague\n",
-        "  request refers to.\n",
+        "  returns the document open in the editor, which is usually the thing a\n",
+        "  vague request refers to. It works only when the user is in RStudio or\n",
+        "  Positron; in any other editor it errors, which tells you nothing about\n",
+        "  the rest of the session. Ask them which file they mean instead.\n",
         if (run_r) paste0(
             "- **Run mizer code in their session, not in a scratch script.**\n",
             "  `btw_tool_run_r` evaluates in their global environment, so results\n",
@@ -298,7 +309,7 @@
             "  calculated.\n"
         ) else "",
         "\nIf these tools are missing, the user has not connected their session; ask\n",
-        "them to run `mizerAgents::connect_mizer_agent()` in their RStudio console,\n",
-        "rather than working around it.\n"
+        "them to run `mizerAgents::connect_mizer_agent()` in their R console, rather\n",
+        "than working around it.\n"
     )
 }

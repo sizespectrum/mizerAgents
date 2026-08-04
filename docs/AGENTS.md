@@ -13,6 +13,7 @@ the package’s `inst/` directory into a user’s mizer project directory.
 ## Common commands
 
 ``` r
+
 devtools::load_all()      # Load package for development
 devtools::document()      # Regenerate NAMESPACE and man/ from roxygen2
 devtools::test()          # Run all tests

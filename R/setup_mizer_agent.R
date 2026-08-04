@@ -381,18 +381,27 @@
 #' [btw](https://posit-dev.github.io/btw/) package, which you need to install
 #' separately. This gives the agent help pages and vignettes for the mizer
 #' version you actually have installed, rather than whatever mizer API it
-#' remembers, along with a view of the objects in your global environment and
-#' of the document open in RStudio, and it can run mizer code there and see the
-#' plots that come back. For the server to see your session you must run
-#' [connect_mizer_agent()] in the RStudio console once per session; passing
-#' `rprofile = TRUE` adds the underlying `btw::btw_mcp_session()` call to the
-#' project `.Rprofile` so that it happens automatically.
+#' remembers, along with a view of the objects in your global environment, and
+#' it can run mizer code there and see the plots that come back. For the server
+#' to see your session you must run [connect_mizer_agent()] in the R console
+#' once per session; passing `rprofile = TRUE` adds the underlying
+#' `btw::btw_mcp_session()` call to the project `.Rprofile` so that it happens
+#' automatically - which needs R to be started in the project directory, as
+#' RStudio and Positron do for you and a shell does not.
 #' Only the `r-mizer` entry of `.mcp.json` is package-managed; other servers you
 #' configure there are left alone.
 #'
 #' After running this function, start your AI coding agent
-#' (e.g. `claude`, `codex`, `copilot` or `gemini`) from the RStudio Terminal
-#' and it will immediately have the mizer context it needs.
+#' (e.g. `claude`, `codex`, `copilot` or `gemini`) from a terminal in the
+#' project directory - the RStudio or Positron Terminal pane, or any other
+#' terminal - and it will immediately have the mizer context it needs.
+#'
+#' Nothing here is tied to a particular editor. The files are read by agents
+#' running in a terminal, and the session connection is a socket, so a project
+#' set up this way works the same from RStudio, Positron, a bare R console, ESS
+#' or the VS Code R extension. The one exception is the agent's ability to read
+#' the document you have open, which needs `rstudioapi` and so works only in
+#' RStudio and Positron; everything else does not.
 #'
 #' @param path Directory in which to create or update the agent files. Defaults
 #'   to the current working directory, which should be your R project root.
@@ -403,8 +412,8 @@
 #'   yet. `MIZER-AGENTS.md` is always overwritten to ensure it stays up-to-date.
 #' @param r_session If `TRUE` (the default), configure the `r-mizer` MCP server
 #'   so that the agent can read mizer's documentation, your global environment
-#'   and the open RStudio document. Set to `FALSE` to write no MCP config at
-#'   all.
+#'   and, in RStudio or Positron, the open document. Set to `FALSE` to write no
+#'   MCP config at all.
 #' @param agents Which agents to configure the server for. By default all of
 #'   them, since the config files are small, sit in different places and do not
 #'   interfere with each other, so a project set up on your machine works for a
@@ -442,7 +451,11 @@
 #'   server automatically. `FALSE` by default, in which case you call
 #'   [connect_mizer_agent()] yourself. The `.Rprofile` calls btw directly rather
 #'   than going through this package, so that a project still starts cleanly
-#'   without mizerAgents installed. Ignored when `r_session = FALSE`.
+#'   without mizerAgents installed. R reads a project `.Rprofile` only when it
+#'   starts in that directory, which RStudio and Positron guarantee for a
+#'   project and starting R from a shell does not, so from a terminal either
+#'   start R in the project root or call [connect_mizer_agent()] yourself.
+#'   Ignored when `r_session = FALSE`.
 #'
 #' @return Invisibly returns the path to the `AGENTS.md` file.
 #' @export
