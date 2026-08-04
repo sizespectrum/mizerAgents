@@ -1,3 +1,21 @@
+# mizerAgents 0.3.3
+
+## New features
+
+* **The skills now come from the installed mizer, not from this package.**
+  `setup_mizer_agent()` reads them from `system.file("skills", package =
+  "mizer")`, so the guidance an agent follows always describes the version of
+  mizer the project actually runs. Previously this package shipped its own copy,
+  which had to be kept in step with mizer by hand — the reason for the separate
+  `@dev` branch — and could describe functions the user's mizer did not have.
+
+  In mizer each `SKILL.md` is now also the source of the matching `cheatsheet-*`
+  article on the mizer website, so the agent-facing and human-facing
+  documentation are one document rather than two that drift apart.
+
+  Skills arrived in mizer 3.2.2. Against an older mizer, `setup_mizer_agent()`
+  still writes everything else and reports that it installed no skills.
+
 # mizerAgents 0.3.2
 
 ## New features

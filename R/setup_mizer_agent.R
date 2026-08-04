@@ -1,3 +1,21 @@
+# Where the bundled skills come from.
+#
+# The skills are maintained in mizer itself (`inst/skills/`), where each
+# `SKILL.md` doubles as the source of the matching `cheatsheet-*` article on the
+# mizer website. Reading them from the *installed* mizer rather than shipping a
+# copy here means the guidance an agent follows always describes the mizer the
+# user is actually running: a project on CRAN mizer gets the CRAN skills, one on
+# the development version gets the development skills, with no version skew
+# between the two packages to keep in step by hand.
+#
+# Returns "" when the installed mizer is too old to ship them, which the caller
+# reports rather than treating as an error - everything else `setup_mizer_agent()`
+# writes is independent of mizer.
+.skills_source <- function() {
+    src <- system.file("skills", package = "mizer")
+    if (nzchar(src) && dir.exists(src)) src else ""
+}
+
 # Extract the `description` field from a SKILL.md YAML frontmatter block.
 # Handles both an inline value and a folded/literal block scalar (`>`, `>-`,
 # `|`, ...), collapsing it to a single-line string. Internal helper.
@@ -314,12 +332,19 @@
 #' yourself or an earlier version of this package did, it is left untouched -
 #' the block reaches the agent through the import.
 #'
-#' It also installs a set of bundled Claude Code *skills* into
-#' `.claude/skills/` (one sub-directory with a `SKILL.md` per skill, e.g.
-#' `analyse-and-plot` and `build-multispecies-model`). Claude Code loads these
-#' automatically when a task matches, giving step-by-step guidance for common
-#' mizer workflows. Like `MIZER-AGENTS.md`, the skills are package-managed and
-#' refreshed on every call so they stay up to date.
+#' It also installs a set of Claude Code *skills* into `.claude/skills/` (one
+#' sub-directory with a `SKILL.md` per skill, e.g. `analyse-and-plot` and
+#' `build-multispecies-model`). Claude Code loads these automatically when a
+#' task matches, giving step-by-step guidance for common mizer workflows. Like
+#' `MIZER-AGENTS.md`, the skills are package-managed and refreshed on every call
+#' so they stay up to date.
+#'
+#' The skills are taken from the **installed mizer** (`inst/skills/`), not from
+#' this package, so the guidance an agent follows always describes the mizer the
+#' project is actually running. In mizer each `SKILL.md` is also the source of
+#' the matching `cheatsheet-*` article on the mizer website, so the two are the
+#' same document. Skills arrived in mizer 3.2.2; against an older mizer this
+#' function still writes everything else and reports that it installed none.
 #'
 #' What a project learns about mizer is kept separate from them, so that neither
 #' overwrites the other. Each skill's directory may hold a `NOTES.md`, which this
@@ -438,7 +463,7 @@ setup_mizer_agent <- function(path = ".", overwrite = FALSE,
     agents <- match.arg(agents, .agent_choices, several.ok = TRUE)
     mizer_src     <- system.file("MIZER-AGENTS.md", package = "mizerAgents")
     llms_src      <- system.file("llms.txt",      package = "mizerAgents")
-    skills_src    <- system.file("skills",        package = "mizerAgents")
+    skills_src    <- .skills_source()
     mizer_dest    <- normalizePath(file.path(path, "MIZER-AGENTS.md"), mustWork = FALSE)
     agents_dest   <- normalizePath(file.path(path, "AGENTS.md"),       mustWork = FALSE)
 
@@ -548,6 +573,10 @@ setup_mizer_agent <- function(path = ".", overwrite = FALSE,
     kept <- character(0)
     if (nzchar(skills_src) && dir.exists(skills_src)) {
         kept <- .install_skills(skills_src, path)
+    } else {
+        message("No skills installed: the installed mizer does not ship them.\n",
+                "  They arrived in mizer 3.2.2; upgrade mizer and re-run to ",
+                "get them.")
     }
 
     # Configure the MCP server that connects the agent to the user's R session,

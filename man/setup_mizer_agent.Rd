@@ -103,12 +103,19 @@ one of these files already imports \code{AGENTS.md}, whether you wrote that
 yourself or an earlier version of this package did, it is left untouched -
 the block reaches the agent through the import.
 
-It also installs a set of bundled Claude Code \emph{skills} into
-\verb{.claude/skills/} (one sub-directory with a \code{SKILL.md} per skill, e.g.
-\code{analyse-and-plot} and \code{build-multispecies-model}). Claude Code loads these
-automatically when a task matches, giving step-by-step guidance for common
-mizer workflows. Like \code{MIZER-AGENTS.md}, the skills are package-managed and
-refreshed on every call so they stay up to date.
+It also installs a set of Claude Code \emph{skills} into \verb{.claude/skills/} (one
+sub-directory with a \code{SKILL.md} per skill, e.g. \code{analyse-and-plot} and
+\code{build-multispecies-model}). Claude Code loads these automatically when a
+task matches, giving step-by-step guidance for common mizer workflows. Like
+\code{MIZER-AGENTS.md}, the skills are package-managed and refreshed on every call
+so they stay up to date.
+
+The skills are taken from the \strong{installed mizer} (\verb{inst/skills/}), not from
+this package, so the guidance an agent follows always describes the mizer the
+project is actually running. In mizer each \code{SKILL.md} is also the source of
+the matching \verb{cheatsheet-*} article on the mizer website, so the two are the
+same document. Skills arrived in mizer 3.2.2; against an older mizer this
+function still writes everything else and reports that it installed none.
 
 What a project learns about mizer is kept separate from them, so that neither
 overwrites the other. Each skill's directory may hold a \code{NOTES.md}, which this

@@ -47,12 +47,19 @@ This creates:
   `<!-- mizerAgents: start -->` and `<!-- mizerAgents: end -->` markers is
   refreshed on each run; anything you add outside it is preserved, and no
   `@AGENTS.md` import is ever written or removed.
-- **`.claude/skills/`** — bundled Claude Code skills (`analyse-and-plot`,
+- **`.claude/skills/`** — Claude Code skills (`analyse-and-plot`,
   `build-multispecies-model`, `calibrate-model`, `run-simulation`,
   `set-up-fishing`, `change-parameters`, `extend-mizer`) that agents read
   automatically when a task matches, giving step-by-step guidance for common
   mizer workflows. They are refreshed on each run, but only file by file and
   only where nothing has edited them: see [What your project learns](#what-your-project-learns).
+
+  The skills come from the **installed mizer** (`inst/skills/`), not from this
+  package, so they always describe the version of mizer your project actually
+  runs. Each is also the source of the matching `cheatsheet-*` article on the
+  mizer website, so the agent and the human documentation are one document.
+  Skills arrived in mizer 3.2.2; against an older mizer everything else is still
+  set up and `setup_mizer_agent()` reports that it installed none.
 - **MCP configuration** for an `r-mizer` server that connects the agent to your
   live R session (see below), written in each agent's own format — Claude Code,
   Codex, Gemini CLI, Antigravity, Cursor, VS Code and Posit Assistant all keep
