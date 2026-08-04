@@ -60,5 +60,6 @@ remove_mizer_agent()
 }
 }
 \seealso{
-\code{\link[=setup_mizer_agent]{setup_mizer_agent()}}, which this undoes.
+\code{\link[=setup_mizer_agent]{setup_mizer_agent()}}, which this undoes, and
+\code{\link[=update_mizer_agent]{update_mizer_agent()}} if you only want to refresh the files.
 }

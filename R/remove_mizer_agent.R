@@ -249,7 +249,8 @@
 #'   changed.
 #' @export
 #'
-#' @seealso [setup_mizer_agent()], which this undoes.
+#' @seealso [setup_mizer_agent()], which this undoes, and
+#'   [update_mizer_agent()] if you only want to refresh the files.
 #'
 #' @examples
 #' \dontrun{

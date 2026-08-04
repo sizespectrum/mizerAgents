@@ -19,6 +19,7 @@ reference:
       up the mizer reference card and API documentation automatically.
     contents:
       - setup_mizer_agent
+      - update_mizer_agent
       - remove_mizer_agent
 
 navbar:

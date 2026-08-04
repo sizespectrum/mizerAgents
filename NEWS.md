@@ -2,6 +2,24 @@
 
 ## New features
 
+* **New `update_mizer_agent()` refreshes a project while keeping the settings it
+  was set up with.** Since the skills now come from the installed mizer,
+  "upgrade mizer, then refresh" is the normal way to get new guidance — but
+  `setup_mizer_agent()` is declarative, so a bare re-run re-declares its
+  arguments from the defaults for a *new* project: it would switch code
+  execution back on in a project set up with `run_r = FALSE`, drop the package
+  tools from one set up with `pkg_dev = TRUE`, and write config files for agents
+  you had narrowed away from with `agents`. `update_mizer_agent()` reads those
+  choices back from what the last run wrote and replays them, so a refresh
+  changes content and nothing else. Nothing had to be stored to make that work,
+  so it works for projects set up by earlier versions too. Pass any argument of
+  `setup_mizer_agent()` through `...` to override what was detected.
+
+* `setup_mizer_agent()` now **reports any setting it changes** relative to how
+  the project was already set up, so that a plain re-run meant as a refresh at
+  least says what it did rather than switching things over silently. A first run
+  has nothing to compare against and says nothing.
+
 * **New `remove_mizer_agent()` undoes everything `setup_mizer_agent()` did.**
   It deletes `MIZER-AGENTS.md`, the marked block in `AGENTS.md`, `CLAUDE.md` and
   `GEMINI.md`, the bundled skills in `.claude/skills/`, the `r-mizer` entry in

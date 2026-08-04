@@ -444,7 +444,9 @@
 #' @return Invisibly returns the path to the `AGENTS.md` file.
 #' @export
 #'
-#' @seealso [remove_mizer_agent()], which undoes all of this.
+#' @seealso [update_mizer_agent()], which refreshes the files a project already
+#'   has while keeping the settings it was set up with, and
+#'   [remove_mizer_agent()], which undoes all of this.
 #'
 #' @examples
 #' \dontrun{
@@ -463,6 +465,12 @@ setup_mizer_agent <- function(path = ".", overwrite = FALSE,
                               pkg_dev = FALSE, rprofile = FALSE,
                               agents = .agent_choices) {
     agents <- match.arg(agents, .agent_choices, several.ok = TRUE)
+    # How the project is set up now, read before we change it, so that the
+    # summary can say which settings this run is re-declaring. The arguments
+    # here describe the setup the user wants and default to the ones for a new
+    # project, so a re-run meant as a refresh can turn a setting back over
+    # without meaning to; `update_mizer_agent()` is the way to avoid that.
+    before <- .detect_options(path)
     mizer_src     <- system.file("MIZER-AGENTS.md", package = "mizerAgents")
     llms_src      <- system.file("llms.txt",      package = "mizerAgents")
     skills_src    <- .skills_source()
@@ -621,6 +629,7 @@ setup_mizer_agent <- function(path = ".", overwrite = FALSE,
             paste0(.r_session_message(run_r, rprofile, pkg_dev, agents),
                    if ("copilot" %in% agents) .copilot_snippet(run_r, pkg_dev))
         } else "",
+        .setting_changes(before, r_session, run_r, pkg_dev, agents),
         "\n\nStart your AI coding agent from the terminal, e.g.:\n",
         "  claude    (Claude Code)\n",
         "  codex     (Codex CLI)\n",

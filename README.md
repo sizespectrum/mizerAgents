@@ -143,6 +143,26 @@ shelling out to `devtools`. After `load_all()` the new code is live in the
 session, so the agent can exercise it immediately. Off by default, since these
 tools do nothing useful in an ordinary modelling project.
 
+### Keeping it up to date
+
+```r
+mizerAgents::update_mizer_agent()
+```
+
+refreshes everything the setup installed — most usefully after upgrading mizer,
+since that is where the skills now come from — **keeping the settings this
+project was set up with**.
+
+Use it rather than re-running `setup_mizer_agent()`. That function is
+declarative: its arguments describe the setup you want, and its defaults are the
+ones for a new project. So a bare re-run switches code execution back on in a
+project set up with `run_r = FALSE`, drops the package tools from one set up
+with `pkg_dev = TRUE`, and writes config files for the agents you narrowed away
+from. `update_mizer_agent()` reads those choices back off disk and replays them,
+so only the content changes. (`setup_mizer_agent()` reports any setting it
+changes, so a plain re-run at least tells you.) Pass any of its arguments to
+override what was detected, e.g. `update_mizer_agent(run_r = FALSE)`.
+
 ### Undoing the setup
 
 ```r

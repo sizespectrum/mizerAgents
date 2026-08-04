@@ -2,3 +2,4 @@
 
 export(remove_mizer_agent)
 export(setup_mizer_agent)
+export(update_mizer_agent)

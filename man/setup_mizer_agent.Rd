@@ -178,5 +178,7 @@ setup_mizer_agent(run_r = FALSE)
 }
 }
 \seealso{
+\code{\link[=update_mizer_agent]{update_mizer_agent()}}, which refreshes the files a project already
+has while keeping the settings it was set up with, and
 \code{\link[=remove_mizer_agent]{remove_mizer_agent()}}, which undoes all of this.
 }
