@@ -46,3 +46,26 @@ test_that("connect_mizer_agent rejects a path that does not exist", {
     expect_error(connect_mizer_agent(tempfile("no_such_dir")),
                  "does not exist")
 })
+
+test_that(".session_slot() reports no slot for an unconnected session", {
+    # The testing session has not called `btw::btw_mcp_session()`, and must not
+    expect_null(.session_slot())
+})
+
+test_that("connect_mizer_agent does not connect an already connected session", {
+    skip_if_not_installed("btw")
+    tmp_dir <- tempfile("mizer_agent_connect_twice")
+    dir.create(tmp_dir)
+    on.exit(unlink(tmp_dir, recursive = TRUE))
+    suppressMessages(setup_mizer_agent(path = tmp_dir))
+
+    # Stand in for a session that has already been handed over, so that the
+    # guard can be exercised without handing over the testing session
+    local_mocked_bindings(.session_slot = function() 3L)
+    msgs <- capture_messages(res <- connect_mizer_agent(tmp_dir))
+    expect_null(res)
+    expect_true(any(grepl("already connected", msgs, fixed = TRUE)))
+    # The pre-flight belongs to a connection that is being made, not to one
+    # that already exists
+    expect_false(any(grepl("Handing this session", msgs, fixed = TRUE)))
+})

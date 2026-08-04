@@ -71,7 +71,8 @@ the session is handed over whatever this says.</p></dd>
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>Invisibly, the result of <code><a href="https://posit-dev.github.io/btw/reference/mcp.html" class="external-link">btw::btw_mcp_session()</a></code>.</p>
+    <p>Invisibly, the result of <code><a href="https://posit-dev.github.io/btw/reference/mcp.html" class="external-link">btw::btw_mcp_session()</a></code>, or <code>NULL</code> if this
+session was already connected and nothing was done.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
@@ -89,6 +90,51 @@ project, it also reports which agents are configured to reach this session
 and what they are allowed to do in it, warning you if the answer is none -
 handing over a session that nothing is set up to reach otherwise fails
 silently.</p>
+<p>Call it once per session. A second call in the same session does not refresh
+the connection but breaks it, so this function checks and refuses; see
+"Connecting twice" below.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="which-session-the-agent-connects-to">Which session the agent connects to<a class="anchor" aria-label="anchor" href="#which-session-the-agent-connects-to"></a></h2>
+
+
+
+<p>Connected sessions are not private to a project: they are registered per
+user, in a single machine-wide list, and every MCP server your agents start
+can see all of them. Each server runs in the directory the agent was started
+in, and picks a session on its <em>first tool call</em>, in this order:</p><ol><li><p>The session it is already connected to, if there is one. That choice is
+then fixed for as long as the agent runs.</p></li>
+<li><p>The one connected session whose working directory is the server's own.
+This is what makes several projects, each with its own session and its own
+agent, sort themselves out.</p></li>
+<li><p>Failing that, the only connected session there is, whatever directory it
+is in - so an agent started in a project with no session of its own will
+reach for one belonging to another project.</p></li>
+<li><p>Failing that, no session at all: the agent's <code>btw_tool_*</code> calls run in the
+server's own throwaway R process, with an empty global environment. This
+is not reported as an error, and is the usual explanation for an agent
+that cannot see objects you can see.</p></li>
+</ol><p>Two sessions in the same directory are ambiguous under rule 2 and, being two,
+cannot be resolved by rule 3 either, so neither is picked. Every agent can
+list the sessions and choose between them (<code>list_r_sessions</code> and
+<code>select_r_session</code>); ask yours to do so when the automatic choice is wrong.
+To check which session an agent is working in, have it evaluate
+<code><a href="https://rdrr.io/r/base/Sys.getpid.html" class="external-link">Sys.getpid()</a></code> and compare that with <code><a href="https://rdrr.io/r/base/Sys.getpid.html" class="external-link">Sys.getpid()</a></code> in your console.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="connecting-twice">Connecting twice<a class="anchor" aria-label="anchor" href="#connecting-twice"></a></h2>
+
+
+
+<p><code><a href="https://posit-dev.github.io/btw/reference/mcp.html" class="external-link">btw::btw_mcp_session()</a></code> is not idempotent. A second call in the same session
+opens a second connection without releasing the first, and the session then
+stops responding: it disappears from the agent's <code>list_r_sessions</code>, while the
+connection it abandoned still counts as a live session and so spoils rule 3
+above for every other agent on the machine. Only restarting R clears it.</p>
+<p>This function therefore reports the connection this session already has and
+does nothing else. The case worth knowing about is
+<code>setup_mizer_agent(rprofile = TRUE)</code>, which connects each session as it
+starts: there is then nothing left for you to call.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

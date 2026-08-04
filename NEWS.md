@@ -16,6 +16,24 @@
   `btw::btw_mcp_session()` directly, so that a project starts cleanly for someone
   who does not have mizerAgents installed.
 
+  It also refuses to connect a session that is already connected. Calling
+  `btw::btw_mcp_session()` twice does not refresh the connection but breaks it:
+  the second call opens a second connection without releasing the first, after
+  which the session stops answering agents and disappears from their
+  `list_r_sessions`, while the connection it abandoned still counts as a live
+  session and spoils the automatic choice for every other agent on the machine.
+  Only restarting R clears it. A project set up with `rprofile = TRUE` makes this
+  easy to walk into, since every session there is connected before you type
+  anything.
+
+  Which session an agent ends up in is now documented, in
+  `?connect_mizer_agent` and in a new section of the *Using AI Agents with
+  Mizer* article. In short: connected sessions are listed per user rather than
+  per project, and an agent picks the one whose working directory is the
+  directory it was started in, falling back to the only session there is and
+  then to a scratch R process of its own — which is silent, and is the usual
+  explanation for an agent that cannot see the objects you can see.
+
 * **New `update_mizer_agent()` refreshes a project while keeping the settings it
   was set up with.** Since the skills now come from the installed mizer,
   "upgrade mizer, then refresh" is the normal way to get new guidance — but

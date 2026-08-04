@@ -115,8 +115,15 @@ The server runs as its own R process, so it does not see your session
 until you hand it over. In the RStudio console, run:
 
 ``` r
-btw::btw_mcp_session()
+mizerAgents::connect_mizer_agent()
 ```
+
+This wraps
+[`btw::btw_mcp_session()`](https://posit-dev.github.io/btw/reference/mcp.html),
+which does the work, and adds a report of which agents are configured to
+reach the session you have just handed over — and a warning if none are,
+since handing over a session that nothing is set up to reach otherwise
+looks exactly like success.
 
 The agent can now read help pages, vignettes and release notes for your
 installed mizer, list the objects in your global environment, and read
@@ -132,6 +139,61 @@ mizerAgents::setup_mizer_agent(rprofile = TRUE)
 ```
 
 which adds the `btw_mcp_session()` call to your project’s `.Rprofile`.
+Your sessions then connect themselves, and you no longer call
+[`connect_mizer_agent()`](https://sizespectrum.github.io/mizerAgents/reference/connect_mizer_agent.md)
+at all.
+
+### Which R session does the agent use?
+
+Connected sessions are not private to a project. They all go into one
+list belonging to your user account, and every agent you run can see all
+of them, so an agent has to pick. It picks **the connected session whose
+working directory is the directory the agent was started in.** Keep one
+connected session per project, start the agent from that project’s
+directory, and the rest of this section will never come up.
+
+Here is what happens when it does.
+
+**Two projects open at the same time.** Each RStudio session connects
+itself, each agent is started from its own project directory, and each
+agent gets its own session. Directory matching is exactly the case this
+handles, so nothing special is needed.
+
+**An agent started where nothing is connected.** If just one session is
+connected anywhere on your machine, the agent will use it — even though
+it belongs to a different project. If none is, or if several are, the
+agent’s R tools quietly run in a scratch R process of their own instead:
+it will report an empty global environment, and objects it creates never
+appear in yours. Neither case produces an error message, so the symptom
+to watch for is an agent that cannot see the objects you are looking at.
+Run
+[`connect_mizer_agent()`](https://sizespectrum.github.io/mizerAgents/reference/connect_mizer_agent.md)
+in the right session, then restart the agent — an agent holds on to the
+session it first reached for as long as it runs.
+
+**Two R sessions open on the same project.** Now the directory does not
+identify a session, and the agent picks neither. Ask it to run
+`list_r_sessions` — it will show something like
+`2: celtic-sea (RStudio)` — and then to select the one you want with
+`select_r_session`. Every agent has these two tools, and the choice
+sticks until the agent stops.
+
+**Not sure which session an agent is in.** Ask it to run
+[`Sys.getpid()`](https://rdrr.io/r/base/Sys.getpid.html) and compare the
+number with [`Sys.getpid()`](https://rdrr.io/r/base/Sys.getpid.html) in
+your console. If they differ, it is working somewhere else.
+
+**Do not connect the same session twice.** A second call does not
+refresh the connection; it breaks it. The session stops answering agents
+and stops appearing in `list_r_sessions`, and only restarting R puts it
+right.
+[`connect_mizer_agent()`](https://sizespectrum.github.io/mizerAgents/reference/connect_mizer_agent.md)
+checks for this and tells you the session is already connected rather
+than doing it, so the way to hit it is to call
+[`btw::btw_mcp_session()`](https://posit-dev.github.io/btw/reference/mcp.html)
+yourself in a session that is already connected — in particular in a
+project set up with `rprofile = TRUE`, where every session connects
+itself at startup.
 
 ### Letting the agent run mizer code
 

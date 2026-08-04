@@ -12,7 +12,8 @@ to the current working directory. It does not affect what is connected:
 the session is handed over whatever this says.}
 }
 \value{
-Invisibly, the result of \code{btw::btw_mcp_session()}.
+Invisibly, the result of \code{btw::btw_mcp_session()}, or \code{NULL} if this
+session was already connected and nothing was done.
 }
 \description{
 Hands the R session you are working in to the \code{r-mizer} MCP server that
@@ -38,7 +39,56 @@ project, it also reports which agents are configured to reach this session
 and what they are allowed to do in it, warning you if the answer is none -
 handing over a session that nothing is set up to reach otherwise fails
 silently.
+
+Call it once per session. A second call in the same session does not refresh
+the connection but breaks it, so this function checks and refuses; see
+"Connecting twice" below.
 }
+\section{Which session the agent connects to}{
+
+
+Connected sessions are not private to a project: they are registered per
+user, in a single machine-wide list, and every MCP server your agents start
+can see all of them. Each server runs in the directory the agent was started
+in, and picks a session on its \emph{first tool call}, in this order:
+\enumerate{
+\item The session it is already connected to, if there is one. That choice is
+then fixed for as long as the agent runs.
+\item The one connected session whose working directory is the server's own.
+This is what makes several projects, each with its own session and its own
+agent, sort themselves out.
+\item Failing that, the only connected session there is, whatever directory it
+is in - so an agent started in a project with no session of its own will
+reach for one belonging to another project.
+\item Failing that, no session at all: the agent's \verb{btw_tool_*} calls run in the
+server's own throwaway R process, with an empty global environment. This
+is not reported as an error, and is the usual explanation for an agent
+that cannot see objects you can see.
+}
+
+Two sessions in the same directory are ambiguous under rule 2 and, being two,
+cannot be resolved by rule 3 either, so neither is picked. Every agent can
+list the sessions and choose between them (\code{list_r_sessions} and
+\code{select_r_session}); ask yours to do so when the automatic choice is wrong.
+To check which session an agent is working in, have it evaluate
+\code{Sys.getpid()} and compare that with \code{Sys.getpid()} in your console.
+}
+
+\section{Connecting twice}{
+
+
+\code{btw::btw_mcp_session()} is not idempotent. A second call in the same session
+opens a second connection without releasing the first, and the session then
+stops responding: it disappears from the agent's \code{list_r_sessions}, while the
+connection it abandoned still counts as a live session and so spoils rule 3
+above for every other agent on the machine. Only restarting R clears it.
+
+This function therefore reports the connection this session already has and
+does nothing else. The case worth knowing about is
+\code{setup_mizer_agent(rprofile = TRUE)}, which connects each session as it
+starts: there is then nothing left for you to call.
+}
+
 \examples{
 \dontrun{
 # In the RStudio console, once per session
