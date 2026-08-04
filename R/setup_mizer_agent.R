@@ -444,6 +444,8 @@
 #' @return Invisibly returns the path to the `AGENTS.md` file.
 #' @export
 #'
+#' @seealso [remove_mizer_agent()], which undoes all of this.
+#'
 #' @examples
 #' \dontrun{
 #' # Run once in your mizer project to set up AI agent support

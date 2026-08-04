@@ -2,6 +2,19 @@
 
 ## New features
 
+* **New `remove_mizer_agent()` undoes everything `setup_mizer_agent()` did.**
+  It deletes `MIZER-AGENTS.md`, the marked block in `AGENTS.md`, `CLAUDE.md` and
+  `GEMINI.md`, the bundled skills in `.claude/skills/`, the `r-mizer` entry in
+  each agent's MCP config, and the `btw::btw_mcp_session()` call in the project
+  `.Rprofile`, and cleans up the directories those left empty.
+
+  It removes only what this package wrote, following the same boundary setup
+  respects: your notes outside the markers stay, other MCP servers in those
+  config files stay, and a file that held nothing but our block is deleted with
+  it. A skill file that has been edited in the project is no longer ours to
+  delete, so it is kept and reported, as is any `NOTES.md`. The `btw` package
+  itself is left installed.
+
 * **The skills now come from the installed mizer, not from this package.**
   `setup_mizer_agent()` reads them from `system.file("skills", package =
   "mizer")`, so the guidance an agent follows always describes the version of

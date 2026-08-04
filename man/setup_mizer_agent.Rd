@@ -177,3 +177,6 @@ setup_mizer_agent(pkg_dev = TRUE, rprofile = TRUE)
 setup_mizer_agent(run_r = FALSE)
 }
 }
+\seealso{
+\code{\link[=remove_mizer_agent]{remove_mizer_agent()}}, which undoes all of this.
+}

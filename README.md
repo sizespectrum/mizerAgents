@@ -143,6 +143,21 @@ shelling out to `devtools`. After `load_all()` the new code is live in the
 session, so the agent can exercise it immediately. Off by default, since these
 tools do nothing useful in an ordinary modelling project.
 
+### Undoing the setup
+
+```r
+mizerAgents::remove_mizer_agent()
+```
+
+removes everything `setup_mizer_agent()` installed: `MIZER-AGENTS.md`, the
+marked block in the instruction files, the bundled skills, the `r-mizer` entry
+in each agent's MCP config, and the `btw_mcp_session()` call in `.Rprofile`.
+Only what this package wrote comes out. Your own notes outside the markers stay,
+as do other MCP servers you configured in those files; a file that held nothing
+but our block is deleted with it, and directories left empty are removed. A
+skill file you have edited, and any `NOTES.md`, are kept and reported rather
+than deleted — see below.
+
 ## What your project learns
 
 The files this package installs are refreshed on every run, so nothing you or
