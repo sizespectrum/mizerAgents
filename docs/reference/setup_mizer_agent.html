@@ -21,7 +21,7 @@ actually have installed."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">mizerAgents</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.2.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -119,7 +119,9 @@ project. Ignored when <code>r_session = FALSE</code>.</p></dd>
 <dd><p>If <code>TRUE</code>, append a guarded <code><a href="https://posit-dev.github.io/btw/reference/mcp.html" class="external-link">btw::btw_mcp_session()</a></code> call to
 the project <code>.Rprofile</code>, so that each new session hands itself to the MCP
 server automatically. <code>FALSE</code> by default, in which case you call
-<code><a href="https://posit-dev.github.io/btw/reference/mcp.html" class="external-link">btw::btw_mcp_session()</a></code> yourself. Ignored when <code>r_session = FALSE</code>.</p></dd>
+<code><a href="connect_mizer_agent.html">connect_mizer_agent()</a></code> yourself. The <code>.Rprofile</code> calls btw directly rather
+than going through this package, so that a project still starts cleanly
+without mizerAgents installed. Ignored when <code>r_session = FALSE</code>.</p></dd>
 
 
 <dt id="arg-agents">agents<a class="anchor" aria-label="anchor" href="#arg-agents"></a></dt>
@@ -156,12 +158,18 @@ removed, so which of your own instructions reach which agent is unchanged. If
 one of these files already imports <code>AGENTS.md</code>, whether you wrote that
 yourself or an earlier version of this package did, it is left untouched -
 the block reaches the agent through the import.</p>
-<p>It also installs a set of bundled Claude Code <em>skills</em> into
-<code>.claude/skills/</code> (one sub-directory with a <code>SKILL.md</code> per skill, e.g.
-<code>analyse-and-plot</code> and <code>build-multispecies-model</code>). Claude Code loads these
-automatically when a task matches, giving step-by-step guidance for common
-mizer workflows. Like <code>MIZER-AGENTS.md</code>, the skills are package-managed and
-refreshed on every call so they stay up to date.</p>
+<p>It also installs a set of Claude Code <em>skills</em> into <code>.claude/skills/</code> (one
+sub-directory with a <code>SKILL.md</code> per skill, e.g. <code>analyse-and-plot</code> and
+<code>build-multispecies-model</code>). Claude Code loads these automatically when a
+task matches, giving step-by-step guidance for common mizer workflows. Like
+<code>MIZER-AGENTS.md</code>, the skills are package-managed and refreshed on every call
+so they stay up to date.</p>
+<p>The skills are taken from the <strong>installed mizer</strong> (<code>inst/skills/</code>), not from
+this package, so the guidance an agent follows always describes the mizer the
+project is actually running. In mizer each <code>SKILL.md</code> is also the source of
+the matching <code>cheatsheet-*</code> article on the mizer website, so the two are the
+same document. Skills arrived in mizer 3.2.2; against an older mizer this
+function still writes everything else and reports that it installed none.</p>
 <p>What a project learns about mizer is kept separate from them, so that neither
 overwrites the other. Each skill's directory may hold a <code>NOTES.md</code>, which this
 package never writes and which the <code>SKILL.md</code> tells agents to read alongside
@@ -197,13 +205,21 @@ version you actually have installed, rather than whatever mizer API it
 remembers, along with a view of the objects in your global environment and
 of the document open in RStudio, and it can run mizer code there and see the
 plots that come back. For the server to see your session you must run
-<code><a href="https://posit-dev.github.io/btw/reference/mcp.html" class="external-link">btw::btw_mcp_session()</a></code> in the RStudio console; passing <code>rprofile = TRUE</code>
-adds that call to the project <code>.Rprofile</code> so that it happens automatically.
+<code><a href="connect_mizer_agent.html">connect_mizer_agent()</a></code> in the RStudio console once per session; passing
+<code>rprofile = TRUE</code> adds the underlying <code><a href="https://posit-dev.github.io/btw/reference/mcp.html" class="external-link">btw::btw_mcp_session()</a></code> call to the
+project <code>.Rprofile</code> so that it happens automatically.
 Only the <code>r-mizer</code> entry of <code>.mcp.json</code> is package-managed; other servers you
 configure there are left alone.</p>
 <p>After running this function, start your AI coding agent
 (e.g. <code>claude</code>, <code>codex</code>, <code>copilot</code> or <code>gemini</code>) from the RStudio Terminal
 and it will immediately have the mizer context it needs.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
+    <div class="dont-index"><p><code><a href="connect_mizer_agent.html">connect_mizer_agent()</a></code> to hand your session to the server this
+configures, <code><a href="update_mizer_agent.html">update_mizer_agent()</a></code>, which refreshes the files a project
+already has while keeping the settings it was set up with, and
+<code><a href="remove_mizer_agent.html">remove_mizer_agent()</a></code>, which undoes all of this.</p></div>
     </div>
 
     <div class="section level2">

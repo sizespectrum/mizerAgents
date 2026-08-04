@@ -115,8 +115,13 @@ fewer files, e.g. `setup_mizer_agent(agents = "claude")`.
 Then, in your RStudio console, hand your session to the server:
 
 ```r
-btw::btw_mcp_session()
+mizerAgents::connect_mizer_agent()
 ```
+
+Once per session, before you start the agent. It wraps `btw::btw_mcp_session()`,
+which does the work, and tells you which agents are configured to reach the
+session and whether they may run code in it — warning you if none are, since
+connecting to nothing otherwise looks exactly like connecting to something.
 
 The agent can now read help pages, vignettes and NEWS for your installed mizer,
 list the objects in your global environment, read the document you have open in
@@ -180,7 +185,7 @@ than deleted — see below.
 
 ## What your project learns
 
-The files this package installs are refreshed on every run, so nothing you or
+The files this package installs are refreshed on every update, so nothing you or
 your agent writes into them survives. But an agent that discovers something
 about your model wants to write it down, and it writes it where it was reading:
 in the skill it was following. So each skill has a home for that which the

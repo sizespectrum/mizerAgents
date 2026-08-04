@@ -236,7 +236,7 @@
         if (isTRUE(rprofile)) {
             "\n  Connects automatically: .Rprofile now calls btw::btw_mcp_session()\n  (restart R for this to take effect)"
         } else {
-            "\n  Run btw::btw_mcp_session() in this console to connect it,\n  or re-run with rprofile = TRUE to do that on every startup"
+            "\n  Run connect_mizer_agent() in this console to connect it\n  (a wrapper around btw::btw_mcp_session()), or re-run with\n  rprofile = TRUE to do that on every startup"
         },
         if (run_r) {
             "\n  Code execution in your session is ENABLED: the agent can overwrite\n  your objects. Re-run with run_r = FALSE to make it read-only."
@@ -297,7 +297,8 @@
             "  Read the `extend-mizer` skill before changing how a mizer rate is\n",
             "  calculated.\n"
         ) else "",
-        "\nIf these tools are missing, the user has not run `btw::btw_mcp_session()` in\n",
-        "their RStudio console; ask them to, rather than working around it.\n"
+        "\nIf these tools are missing, the user has not connected their session; ask\n",
+        "them to run `mizerAgents::connect_mizer_agent()` in their RStudio console,\n",
+        "rather than working around it.\n"
     )
 }

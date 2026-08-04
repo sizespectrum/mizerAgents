@@ -384,8 +384,9 @@
 #' remembers, along with a view of the objects in your global environment and
 #' of the document open in RStudio, and it can run mizer code there and see the
 #' plots that come back. For the server to see your session you must run
-#' `btw::btw_mcp_session()` in the RStudio console; passing `rprofile = TRUE`
-#' adds that call to the project `.Rprofile` so that it happens automatically.
+#' [connect_mizer_agent()] in the RStudio console once per session; passing
+#' `rprofile = TRUE` adds the underlying `btw::btw_mcp_session()` call to the
+#' project `.Rprofile` so that it happens automatically.
 #' Only the `r-mizer` entry of `.mcp.json` is package-managed; other servers you
 #' configure there are left alone.
 #'
@@ -439,13 +440,16 @@
 #' @param rprofile If `TRUE`, append a guarded `btw::btw_mcp_session()` call to
 #'   the project `.Rprofile`, so that each new session hands itself to the MCP
 #'   server automatically. `FALSE` by default, in which case you call
-#'   `btw::btw_mcp_session()` yourself. Ignored when `r_session = FALSE`.
+#'   [connect_mizer_agent()] yourself. The `.Rprofile` calls btw directly rather
+#'   than going through this package, so that a project still starts cleanly
+#'   without mizerAgents installed. Ignored when `r_session = FALSE`.
 #'
 #' @return Invisibly returns the path to the `AGENTS.md` file.
 #' @export
 #'
-#' @seealso [update_mizer_agent()], which refreshes the files a project already
-#'   has while keeping the settings it was set up with, and
+#' @seealso [connect_mizer_agent()] to hand your session to the server this
+#'   configures, [update_mizer_agent()], which refreshes the files a project
+#'   already has while keeping the settings it was set up with, and
 #'   [remove_mizer_agent()], which undoes all of this.
 #'
 #' @examples

@@ -12,7 +12,6 @@ any mizer project with a single function call.
 ## Installation
 
 ``` r
-
 # install.packages("pak")
 pak::pak("sizespectrum/mizerAgents")
 ```
@@ -27,7 +26,6 @@ of the version from CRAN then you need the alternative
 Run once in the root of your mizer project:
 
 ``` r
-
 mizerAgents::setup_mizer_agent()
 ```
 
@@ -36,6 +34,7 @@ This creates:
 - **`MIZER-AGENTS.md`** — a concise mizer reference card that AI agents
   read automatically on startup, including key objects, the core
   workflow, and links to the bundled API documentation.
+
 - **`AGENTS.md`**, **`CLAUDE.md`** and **`GEMINI.md`** — your project
   instruction files, each updated to include a short package-managed
   block pointing agents at `MIZER-AGENTS.md`. All three are handled the
@@ -45,14 +44,24 @@ This creates:
   `<!-- mizerAgents: end -->` markers is refreshed on each run; anything
   you add outside it is preserved, and no `@AGENTS.md` import is ever
   written or removed.
-- **`.claude/skills/`** — bundled Claude Code skills
-  (`analyse-and-plot`, `build-multispecies-model`, `calibrate-model`,
-  `run-simulation`, `set-up-fishing`, `change-parameters`,
-  `extend-mizer`) that agents read automatically when a task matches,
-  giving step-by-step guidance for common mizer workflows. They are
-  refreshed on each run, but only file by file and only where nothing
-  has edited them: see [What your project
-  learns](#what-your-project-learns).
+
+- **`.claude/skills/`** — Claude Code skills (`analyse-and-plot`,
+  `build-multispecies-model`, `calibrate-model`, `run-simulation`,
+  `set-up-fishing`, `change-parameters`, `extend-mizer`) that agents
+  read automatically when a task matches, giving step-by-step guidance
+  for common mizer workflows. They are refreshed on each run, but only
+  file by file and only where nothing has edited them: see [What your
+  project learns](#what-your-project-learns).
+
+  The skills come from the **installed mizer** (`inst/skills/`), not
+  from this package, so they always describe the version of mizer your
+  project actually runs. Each is also the source of the matching
+  `cheatsheet-*` article on the mizer website, so the agent and the
+  human documentation are one document. Skills arrived in mizer 3.2.2;
+  against an older mizer everything else is still set up and
+  [`setup_mizer_agent()`](https://sizespectrum.github.io/mizerAgents/reference/setup_mizer_agent.md)
+  reports that it installed none.
+
 - **MCP configuration** for an `r-mizer` server that connects the agent
   to your live R session (see below), written in each agent’s own format
   — Claude Code, Codex, Gemini CLI, Antigravity, Cursor, VS Code and
@@ -79,7 +88,6 @@ To give it that, install the [btw](https://posit-dev.github.io/btw/)
 package:
 
 ``` r
-
 install.packages("btw")
 ```
 
@@ -110,9 +118,15 @@ want fewer files, e.g. `setup_mizer_agent(agents = "claude")`.
 Then, in your RStudio console, hand your session to the server:
 
 ``` r
-
-btw::btw_mcp_session()
+mizerAgents::connect_mizer_agent()
 ```
+
+Once per session, before you start the agent. It wraps
+[`btw::btw_mcp_session()`](https://posit-dev.github.io/btw/reference/mcp.html),
+which does the work, and tells you which agents are configured to reach
+the session and whether they may run code in it — warning you if none
+are, since connecting to nothing otherwise looks exactly like connecting
+to something.
 
 The agent can now read help pages, vignettes and NEWS for your installed
 mizer, list the objects in your global environment, read the document
@@ -131,7 +145,6 @@ no execution — use `setup_mizer_agent(run_r = FALSE)`, and
 ### If your project is a mizer extension package
 
 ``` r
-
 setup_mizer_agent(pkg_dev = TRUE)
 ```
 
@@ -142,13 +155,56 @@ is live in the session, so the agent can exercise it immediately. Off by
 default, since these tools do nothing useful in an ordinary modelling
 project.
 
+### Keeping it up to date
+
+``` r
+mizerAgents::update_mizer_agent()
+```
+
+refreshes everything the setup installed — most usefully after upgrading
+mizer, since that is where the skills now come from — **keeping the
+settings this project was set up with**.
+
+Use it rather than re-running
+[`setup_mizer_agent()`](https://sizespectrum.github.io/mizerAgents/reference/setup_mizer_agent.md).
+That function is declarative: its arguments describe the setup you want,
+and its defaults are the ones for a new project. So a bare re-run
+switches code execution back on in a project set up with
+`run_r = FALSE`, drops the package tools from one set up with
+`pkg_dev = TRUE`, and writes config files for the agents you narrowed
+away from.
+[`update_mizer_agent()`](https://sizespectrum.github.io/mizerAgents/reference/update_mizer_agent.md)
+reads those choices back off disk and replays them, so only the content
+changes.
+([`setup_mizer_agent()`](https://sizespectrum.github.io/mizerAgents/reference/setup_mizer_agent.md)
+reports any setting it changes, so a plain re-run at least tells you.)
+Pass any of its arguments to override what was detected,
+e.g. `update_mizer_agent(run_r = FALSE)`.
+
+### Undoing the setup
+
+``` r
+mizerAgents::remove_mizer_agent()
+```
+
+removes everything
+[`setup_mizer_agent()`](https://sizespectrum.github.io/mizerAgents/reference/setup_mizer_agent.md)
+installed: `MIZER-AGENTS.md`, the marked block in the instruction files,
+the bundled skills, the `r-mizer` entry in each agent’s MCP config, and
+the `btw_mcp_session()` call in `.Rprofile`. Only what this package
+wrote comes out. Your own notes outside the markers stay, as do other
+MCP servers you configured in those files; a file that held nothing but
+our block is deleted with it, and directories left empty are removed. A
+skill file you have edited, and any `NOTES.md`, are kept and reported
+rather than deleted — see below.
+
 ## What your project learns
 
-The files this package installs are refreshed on every run, so nothing
-you or your agent writes into them survives. But an agent that discovers
-something about your model wants to write it down, and it writes it
-where it was reading: in the skill it was following. So each skill has a
-home for that which the package never touches.
+The files this package installs are refreshed on every update, so
+nothing you or your agent writes into them survives. But an agent that
+discovers something about your model wants to write it down, and it
+writes it where it was reading: in the skill it was following. So each
+skill has a home for that which the package never touches.
 
 - **`.claude/skills/<name>/NOTES.md`** — findings about *this* project.
   Every bundled `SKILL.md` ends by telling agents to read this file
@@ -181,11 +237,11 @@ removed, unless they were edited here.
 
 ## What’s included
 
-| File | Description |
-|----|----|
+| File                   | Description                                                                                                                         |
+|------------------------|-------------------------------------------------------------------------------------------------------------------------------------|
 | `inst/MIZER-AGENTS.md` | Mizer reference card deployed by [`setup_mizer_agent()`](https://sizespectrum.github.io/mizerAgents/reference/setup_mizer_agent.md) |
-| `inst/llms.txt` | Curated index of the mizer API, grouped by workflow stage |
-| `inst/skills/` | Claude Code skills deployed to `.claude/skills/` |
+| `inst/llms.txt`        | Curated index of the mizer API, grouped by workflow stage                                                                           |
+| `inst/skills/`         | Claude Code skills deployed to `.claude/skills/`                                                                                    |
 
 Argument lists are deliberately not bundled. A snapshot of them goes
 stale as soon as mizer moves on, and it fails quietly — an outdated call
@@ -207,6 +263,19 @@ the mizer reference card and API documentation automatically.
 
 - [`setup_mizer_agent()`](https://sizespectrum.github.io/mizerAgents/reference/setup_mizer_agent.md)
   : Set up an AI agent to help with your mizer project
+
+- [`connect_mizer_agent()`](https://sizespectrum.github.io/mizerAgents/reference/connect_mizer_agent.md)
+  : Connect your R session to the agent
+
+- [`update_mizer_agent()`](https://sizespectrum.github.io/mizerAgents/reference/update_mizer_agent.md)
+  : Refresh a project's mizer agent files, keeping its settings
+
+- [`remove_mizer_agent()`](https://sizespectrum.github.io/mizerAgents/reference/remove_mizer_agent.md)
+  :
+
+  Undo what
+  [`setup_mizer_agent()`](https://sizespectrum.github.io/mizerAgents/reference/setup_mizer_agent.md)
+  did
 
 # Articles
 

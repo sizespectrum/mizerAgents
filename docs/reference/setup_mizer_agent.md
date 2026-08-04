@@ -70,8 +70,10 @@ setup_mizer_agent(
   call to the project `.Rprofile`, so that each new session hands itself
   to the MCP server automatically. `FALSE` by default, in which case you
   call
-  [`btw::btw_mcp_session()`](https://posit-dev.github.io/btw/reference/mcp.html)
-  yourself. Ignored when `r_session = FALSE`.
+  [`connect_mizer_agent()`](https://sizespectrum.github.io/mizerAgents/reference/connect_mizer_agent.md)
+  yourself. The `.Rprofile` calls btw directly rather than going through
+  this package, so that a project still starts cleanly without
+  mizerAgents installed. Ignored when `r_session = FALSE`.
 
 - agents:
 
@@ -124,12 +126,20 @@ is unchanged. If one of these files already imports `AGENTS.md`, whether
 you wrote that yourself or an earlier version of this package did, it is
 left untouched - the block reaches the agent through the import.
 
-It also installs a set of bundled Claude Code *skills* into
-`.claude/skills/` (one sub-directory with a `SKILL.md` per skill, e.g.
-`analyse-and-plot` and `build-multispecies-model`). Claude Code loads
-these automatically when a task matches, giving step-by-step guidance
-for common mizer workflows. Like `MIZER-AGENTS.md`, the skills are
-package-managed and refreshed on every call so they stay up to date.
+It also installs a set of Claude Code *skills* into `.claude/skills/`
+(one sub-directory with a `SKILL.md` per skill, e.g. `analyse-and-plot`
+and `build-multispecies-model`). Claude Code loads these automatically
+when a task matches, giving step-by-step guidance for common mizer
+workflows. Like `MIZER-AGENTS.md`, the skills are package-managed and
+refreshed on every call so they stay up to date.
+
+The skills are taken from the **installed mizer** (`inst/skills/`), not
+from this package, so the guidance an agent follows always describes the
+mizer the project is actually running. In mizer each `SKILL.md` is also
+the source of the matching `cheatsheet-*` article on the mizer website,
+so the two are the same document. Skills arrived in mizer 3.2.2; against
+an older mizer this function still writes everything else and reports
+that it installed none.
 
 What a project learns about mizer is kept separate from them, so that
 neither overwrites the other. Each skill's directory may hold a
@@ -171,15 +181,27 @@ rather than whatever mizer API it remembers, along with a view of the
 objects in your global environment and of the document open in RStudio,
 and it can run mizer code there and see the plots that come back. For
 the server to see your session you must run
+[`connect_mizer_agent()`](https://sizespectrum.github.io/mizerAgents/reference/connect_mizer_agent.md)
+in the RStudio console once per session; passing `rprofile = TRUE` adds
+the underlying
 [`btw::btw_mcp_session()`](https://posit-dev.github.io/btw/reference/mcp.html)
-in the RStudio console; passing `rprofile = TRUE` adds that call to the
-project `.Rprofile` so that it happens automatically. Only the `r-mizer`
-entry of `.mcp.json` is package-managed; other servers you configure
-there are left alone.
+call to the project `.Rprofile` so that it happens automatically. Only
+the `r-mizer` entry of `.mcp.json` is package-managed; other servers you
+configure there are left alone.
 
 After running this function, start your AI coding agent (e.g. `claude`,
 `codex`, `copilot` or `gemini`) from the RStudio Terminal and it will
 immediately have the mizer context it needs.
+
+## See also
+
+[`connect_mizer_agent()`](https://sizespectrum.github.io/mizerAgents/reference/connect_mizer_agent.md)
+to hand your session to the server this configures,
+[`update_mizer_agent()`](https://sizespectrum.github.io/mizerAgents/reference/update_mizer_agent.md),
+which refreshes the files a project already has while keeping the
+settings it was set up with, and
+[`remove_mizer_agent()`](https://sizespectrum.github.io/mizerAgents/reference/remove_mizer_agent.md),
+which undoes all of this.
 
 ## Examples
 

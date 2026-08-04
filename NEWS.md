@@ -2,6 +2,20 @@
 
 ## New features
 
+* **New `connect_mizer_agent()` hands your R session to the agent.** This is the
+  one step of the setup you repeat every session, and it was the only one with
+  no entry in this package's reference index: you had to know the name of a
+  second package to finish a job you started here. It wraps
+  `btw::btw_mcp_session()`, which still does the work, and adds what btw cannot
+  know because it knows nothing about your project — which agents are configured
+  to reach the session you are handing over, and whether they may run code in
+  it. If none are, it says so rather than connecting silently to nothing. btw
+  stays in `Suggests`; you get an actionable error if it is not installed.
+
+  The `.Rprofile` line written by `rprofile = TRUE` still calls
+  `btw::btw_mcp_session()` directly, so that a project starts cleanly for someone
+  who does not have mizerAgents installed.
+
 * **New `update_mizer_agent()` refreshes a project while keeping the settings it
   was set up with.** Since the skills now come from the installed mizer,
   "upgrade mizer, then refresh" is the normal way to get new guidance — but

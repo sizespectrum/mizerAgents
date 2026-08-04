@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">mizerAgents</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.2.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -34,6 +34,27 @@
       <small>Source: <a href="https://github.com/sizespectrum/mizerAgents/blob/HEAD/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.3.2.2" id="mizeragents-0322">mizerAgents 0.3.2.2<a class="anchor" aria-label="anchor" href="#mizeragents-0322"></a></h2>
+<div class="section level3">
+<h3 id="new-features-0-3-2-2">New features<a class="anchor" aria-label="anchor" href="#new-features-0-3-2-2"></a></h3>
+<ul><li>
+<p><strong>New <code><a href="../reference/connect_mizer_agent.html">connect_mizer_agent()</a></code> hands your R session to the agent.</strong> This is the one step of the setup you repeat every session, and it was the only one with no entry in this package’s reference index: you had to know the name of a second package to finish a job you started here. It wraps <code><a href="https://posit-dev.github.io/btw/reference/mcp.html" class="external-link">btw::btw_mcp_session()</a></code>, which still does the work, and adds what btw cannot know because it knows nothing about your project — which agents are configured to reach the session you are handing over, and whether they may run code in it. If none are, it says so rather than connecting silently to nothing. btw stays in <code>Suggests</code>; you get an actionable error if it is not installed.</p>
+<p>The <code>.Rprofile</code> line written by <code>rprofile = TRUE</code> still calls <code><a href="https://posit-dev.github.io/btw/reference/mcp.html" class="external-link">btw::btw_mcp_session()</a></code> directly, so that a project starts cleanly for someone who does not have mizerAgents installed.</p>
+</li>
+<li><p><strong>New <code><a href="../reference/update_mizer_agent.html">update_mizer_agent()</a></code> refreshes a project while keeping the settings it was set up with.</strong> Since the skills now come from the installed mizer, “upgrade mizer, then refresh” is the normal way to get new guidance — but <code><a href="../reference/setup_mizer_agent.html">setup_mizer_agent()</a></code> is declarative, so a bare re-run re-declares its arguments from the defaults for a <em>new</em> project: it would switch code execution back on in a project set up with <code>run_r = FALSE</code>, drop the package tools from one set up with <code>pkg_dev = TRUE</code>, and write config files for agents you had narrowed away from with <code>agents</code>. <code><a href="../reference/update_mizer_agent.html">update_mizer_agent()</a></code> reads those choices back from what the last run wrote and replays them, so a refresh changes content and nothing else. Nothing had to be stored to make that work, so it works for projects set up by earlier versions too. Pass any argument of <code><a href="../reference/setup_mizer_agent.html">setup_mizer_agent()</a></code> through <code>...</code> to override what was detected.</p></li>
+<li><p><code><a href="../reference/setup_mizer_agent.html">setup_mizer_agent()</a></code> now <strong>reports any setting it changes</strong> relative to how the project was already set up, so that a plain re-run meant as a refresh at least says what it did rather than switching things over silently. A first run has nothing to compare against and says nothing.</p></li>
+<li>
+<p><strong>New <code><a href="../reference/remove_mizer_agent.html">remove_mizer_agent()</a></code> undoes everything <code><a href="../reference/setup_mizer_agent.html">setup_mizer_agent()</a></code> did.</strong> It deletes <code>MIZER-AGENTS.md</code>, the marked block in <code>AGENTS.md</code>, <code>CLAUDE.md</code> and <code>GEMINI.md</code>, the bundled skills in <code>.claude/skills/</code>, the <code>r-mizer</code> entry in each agent’s MCP config, and the <code><a href="https://posit-dev.github.io/btw/reference/mcp.html" class="external-link">btw::btw_mcp_session()</a></code> call in the project <code>.Rprofile</code>, and cleans up the directories those left empty.</p>
+<p>It removes only what this package wrote, following the same boundary setup respects: your notes outside the markers stay, other MCP servers in those config files stay, and a file that held nothing but our block is deleted with it. A skill file that has been edited in the project is no longer ours to delete, so it is kept and reported, as is any <code>NOTES.md</code>. The <code>btw</code> package itself is left installed.</p>
+</li>
+<li>
+<p><strong>The skills now come from the installed mizer, not from this package.</strong> <code><a href="../reference/setup_mizer_agent.html">setup_mizer_agent()</a></code> reads them from <code>system.file("skills", package =   "mizer")</code>, so the guidance an agent follows always describes the version of mizer the project actually runs. Previously this package shipped its own copy, which had to be kept in step with mizer by hand — the reason for the separate <code>@dev</code> branch — and could describe functions the user’s mizer did not have.</p>
+<p>In mizer each <code>SKILL.md</code> is now also the source of the matching <code>cheatsheet-*</code> article on the mizer website, so the agent-facing and human-facing documentation are one document rather than two that drift apart.</p>
+<p>Skills arrived in mizer 3.2.2. Against an older mizer, <code><a href="../reference/setup_mizer_agent.html">setup_mizer_agent()</a></code> still writes everything else and reports that it installed no skills.</p>
+</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.3.2" id="mizeragents-032">mizerAgents 0.3.2<a class="anchor" aria-label="anchor" href="#mizeragents-032"></a></h2>
 <div class="section level3">

@@ -46,7 +46,9 @@ project. Ignored when \code{r_session = FALSE}.}
 \item{rprofile}{If \code{TRUE}, append a guarded \code{btw::btw_mcp_session()} call to
 the project \code{.Rprofile}, so that each new session hands itself to the MCP
 server automatically. \code{FALSE} by default, in which case you call
-\code{btw::btw_mcp_session()} yourself. Ignored when \code{r_session = FALSE}.}
+\code{\link[=connect_mizer_agent]{connect_mizer_agent()}} yourself. The \code{.Rprofile} calls btw directly rather
+than going through this package, so that a project still starts cleanly
+without mizerAgents installed. Ignored when \code{r_session = FALSE}.}
 
 \item{agents}{Which agents to configure the server for. By default all of
 them, since the config files are small, sit in different places and do not
@@ -155,8 +157,9 @@ version you actually have installed, rather than whatever mizer API it
 remembers, along with a view of the objects in your global environment and
 of the document open in RStudio, and it can run mizer code there and see the
 plots that come back. For the server to see your session you must run
-\code{btw::btw_mcp_session()} in the RStudio console; passing \code{rprofile = TRUE}
-adds that call to the project \code{.Rprofile} so that it happens automatically.
+\code{\link[=connect_mizer_agent]{connect_mizer_agent()}} in the RStudio console once per session; passing
+\code{rprofile = TRUE} adds the underlying \code{btw::btw_mcp_session()} call to the
+project \code{.Rprofile} so that it happens automatically.
 Only the \code{r-mizer} entry of \code{.mcp.json} is package-managed; other servers you
 configure there are left alone.
 
@@ -178,7 +181,8 @@ setup_mizer_agent(run_r = FALSE)
 }
 }
 \seealso{
-\code{\link[=update_mizer_agent]{update_mizer_agent()}}, which refreshes the files a project already
-has while keeping the settings it was set up with, and
+\code{\link[=connect_mizer_agent]{connect_mizer_agent()}} to hand your session to the server this
+configures, \code{\link[=update_mizer_agent]{update_mizer_agent()}}, which refreshes the files a project
+already has while keeping the settings it was set up with, and
 \code{\link[=remove_mizer_agent]{remove_mizer_agent()}}, which undoes all of this.
 }

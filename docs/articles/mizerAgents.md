@@ -17,7 +17,6 @@ mizerAgents bundles everything an AI agent needs to understand the mizer
 API. You only need to run this once in your R project:
 
 ``` r
-
 pak::pak("sizespectrum/mizerAgents")
 mizerAgents::setup_mizer_agent()
 ```
@@ -73,7 +72,6 @@ half: an MCP server that lets the agent read the documentation of your
 *installed* packages, along with your R session. Install it once:
 
 ``` r
-
 install.packages("btw")
 ```
 
@@ -99,7 +97,6 @@ along with `AGENTS.md`. If you would rather have fewer files, name the
 ones you use:
 
 ``` r
-
 mizerAgents::setup_mizer_agent(agents = c("claude", "posit"))
 ```
 
@@ -118,7 +115,6 @@ The server runs as its own R process, so it does not see your session
 until you hand it over. In the RStudio console, run:
 
 ``` r
-
 btw::btw_mcp_session()
 ```
 
@@ -132,7 +128,6 @@ mizer code that looks right and is not.
 To have every new session connect itself, run
 
 ``` r
-
 mizerAgents::setup_mizer_agent(rprofile = TRUE)
 ```
 
@@ -156,7 +151,6 @@ it. If you would rather have a read-only connection — documentation and
 inspection, but no execution — use
 
 ``` r
-
 mizerAgents::setup_mizer_agent(run_r = FALSE)
 ```
 
@@ -169,7 +163,6 @@ When you are writing an extension package rather than a model, add btw’s
 package development tools:
 
 ``` r
-
 mizerAgents::setup_mizer_agent(pkg_dev = TRUE)
 ```
 

@@ -1,5 +1,90 @@
 # Changelog
 
+## mizerAgents 0.3.2.2
+
+### New features
+
+- **New
+  [`connect_mizer_agent()`](https://sizespectrum.github.io/mizerAgents/reference/connect_mizer_agent.md)
+  hands your R session to the agent.** This is the one step of the setup
+  you repeat every session, and it was the only one with no entry in
+  this package’s reference index: you had to know the name of a second
+  package to finish a job you started here. It wraps
+  [`btw::btw_mcp_session()`](https://posit-dev.github.io/btw/reference/mcp.html),
+  which still does the work, and adds what btw cannot know because it
+  knows nothing about your project — which agents are configured to
+  reach the session you are handing over, and whether they may run code
+  in it. If none are, it says so rather than connecting silently to
+  nothing. btw stays in `Suggests`; you get an actionable error if it is
+  not installed.
+
+  The `.Rprofile` line written by `rprofile = TRUE` still calls
+  [`btw::btw_mcp_session()`](https://posit-dev.github.io/btw/reference/mcp.html)
+  directly, so that a project starts cleanly for someone who does not
+  have mizerAgents installed.
+
+- **New
+  [`update_mizer_agent()`](https://sizespectrum.github.io/mizerAgents/reference/update_mizer_agent.md)
+  refreshes a project while keeping the settings it was set up with.**
+  Since the skills now come from the installed mizer, “upgrade mizer,
+  then refresh” is the normal way to get new guidance — but
+  [`setup_mizer_agent()`](https://sizespectrum.github.io/mizerAgents/reference/setup_mizer_agent.md)
+  is declarative, so a bare re-run re-declares its arguments from the
+  defaults for a *new* project: it would switch code execution back on
+  in a project set up with `run_r = FALSE`, drop the package tools from
+  one set up with `pkg_dev = TRUE`, and write config files for agents
+  you had narrowed away from with `agents`.
+  [`update_mizer_agent()`](https://sizespectrum.github.io/mizerAgents/reference/update_mizer_agent.md)
+  reads those choices back from what the last run wrote and replays
+  them, so a refresh changes content and nothing else. Nothing had to be
+  stored to make that work, so it works for projects set up by earlier
+  versions too. Pass any argument of
+  [`setup_mizer_agent()`](https://sizespectrum.github.io/mizerAgents/reference/setup_mizer_agent.md)
+  through `...` to override what was detected.
+
+- [`setup_mizer_agent()`](https://sizespectrum.github.io/mizerAgents/reference/setup_mizer_agent.md)
+  now **reports any setting it changes** relative to how the project was
+  already set up, so that a plain re-run meant as a refresh at least
+  says what it did rather than switching things over silently. A first
+  run has nothing to compare against and says nothing.
+
+- **New
+  [`remove_mizer_agent()`](https://sizespectrum.github.io/mizerAgents/reference/remove_mizer_agent.md)
+  undoes everything
+  [`setup_mizer_agent()`](https://sizespectrum.github.io/mizerAgents/reference/setup_mizer_agent.md)
+  did.** It deletes `MIZER-AGENTS.md`, the marked block in `AGENTS.md`,
+  `CLAUDE.md` and `GEMINI.md`, the bundled skills in `.claude/skills/`,
+  the `r-mizer` entry in each agent’s MCP config, and the
+  [`btw::btw_mcp_session()`](https://posit-dev.github.io/btw/reference/mcp.html)
+  call in the project `.Rprofile`, and cleans up the directories those
+  left empty.
+
+  It removes only what this package wrote, following the same boundary
+  setup respects: your notes outside the markers stay, other MCP servers
+  in those config files stay, and a file that held nothing but our block
+  is deleted with it. A skill file that has been edited in the project
+  is no longer ours to delete, so it is kept and reported, as is any
+  `NOTES.md`. The `btw` package itself is left installed.
+
+- **The skills now come from the installed mizer, not from this
+  package.**
+  [`setup_mizer_agent()`](https://sizespectrum.github.io/mizerAgents/reference/setup_mizer_agent.md)
+  reads them from `system.file("skills", package = "mizer")`, so the
+  guidance an agent follows always describes the version of mizer the
+  project actually runs. Previously this package shipped its own copy,
+  which had to be kept in step with mizer by hand — the reason for the
+  separate `@dev` branch — and could describe functions the user’s mizer
+  did not have.
+
+  In mizer each `SKILL.md` is now also the source of the matching
+  `cheatsheet-*` article on the mizer website, so the agent-facing and
+  human-facing documentation are one document rather than two that drift
+  apart.
+
+  Skills arrived in mizer 3.2.2. Against an older mizer,
+  [`setup_mizer_agent()`](https://sizespectrum.github.io/mizerAgents/reference/setup_mizer_agent.md)
+  still writes everything else and reports that it installed no skills.
+
 ## mizerAgents 0.3.2
 
 ### New features
