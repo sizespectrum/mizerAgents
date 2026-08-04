@@ -19,6 +19,7 @@ Imports:
     tools
 Suggests:
     btw,
+    mcptools,
     mizer,
     testthat (>= 3.0.0),
     pkgdown,
