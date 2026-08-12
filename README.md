@@ -20,11 +20,11 @@ with a single function call.
 pak::pak("sizespectrum/mizerAgents")
 ```
 
-If you are running the development version of mizer from GitHub instead of the
-version from CRAN then you need the alternative
-```
-pak::pak("sizespectrum/mizerAgents@dev")
-```
+The same install works whichever mizer you run. The skills and the API index are
+read from the mizer you have installed rather than bundled here, so the CRAN
+version and the development version from GitHub each get guidance matching
+themselves. (Earlier releases needed a separate `@dev` branch for this; it has
+been retired.)
 
 ## Usage
 
@@ -48,8 +48,9 @@ This creates:
   refreshed on each run; anything you add outside it is preserved, and no
   `@AGENTS.md` import is ever written or removed.
 - **`.claude/skills/`** — Claude Code skills (`analyse-and-plot`,
-  `build-multispecies-model`, `calibrate-model`, `run-simulation`,
-  `set-up-fishing`, `change-parameters`, `extend-mizer`) that agents read
+  `analyse-stability`, `build-multispecies-model`, `calibrate-model`,
+  `run-simulation`, `set-up-fishing`, `change-parameters`, `extend-mizer`)
+  that agents read
   automatically when a task matches, giving step-by-step guidance for common
   mizer workflows. They are refreshed on each run, but only file by file and
   only where nothing has edited them: see [What your project learns](#what-your-project-learns).
@@ -241,14 +242,22 @@ were edited here.
 | File | Description |
 |------|-------------|
 | `inst/MIZER-AGENTS.md` | Mizer reference card deployed by `setup_mizer_agent()` |
-| `inst/llms.txt` | Curated index of the mizer API, grouped by workflow stage |
-| `inst/skills/` | Claude Code skills deployed to `.claude/skills/` |
+| `inst/llms.txt` | Fallback copy of the mizer API index, for a mizer too old to ship its own |
 
-Argument lists are deliberately not bundled. A snapshot of them goes stale as
-soon as mizer moves on, and it fails quietly — an outdated call often still
-runs and returns plausible numbers. The index tells an agent *which* function
-it needs; *how to call it* comes from the help page of the mizer you have
-installed, which is what the R session connection above is for.
+Everything that describes mizer rather than the agent setup is maintained in
+mizer and read from the installed copy, so it always matches the version your
+project runs. The skills come from `system.file("skills", package = "mizer")`,
+and the API index — every exported function with a one-line description,
+grouped by workflow stage — from `system.file("llms.txt", package = "mizer")`,
+where it is generated from the website by `dev_scripts/build_llms.R`. mizer
+began installing that index in 3.2.2; the copy bundled here is used against
+anything older.
+
+Argument lists are deliberately not bundled anywhere. A snapshot of them goes
+stale as soon as mizer moves on, and it fails quietly — an outdated call often
+still runs and returns plausible numbers. The index tells an agent *which*
+function it needs; *how to call it* comes from the help page of the mizer you
+have installed, which is what the R session connection above is for.
 
 ## Documentation
 

@@ -579,3 +579,42 @@ test_that("rprofile = TRUE adds the session hook exactly once", {
     suppressMessages(setup_mizer_agent(path = tmp_dir, rprofile = TRUE))
     expect_equal(sum(grepl("btw_mcp_session", readLines(rprofile_dest))), 1)
 })
+
+test_that("the API index is taken from the installed mizer when it ships one", {
+    # llms.txt describes one version of the mizer API, so it is maintained and
+    # installed in mizer for the same reason the skills are: the index an agent
+    # greps should list the functions the project's own mizer actually has.
+    fake <- tempfile(fileext = ".txt")
+    writeLines("# Mizer", fake)
+    on.exit(unlink(fake))
+
+    local_mocked_bindings(
+        system.file = function(..., package = "base") {
+            if (identical(package, "mizer")) fake else ""
+        },
+        .package = "base"
+    )
+    expect_identical(.llms_source(), fake)
+})
+
+test_that("the bundled API index is used against a mizer that predates the move", {
+    # mizer only began installing llms.txt in 3.2.2. Against an older one the
+    # copy shipped here is still a usable index, so unlike the skills there is
+    # no degraded mode to report: a source is always found.
+    # Captured before the mock is installed: inside it, `base::system.file`
+    # resolves to the mock itself and would recurse. Unqualified, so that under
+    # `load_all()` this is devtools' shim, which finds `inst/` in the source
+    # tree - the same function `.llms_source()` is calling.
+    real_system_file <- system.file
+    bundled <- real_system_file("llms.txt", package = "mizerAgents")
+
+    local_mocked_bindings(
+        system.file = function(..., package = "base") {
+            if (identical(package, "mizer")) "" else real_system_file(..., package = package)
+        },
+        .package = "base"
+    )
+    src <- .llms_source()
+    expect_identical(src, bundled)
+    expect_true(nzchar(src) && file.exists(src))
+})

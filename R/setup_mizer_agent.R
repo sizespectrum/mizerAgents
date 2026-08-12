@@ -16,6 +16,24 @@
     if (nzchar(src) && dir.exists(src)) src else ""
 }
 
+# Where the API index comes from, on the same reasoning as `.skills_source()`.
+#
+# `llms.txt` lists every exported mizer function with a one-line description, so
+# it describes one version of the mizer API and goes stale the moment mizer gains
+# or renames a function. It is generated in mizer by `dev_scripts/build_llms.R`
+# and installed there, so the index an agent greps matches the mizer the project
+# actually runs.
+#
+# Falls back to the copy bundled here for a mizer predating that move. Unlike the
+# skills there is always a source, so this never returns "": a stale index still
+# names most functions correctly, and the card sends the agent to the installed
+# mizer's help pages for anything it finds.
+.llms_source <- function() {
+    src <- system.file("llms.txt", package = "mizer")
+    if (nzchar(src) && file.exists(src)) return(src)
+    system.file("llms.txt", package = "mizerAgents")
+}
+
 # Extract the `description` field from a SKILL.md YAML frontmatter block.
 # Handles both an inline value and a folded/literal block scalar (`>`, `>-`,
 # `|`, ...), collapsing it to a single-line string. Internal helper.
@@ -489,7 +507,7 @@ setup_mizer_agent <- function(path = ".", overwrite = FALSE,
     # without meaning to; `update_mizer_agent()` is the way to avoid that.
     before <- .detect_options(path)
     mizer_src     <- system.file("MIZER-AGENTS.md", package = "mizerAgents")
-    llms_src      <- system.file("llms.txt",      package = "mizerAgents")
+    llms_src      <- .llms_source()
     skills_src    <- .skills_source()
     mizer_dest    <- normalizePath(file.path(path, "MIZER-AGENTS.md"), mustWork = FALSE)
     agents_dest   <- normalizePath(file.path(path, "AGENTS.md"),       mustWork = FALSE)

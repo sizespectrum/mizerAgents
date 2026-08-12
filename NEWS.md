@@ -1,3 +1,44 @@
+# mizerAgents 0.4.0
+
+## New features
+
+* **The API index now comes from the installed mizer too.** `llms.txt` lists
+  every exported mizer function with a one-line description, so it describes one
+  version of the mizer API and goes stale the moment mizer gains or renames a
+  function — the same problem the skills had before 0.3.2.2, and it is fixed the
+  same way. `setup_mizer_agent()` reads it from `system.file("llms.txt", package
+  = "mizer")`, so the index an agent greps lists the functions the project's own
+  mizer actually has.
+
+  In mizer the file is generated from the website by `dev_scripts/build_llms.R`,
+  which replaces the badge-laden preamble pkgdown puts on `docs/llms.txt` with a
+  hand-written orientation and installs the result. Previously the index was
+  copied into this repository by hand after every mizer site build, which meant
+  a function added to mizer was missing from the index until someone remembered
+  to make a commit in a different repository.
+
+  mizer began installing the index in 3.2.2. Against an older mizer the copy
+  bundled here is used instead: unlike the skills there is no degraded mode to
+  report, since a slightly stale index still names most functions correctly and
+  the reference card sends the agent to the installed mizer's help pages for the
+  arguments either way.
+
+## Other changes
+
+* **The version number no longer tracks mizer's.** The convention that the last
+  three digits matched the mizer version existed because this package shipped
+  mizer content that had to be kept in step by hand. Nothing describing mizer is
+  bundled any more — the skills and the API index both come from the installed
+  mizer — so the convention only forced a release here for every release there.
+  This package is versioned on its own changes from now on, and the mizer it is
+  designed against is stated where it belongs, as `mizer (>= 3.2.2)` in
+  `Suggests`.
+
+* The `@dev` branch has been retired. It existed to hold skills matching the
+  development version of mizer, which the installed-mizer lookup made
+  unnecessary; its one piece of unique content, the `analyse-stability` skill,
+  is now in mizer with the rest. Install from `main` whichever mizer you run.
+
 # mizerAgents 0.3.2.2
 
 ## New features
