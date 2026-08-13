@@ -334,6 +334,11 @@ test_that("the r-mizer MCP server is configured in .mcp.json", {
     entry <- cfg$mcpServers[["r-mizer"]]
     expect_identical(entry$command, "Rscript")
     expect_match(entry$args[[2]], "btw::btw_mcp_server", fixed = TRUE)
+    # Agent launchers may strip XDG_RUNTIME_DIR. The shared R command recovers
+    # Linux's per-user socket directory so that the MCP server still sees the
+    # RStudio/Positron session registered there.
+    expect_match(entry$args[[2]], "MCPTOOLS_SOCKET_DIR", fixed = TRUE)
+    expect_match(entry$args[[2]], "/run/user", fixed = TRUE)
     # Execution is on by default, and needs btw's own opt-in to work
     expect_true(grepl("'run'", entry$args[[2]], fixed = TRUE))
     expect_identical(entry$env$BTW_RUN_R_ENABLED, "true")
@@ -460,15 +465,38 @@ test_that("the groups reach btw_mcp_server() as tools, not a character vector", 
     expect_false(grepl("btw_mcp_server(c(", call, fixed = TRUE))
 
     # The call must be valid R, with the groups inside the wrapper rather than
-    # alongside it
+    # alongside it. The outer local() also contains the socket-directory
+    # recovery prelude, so validate the group names independently instead of
+    # evaluating the full expression (whose final call starts the server).
     parsed <- parse(text = call)[[1]]
     expect_length(parsed, 2L)
-    expect_identical(as.list(parsed[[2]])[-1],
-                     as.list(.btw_groups(run_r = TRUE, pkg_dev = TRUE)))
+    expect_identical(as.character(parsed[[1]]), "local")
+    groups <- .btw_groups(run_r = TRUE, pkg_dev = TRUE)
+    for (group in groups) {
+        expect_match(call, paste0("'", group, "'"), fixed = TRUE)
+    }
 
     # ...and the group names must be ones this btw actually knows
     skip_if_not_installed("btw")
-    expect_no_error(eval(parsed[[2]]))
+    expect_no_error(do.call(btw::btw_tools, as.list(groups)))
+})
+
+test_that("the MCP launcher preserves and recovers socket configuration", {
+    call <- .btw_call(run_r = FALSE, pkg_dev = FALSE)
+
+    # Never override a socket directory supplied deliberately by the user or
+    # an XDG runtime directory inherited from the agent.
+    expect_match(call, "!nzchar(Sys.getenv('MCPTOOLS_SOCKET_DIR'))",
+                 fixed = TRUE)
+    expect_match(call, "!nzchar(Sys.getenv('XDG_RUNTIME_DIR'))", fixed = TRUE)
+
+    # If both are absent, derive the standard Linux path from the current
+    # user's numeric uid. This stays portable across users instead of baking
+    # the uid of the person who ran setup into a committed config file.
+    expect_match(call, "file.info(path.expand('~'))$uid", fixed = TRUE)
+    expect_match(call, "file.path('/run/user', uid)", fixed = TRUE)
+    expect_match(call, "file.path(runtime, 'mcptools')", fixed = TRUE)
+    expect_no_error(parse(text = call))
 })
 
 test_that("the Codex TOML block is merged and refreshed in place", {

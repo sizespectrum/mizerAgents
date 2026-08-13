@@ -41,6 +41,16 @@
 
 # mizerAgents 0.3.2.2
 
+## Bug fixes
+
+* MCP servers launched by agents that strip `XDG_RUNTIME_DIR` now recover the
+  standard Linux per-user runtime directory before starting `btw`. Previously
+  an RStudio or Positron session would register with mcptools under
+  `/run/user/<uid>/mcptools`, while the agent's server silently fell back to
+  `/tmp/mcptools-<user>` and reported no available R sessions. The generated
+  command respects an explicit `MCPTOOLS_SOCKET_DIR` and any inherited
+  `XDG_RUNTIME_DIR`, so launchers that already worked are unchanged.
+
 ## New features
 
 * **New `connect_mizer_agent()` hands your R session to the agent.** This is the

@@ -33,6 +33,28 @@
 # The `Rscript -e` invocation that starts the server. Every agent's config
 # format ultimately wraps this same command.
 #
+# Linux desktop sessions normally advertise their per-user runtime directory
+# through `XDG_RUNTIME_DIR`, which is where `mcptools` puts the sockets that
+# connect an MCP server to an interactive R session. Some agents sanitise the
+# environment of MCP subprocesses, however. The user's R session then registers
+# under `/run/user/<uid>/mcptools`, while the server falls back to
+# `/tmp/mcptools-<user>` and silently sees no sessions.
+#
+# Recover the standard Linux location in the server process when neither the
+# explicit mcptools override nor XDG itself survived. The expression has to be
+# self-contained because the generated config depends only on btw/mcptools,
+# not on mizerAgents remaining installed. It deliberately leaves explicit and
+# inherited settings alone, and is a no-op on systems without `/run/user`.
+.mcp_socket_prelude <- paste0(
+    "if (.Platform$OS.type == 'unix' && ",
+    "!nzchar(Sys.getenv('MCPTOOLS_SOCKET_DIR')) && ",
+    "!nzchar(Sys.getenv('XDG_RUNTIME_DIR'))) { ",
+    "uid <- file.info(path.expand('~'))$uid; ",
+    "runtime <- file.path('/run/user', uid); ",
+    "if (!is.na(uid) && dir.exists(runtime)) ",
+    "Sys.setenv(MCPTOOLS_SOCKET_DIR = file.path(runtime, 'mcptools')) }"
+)
+
 # The groups go through `btw_tools()` rather than being handed to
 # `btw_mcp_server()` as a bare character vector. `btw_mcp_server()` starts by
 # testing whether its argument names an R file, with
@@ -43,7 +65,8 @@
 # list of tool objects makes `is.character()` FALSE and short-circuits the test
 # before `file.exists()` is reached.
 .btw_call <- function(run_r, pkg_dev) {
-    sprintf("btw::btw_mcp_server(btw::btw_tools(%s))",
+    sprintf("local({ %s; btw::btw_mcp_server(btw::btw_tools(%s)) })",
+            .mcp_socket_prelude,
             paste0("'", .btw_groups(run_r, pkg_dev), "'", collapse = ", "))
 }
 
