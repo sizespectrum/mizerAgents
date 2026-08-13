@@ -2,6 +2,27 @@
 
 ## New features
 
+* **`MIZER-AGENTS.md` is a routing card, not a reference.** It has gone from 229
+  lines to 113, and most of what remains is generated from the skills. The core
+  workflow, the species-parameter table, the plotting list, the numerical-scheme
+  note and the extension pointer are all gone: each was a lossy paraphrase of a
+  skill that says it better, and a summary an agent can act on is a summary it
+  acts on *instead of* reading the skill — which is the failure the card's own
+  opening section warns about. The two facts that lived only in the card have
+  moved upstream into mizer's `build-multispecies-model` and `run-simulation`
+  skills, where every project gets them.
+* **The generated sections now go where the card puts them**, substituted into
+  `<!-- mizerAgents:… -->` placeholders instead of being appended in the order
+  the code builds them. The skills index has moved from line 159 to line 42, so
+  an agent reading top-down under a budget reaches the routing before it runs
+  out of attention.
+* The card no longer carries its own copy of the "you are in the user's global
+  environment" warning. That warning was unconditional while the live-session
+  section it duplicated was not, so with `r_session = FALSE` or `run_r = FALSE`
+  the card told the agent it was running in the user's session on the same page
+  that told it in-session execution was disabled. It is now stated once, in the
+  `run_r` branch where it is true.
+
 * **The API index now comes from the installed mizer too.** `llms.txt` lists
   every exported mizer function with a one-line description, so it describes one
   version of the mizer API and goes stale the moment mizer gains or renames a
@@ -24,10 +45,6 @@
   arguments either way.
 
 ## Other changes
-
-* `MIZER-AGENTS.md` now warns that code run through the `r-mizer` MCP server
-  executes in the user's global environment, where `load()` and top-level
-  assignment silently overwrite their objects.
 
 * The version number no longer tracks mizer's. The convention that the last
   three digits matched the mizer version existed because this package shipped

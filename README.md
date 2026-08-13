@@ -36,9 +36,10 @@ mizerAgents::setup_mizer_agent()
 
 This creates:
 
-- **`MIZER-AGENTS.md`** — a concise mizer reference card that AI agents read
-  automatically on startup, including key objects, the core workflow, and links
-  to the bundled API documentation.
+- **`MIZER-AGENTS.md`** — a short routing card that AI agents read automatically
+  on startup. It does not try to teach mizer: it warns the agent that its
+  recollection of the mizer API is probably stale, and points it at the skills
+  below and at the bundled API index for anything it actually needs to know.
 - **`AGENTS.md`**, **`CLAUDE.md`** and **`GEMINI.md`** — your project
   instruction files, each updated to include a short package-managed block
   pointing agents at `MIZER-AGENTS.md`. All three are handled the same way,

@@ -59,6 +59,113 @@
     trimws(val)
 }
 
+# The "task skills" index for the always-loaded reference card, generated from
+# the bundled skills' own frontmatter. Claude Code discovers `.claude/skills/`
+# natively; every other agent does not, so this index is how they learn which
+# skills exist and when to read them. Only the index (names + descriptions +
+# path) goes in the card; the skill bodies stay on disk and are read on demand,
+# mirroring Claude Code's lazy loading.
+#
+# Returns "" when the installed mizer ships no skills, which drops the section
+# from the card entirely rather than promising guides that are not there.
+.skills_index_section <- function(skills_src) {
+    if (!nzchar(skills_src) || !dir.exists(skills_src)) return("")
+    skill_dirs <- sort(list.dirs(skills_src, recursive = FALSE))
+    index_lines <- vapply(skill_dirs, function(d) {
+        sprintf("- **`%s`**: %s",
+                basename(d), .skill_description(file.path(d, "SKILL.md")))
+    }, character(1))
+    paste0(
+        "## Task skills (read on demand)\n\n",
+        "Step-by-step guides for common mizer tasks are installed under ",
+        "`.claude/skills/<name>/SKILL.md`. Claude Code loads them ",
+        "automatically; other agents should **read the matching file before ",
+        "starting** such a task rather than working from memory. They are the ",
+        "reference this card is not: workflows, argument tables and the ",
+        "failure modes of each step. Triggers:\n\n",
+        paste(index_lines, collapse = "\n"), "\n\n",
+        "A skill's directory may also hold a `NOTES.md` recording what ",
+        "earlier work in this project found. Read it whenever you read the ",
+        "`SKILL.md`, and treat it as taking precedence. Write new ",
+        "project-specific findings there, creating the file if needed.\n\n",
+        "Do not edit `SKILL.md` or this card: both are installed by ",
+        "`mizerAgents::setup_mizer_agent()`. Project notes that belong to no ",
+        "single skill go in `AGENTS.md` / `CLAUDE.md`, outside the ",
+        "`<!-- mizerAgents: ... -->` markers. A lesson that is true of mizer ",
+        "in general rather than of this project belongs upstream, where every ",
+        "project gets it: tell the user, and offer to report it at ",
+        "<https://github.com/sizespectrum/mizerAgents/issues>."
+    )
+}
+
+# The section pointing at the bundled API index, explicit about what that index
+# is *not*. The index is a curated map of the API grouped by workflow stage,
+# which no tool can regenerate, and it ages gracefully: a function that has been
+# renamed shows up as a lookup that fails, not as a call that quietly does the
+# wrong thing. Signatures and defaults are the part that rots dangerously, so
+# they are deliberately not bundled: they come from the installed mizer, read
+# through btw when the user's session is connected and through `Rscript` when it
+# is not.
+.function_lookup_section <- function(llms_src, r_session) {
+    paste0(
+        "## Finding the right mizer function\n\n",
+        "Two steps, and they use different sources:\n\n",
+        "1. **Which function do I need?** Grep the bundled API index: every\n",
+        "   exported function with a one-line description, grouped by workflow\n",
+        "   stage (creating a model, tuning the steady state, projecting,\n",
+        "   plotting). Grep it for a keyword; do not read the whole file:\n",
+        "   ", llms_src, "\n",
+        "2. **How do I call it?** ",
+        if (isTRUE(r_session)) {
+            paste0(
+                "Read the help page for the *installed* mizer with\n",
+                "   `btw_tool_docs_help_page`. The index above deliberately carries no\n",
+                "   argument lists, and this card is not a reference either.\n"
+            )
+        } else {
+            paste0(
+                "Read the help page for the *installed* mizer:\n",
+                "   `Rscript -e 'help(name, package = \"mizer\")'`. The index above\n",
+                "   deliberately carries no argument lists, and this card is not a\n",
+                "   reference either.\n"
+            )
+        },
+        "\nNever supply arguments from memory for a function you have not looked up\n",
+        "in this session. Rendered documentation for the current release is at\n",
+        "<https://sizespectrum.org/mizer/reference/>, but the installed version is\n",
+        "what your code will run against, so prefer the local help page."
+    )
+}
+
+# Substitute a generated section into the reference card.
+#
+# `inst/MIZER-AGENTS.md` carries `<!-- mizerAgents:<name> -->` placeholder lines
+# where the generated sections go, rather than having them appended in the order
+# the code happens to build them. The card is always loaded in full, but an
+# agent reads it top-down under a budget, so the sections that route it
+# elsewhere - the skills index, the function lookup - have to sit near the top,
+# and only the card itself is in a position to say where. Adding a section means
+# adding its placeholder there too.
+#
+# `lines` and the return value are character vectors of lines; `text` is a
+# single string, possibly multi-line, and possibly empty for a section this
+# project does not get (no skills installed, no R session). An empty section
+# takes its placeholder and the blank line after it away with it, so that
+# turning one off leaves no gap behind.
+.fill_card_section <- function(lines, name, text) {
+    marker <- paste0("<!-- mizerAgents:", name, " -->")
+    at <- which(trimws(lines) == marker)
+    if (length(at) != 1) {
+        stop("MIZER-AGENTS.md needs exactly one `", marker, "` placeholder, ",
+             "found ", length(at), ".", call. = FALSE)
+    }
+    if (!nzchar(text)) {
+        drop <- if (at < length(lines) && !nzchar(lines[at + 1])) c(at, at + 1) else at
+        return(lines[-drop])
+    }
+    append(lines[-at], strsplit(text, "\n", fixed = TRUE)[[1]], after = at - 1)
+}
+
 # The instruction files agents read at startup. None of them is a fallback for
 # another: Claude Code reads `CLAUDE.md` and not `AGENTS.md`, and Gemini CLI
 # reads `GEMINI.md` unless `context.fileName` says otherwise. So each file gets
@@ -321,14 +428,16 @@
 
 #' Set up an AI agent to help with your mizer project
 #'
-#' Creates (or updates) a `MIZER-AGENTS.md` file in your project directory
-#' containing a concise mizer reference that AI coding agents read
-#' automatically on startup. The file includes the core mizer workflow, key
-#' object descriptions, and the path to the bundled API index: a curated list
-#' of every exported mizer function, grouped by workflow stage, for finding the
-#' right function. Argument lists are deliberately not bundled: those go stale
-#' silently, so the card sends agents to the help pages of the mizer version you
-#' actually have installed.
+#' Creates (or updates) a `MIZER-AGENTS.md` file in your project directory: a
+#' short routing card that AI coding agents read automatically on startup. It is
+#' not a mizer reference, on purpose - a summary complete enough to work from is
+#' a summary an agent will work from instead of reading the skill, and it goes
+#' stale a release later. The card carries only what has to be said up front,
+#' then an index of the task skills, the path to the bundled API index (a
+#' curated list of every exported mizer function, grouped by workflow stage) and
+#' how to reach your R session. Argument lists are bundled nowhere: those go
+#' stale silently, so the card sends agents to the help pages of the mizer
+#' version you actually have installed.
 #'
 #' It also creates (or updates) the instruction files agents read at startup -
 #' `AGENTS.md`, `CLAUDE.md` and `GEMINI.md` - adding to each a short note and a
@@ -512,89 +621,20 @@ setup_mizer_agent <- function(path = ".", overwrite = FALSE,
     mizer_dest    <- normalizePath(file.path(path, "MIZER-AGENTS.md"), mustWork = FALSE)
     agents_dest   <- normalizePath(file.path(path, "AGENTS.md"),       mustWork = FALSE)
 
-    mizer_section <- paste(readLines(mizer_src, warn = FALSE), collapse = "\n")
-
-    # Add a "task skills" index to the always-loaded reference card, generated
-    # from the bundled skills' own frontmatter. Claude Code discovers
-    # `.claude/skills/` natively; every other agent does not, so this index is
-    # how they learn which skills exist and when to read them. Only the index
-    # (names + descriptions + path) is added here; the skill bodies stay on disk
-    # and are read on demand, mirroring Claude Code's lazy loading.
-    if (nzchar(skills_src) && dir.exists(skills_src)) {
-        skill_dirs <- sort(list.dirs(skills_src, recursive = FALSE))
-        index_lines <- vapply(skill_dirs, function(d) {
-            sprintf("- **`%s`**: %s",
-                    basename(d), .skill_description(file.path(d, "SKILL.md")))
-        }, character(1))
-        mizer_section <- paste0(
-            mizer_section,
-            "\n\n## Task skills (read on demand)\n\n",
-            "Step-by-step guides for common mizer tasks are installed under ",
-            "`.claude/skills/<name>/SKILL.md`. Claude Code loads them ",
-            "automatically; other agents should **read the matching file before ",
-            "starting** such a task rather than working from memory. Triggers:\n\n",
-            paste(index_lines, collapse = "\n"), "\n\n",
-            "A skill's directory may also hold a `NOTES.md` recording what ",
-            "earlier work in this project found. Read it whenever you read the ",
-            "`SKILL.md`, and treat it as taking precedence. Write new ",
-            "project-specific findings there, creating the file if needed.\n\n",
-            "Do not edit `SKILL.md` or this card: both are installed by ",
-            "`mizerAgents::setup_mizer_agent()`. Project notes that belong to no ",
-            "single skill go in `AGENTS.md` / `CLAUDE.md`, outside the ",
-            "`<!-- mizerAgents: ... -->` markers. A lesson that is true of mizer ",
-            "in general rather than of this project belongs upstream, where every ",
-            "project gets it: tell the user, and offer to report it at ",
-            "<https://github.com/sizespectrum/mizerAgents/issues>.\n"
-        )
-    }
-
-    # Tell the agent how to use the live session, before pointing it at the
-    # static documentation below: help pages from the installed mizer are more
-    # trustworthy than the bundled snapshots, which were taken at whatever
-    # version this package was last built against.
-    if (isTRUE(r_session)) {
-        mizer_section <- paste0(mizer_section,
-                                .r_session_section(run_r, pkg_dev))
-    }
-
-    # Point at the bundled index, and be explicit about what it is *not*. The
-    # index is a curated map of the API grouped by workflow stage, which no tool
-    # can regenerate, and it ages gracefully: a function that has been renamed
-    # shows up as a lookup that fails, not as a call that quietly does the wrong
-    # thing. Signatures and defaults are the part that rots dangerously, so they
-    # are deliberately not bundled: they come from the installed mizer.
-    mizer_section <- paste0(
-        mizer_section,
-        "\n\n## Finding the right mizer function\n\n",
-        "Two steps, and they use different sources:\n\n",
-        "1. **Which function do I need?** Grep the bundled API index: every\n",
-        "   exported function with a one-line description, grouped by workflow\n",
-        "   stage (creating a model, tuning the steady state, projecting,\n",
-        "   plotting). Grep it for a keyword; do not read the whole file:\n",
-        "   ", llms_src, "\n",
-        "2. **How do I call it?** ",
-        if (isTRUE(r_session)) {
-            paste0(
-                "Read the help page for the *installed* mizer with\n",
-                "   `btw_tool_docs_help_page`. The index above deliberately carries no\n",
-                "   argument lists, and this card is not a reference either.\n"
-            )
-        } else {
-            paste0(
-                "Read the help page for the *installed* mizer:\n",
-                "   `Rscript -e 'help(name, package = \"mizer\")'`. The index above\n",
-                "   deliberately carries no argument lists, and this card is not a\n",
-                "   reference either.\n"
-            )
-        },
-        "\nNever supply arguments from memory for a function you have not looked up\n",
-        "in this session. Rendered documentation for the current release is at\n",
-        "<https://sizespectrum.org/mizer/reference/>, but the installed version is\n",
-        "what your code will run against, so prefer the local help page.\n"
-    )
+    # The card is the static prose plus three generated sections, substituted
+    # into the placeholders it carries rather than appended, so that the card
+    # decides where each one goes. `.fill_card_section()` explains why that
+    # matters; the section builders are just above it.
+    card <- readLines(mizer_src, warn = FALSE)
+    card <- .fill_card_section(card, "skills", .skills_index_section(skills_src))
+    card <- .fill_card_section(
+        card, "r-session",
+        if (isTRUE(r_session)) .r_session_section(run_r, pkg_dev) else "")
+    card <- .fill_card_section(card, "function-lookup",
+                               .function_lookup_section(llms_src, r_session))
 
     # Always write/overwrite the package-managed MIZER-AGENTS.md file
-    writeLines(mizer_section, mizer_dest)
+    writeLines(card, mizer_dest)
     message("Created ", mizer_dest)
 
     # Handle the instruction files. Unlike MIZER-AGENTS.md these belong to the

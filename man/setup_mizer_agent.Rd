@@ -79,14 +79,16 @@ snippet to paste there instead. Ignored when \code{r_session = FALSE}.}
 Invisibly returns the path to the \code{AGENTS.md} file.
 }
 \description{
-Creates (or updates) a \code{MIZER-AGENTS.md} file in your project directory
-containing a concise mizer reference that AI coding agents read
-automatically on startup. The file includes the core mizer workflow, key
-object descriptions, and the path to the bundled API index: a curated list
-of every exported mizer function, grouped by workflow stage, for finding the
-right function. Argument lists are deliberately not bundled: those go stale
-silently, so the card sends agents to the help pages of the mizer version you
-actually have installed.
+Creates (or updates) a \code{MIZER-AGENTS.md} file in your project directory: a
+short routing card that AI coding agents read automatically on startup. It is
+not a mizer reference, on purpose - a summary complete enough to work from is
+a summary an agent will work from instead of reading the skill, and it goes
+stale a release later. The card carries only what has to be said up front,
+then an index of the task skills, the path to the bundled API index (a
+curated list of every exported mizer function, grouped by workflow stage) and
+how to reach your R session. Argument lists are bundled nowhere: those go
+stale silently, so the card sends agents to the help pages of the mizer
+version you actually have installed.
 }
 \details{
 It also creates (or updates) the instruction files agents read at startup -

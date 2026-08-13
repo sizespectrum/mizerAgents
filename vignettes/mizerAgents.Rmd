@@ -43,9 +43,14 @@ mizerAgents::setup_mizer_agent()
 
 This creates the following files in your working directory:
 
-- **`MIZER-AGENTS.md`** — a concise mizer reference: core workflow, key object
-  descriptions, a species parameter table, and the path to the bundled API
-  index. This file is package-managed and can be updated when mizer is
+- **`MIZER-AGENTS.md`** — a short routing card, loaded into the agent's context
+  on every request. It is deliberately not a mizer reference: anything it
+  summarised well enough to act on would be something the agent used instead of
+  reading the skill, and it would go stale a release later. So it carries only
+  what has to be said before the agent does anything — that its recollection of
+  the mizer API is probably stale, and that setters return a new object — and
+  then an index of the skills, the path to the bundled API index, and how to use
+  your R session. This file is package-managed and updated when mizer is
   upgraded.
 - **`AGENTS.md`**, **`CLAUDE.md`** and **`GEMINI.md`** — your project-specific
   instruction files. Each is created with a short package-managed block at the

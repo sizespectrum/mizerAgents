@@ -289,7 +289,7 @@
 # which vary between clients.
 .r_session_section <- function(run_r, pkg_dev) {
     paste0(
-        "\n\n## The user's live R session\n\n",
+        "## The user's live R session\n\n",
         "This project is configured with an MCP server named `r-mizer` (provided by\n",
         "the [btw](https://posit-dev.github.io/btw/) package) that connects you to the\n",
         "R session the user is working in. Use it:\n\n",
@@ -312,10 +312,14 @@
             "  persist and the user can carry on with them. Plots come back to you as\n",
             "  images: after calibrating or projecting, plot the result and *look at it*\n",
             "  before reporting success.\n",
-            "- **That session holds their work.** Assigning over an existing object\n",
-            "  destroys it, and there is no undo. Assign to a new name, or say what you\n",
-            "  are about to overwrite first. Long projections block their console, so\n",
-            "  keep `t_max` modest unless asked otherwise.\n"
+            "- **That session holds their work.** You are in *their* global\n",
+            "  environment: assigning over an existing object destroys it, and `load()`\n",
+            "  and `rm()` reach everything they have open. There is no undo and nothing\n",
+            "  warns you. Assign to a new name, or say what you are about to overwrite\n",
+            "  first, and do exploratory work in a throwaway environment or a separate\n",
+            "  `Rscript` — keep the session itself for the steps whose result the user\n",
+            "  wants to keep. Say so whenever you do change a global. Long projections\n",
+            "  block their console, so keep `t_max` modest unless asked otherwise.\n"
         ) else paste0(
             "- Running R code in the session is **not** enabled for this project. To use\n",
             "  the console yourself, write a script and run it with `Rscript`; it will not\n",
@@ -333,6 +337,6 @@
         ) else "",
         "\nIf these tools are missing, the user has not connected their session; ask\n",
         "them to run `mizerAgents::connect_mizer_agent()` in their R console, rather\n",
-        "than working around it.\n"
+        "than working around it."
     )
 }

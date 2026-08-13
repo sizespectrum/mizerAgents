@@ -29,6 +29,19 @@ test_that("setup_mizer_agent works as expected", {
     expect_true(any(grepl("llms.txt", mizer_content, fixed = TRUE)))
     expect_false(any(grepl("llms-full", mizer_content, fixed = TRUE)))
 
+    # Every generated section was substituted into its placeholder, and the
+    # routing sections come before the reference the card is not: the skills
+    # index has to be reachable for an agent that stops reading part-way.
+    expect_false(any(grepl("^<!-- mizerAgents:[a-z-]+ -->$", mizer_content)))
+    expect_lt(grep("^## Task skills", mizer_content),
+              grep("^## Finding the right", mizer_content))
+
+    # The card routes rather than duplicating: the workflow, plotting and
+    # species-parameter sections it used to carry are the skills' job now, and
+    # restating them here is how they went stale.
+    expect_false(any(grepl("plotSpectra", mizer_content, fixed = TRUE)))
+    expect_false(any(grepl("second_order_w", mizer_content, fixed = TRUE)))
+
     # Each instruction file should contain the marked block: a note plus the
     # `@` import. All three carry it, so an agent that reads only its own named
     # file still gets the mizer context.
