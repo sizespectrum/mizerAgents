@@ -25,7 +25,11 @@
 
 ## Other changes
 
-* **The version number no longer tracks mizer's.** The convention that the last
+* `MIZER-AGENTS.md` now warns that code run through the `r-mizer` MCP server
+  executes in the user's global environment, where `load()` and top-level
+  assignment silently overwrite their objects.
+
+* The version number no longer tracks mizer's. The convention that the last
   three digits matched the mizer version existed because this package shipped
   mizer content that had to be kept in step by hand. Nothing describing mizer is
   bundled any more — the skills and the API index both come from the installed
