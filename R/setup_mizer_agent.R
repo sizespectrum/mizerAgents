@@ -16,6 +16,15 @@
     if (nzchar(src) && dir.exists(src)) src else ""
 }
 
+# Files under mizer's `inst/skills/` that are not part of the skill an agent
+# follows. A `quick-reference.md` is website material: mizer's cheatsheet
+# generator appends it to the article as a "Quick reference" section, and no
+# `SKILL.md` points at it, so an agent that is given one never reads it. Copying
+# it into a project only adds a file the user has to recognise as ours.
+#
+# `rels` are paths relative to the skills source. Internal helper.
+.skill_payload <- function(rels) rels[basename(rels) != "quick-reference.md"]
+
 # Where the API index comes from, on the same reasoning as `.skills_source()`.
 #
 # `llms.txt` lists every exported mizer function with a one-line description, so
@@ -363,7 +372,9 @@
     adopting <- is.null(recorded)
     if (adopting) recorded <- character(0)
 
-    rels <- sort(list.files(skills_src, recursive = TRUE))
+    all_rels <- sort(list.files(skills_src, recursive = TRUE))
+    rels <- .skill_payload(all_rels)
+    excluded <- setdiff(all_rels, rels)
     hashes <- character(0)
     installed <- character(0)
     kept <- character(0)
@@ -401,17 +412,29 @@
         installed <- c(installed, sub("/.*$", "", rel))
     }
 
-    # Files we shipped once and no longer do. An unmodified one is ours to
-    # remove; an edited one is not, so it stays and we stop tracking it.
+    # Files we shipped once and no longer do, including the ones that mizer
+    # still ships but we have stopped installing. An unmodified one is ours to
+    # remove; an edited one is not, so it stays and we stop tracking it. An
+    # excluded file has no manifest entry once we have swept it, and in a
+    # project set up before the manifest existed it never had one, so it is
+    # matched against what we would have written for it instead.
     removed <- character(0)
-    for (rel in setdiff(names(recorded), rels)) {
+    for (rel in union(setdiff(names(recorded), rels), excluded)) {
         dest <- file.path(skills_dest, rel)
         if (!file.exists(dest)) next
-        if (identical(.hash_file(dest), unname(recorded[rel]))) {
+        want <- if (rel %in% names(recorded)) {
+            unname(recorded[rel])
+        } else {
+            .hash_lines(readLines(file.path(skills_src, rel), warn = FALSE))
+        }
+        if (identical(.hash_file(dest), want)) {
             unlink(dest)
             removed <- c(removed, sub("/.*$", "", rel))
         }
     }
+    # Only a directory we have emptied is a skill that has gone; removing a
+    # single file from a skill we still install is not worth a message.
+    removed <- setdiff(removed, sub("/.*$", "", rels))
     for (d in list.dirs(skills_dest, recursive = FALSE)) {
         if (length(list.files(d, all.files = TRUE, no.. = TRUE)) == 0) {
             unlink(d, recursive = TRUE)

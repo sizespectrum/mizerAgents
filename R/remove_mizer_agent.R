@@ -140,7 +140,12 @@
 # The hashes the current bundle would have installed, used only when there is no
 # manifest to consult. Empty when the installed mizer ships no skills, in which
 # case nothing under `.claude/skills/` can be identified as ours and everything
-# there is kept. Internal helper.
+# there is kept.
+#
+# Deliberately not filtered through `.skill_payload()`: a project set up by an
+# older version still has the files we have since stopped installing, and with
+# no manifest this is the only way left to recognise them as ours.
+# Internal helper.
 .bundled_skill_hashes <- function() {
     src <- .skills_source()
     if (!nzchar(src) || !dir.exists(src)) return(character(0))

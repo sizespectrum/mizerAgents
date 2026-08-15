@@ -334,6 +334,46 @@ test_that("a skill that is no longer bundled is removed unless edited", {
                                          "SKILL.md")), "# Edited here")
 })
 
+test_that("the website-only files in a skill directory are not installed", {
+    tmp_dir <- tempfile("mizer_agent_skill_payload")
+    dir.create(tmp_dir)
+    on.exit(unlink(tmp_dir, recursive = TRUE))
+    skills_dest <- file.path(tmp_dir, ".claude", "skills")
+
+    src <- .skills_source()
+    skip_if(!nzchar(src), "the installed mizer ships no skills")
+    rels <- sort(list.files(src, recursive = TRUE))
+    excluded <- setdiff(rels, .skill_payload(rels))
+    skip_if(length(excluded) == 0,
+            "the installed mizer ships no quick-reference.md")
+    qr_rel <- excluded[1]
+
+    suppressMessages(setup_mizer_agent(path = tmp_dir))
+    # The skill itself is installed; its quick reference - which belongs to the
+    # mizer website, and which no SKILL.md points at - is not
+    expect_true(file.exists(file.path(skills_dest, dirname(qr_rel),
+                                      "SKILL.md")))
+    expect_false(file.exists(file.path(skills_dest, qr_rel)))
+    expect_length(list.files(skills_dest, pattern = "^quick-reference\\.md$",
+                             recursive = TRUE), 0)
+    expect_false(qr_rel %in% names(.read_skill_manifest(
+        file.path(skills_dest, .skill_manifest))))
+
+    # A copy left behind by a version that did install it is swept away, even
+    # with no manifest entry to recognise it by ...
+    dest <- file.path(skills_dest, qr_rel)
+    writeLines(readLines(file.path(src, qr_rel), warn = FALSE), dest)
+    suppressMessages(setup_mizer_agent(path = tmp_dir))
+    expect_false(file.exists(dest))
+
+    # ... but one that has been edited here is not ours to remove
+    edited <- c(readLines(file.path(src, qr_rel), warn = FALSE),
+                "A note of my own.")
+    writeLines(edited, dest)
+    suppressMessages(setup_mizer_agent(path = tmp_dir))
+    expect_identical(readLines(dest), edited)
+})
+
 test_that("the r-mizer MCP server is configured in .mcp.json", {
     tmp_dir <- tempfile("mizer_agent_mcp")
     dir.create(tmp_dir)

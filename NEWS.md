@@ -46,6 +46,14 @@
 
 ## Other changes
 
+* The `quick-reference.md` files in mizer's `inst/skills/` are no longer
+  installed into `.claude/skills/`. They are website material — mizer's
+  cheatsheet generator appends each one to the matching article as its "Quick
+  reference" section — and no `SKILL.md` points at one, so an agent given a copy
+  never read it. A copy left in a project by an earlier version is removed on the
+  next `setup_mizer_agent()` or `update_mizer_agent()` run, unless it has been
+  edited there.
+
 * The version number no longer tracks mizer's. The convention that the last
   three digits matched the mizer version existed because this package shipped
   mizer content that had to be kept in step by hand. Nothing describing mizer is
