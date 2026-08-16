@@ -12,32 +12,29 @@ skill is a summary you will act on while it is out of date.
 
 ## Do not write mizer code from memory
 
-Mizer's API has moved on, and most mizer code in your training data predates
-the version installed here — recollection that feels solid is often a version
-or two stale. Before calling any function you have not looked up in this
-session, read its help page from the installed mizer and check the real
-signature. This failure is quiet: outdated calls often still run and return
-plausible numbers.
+Mizer's API has evolved, and most mizer code in your training data predates
+the version installed here. Recollection that feels solid is often a version
+or two stale, and outdated calls frequently run and return plausible numbers
+while doing the wrong thing.
 
-Nothing in this repository is a substitute for that. The bundled API index
-tells you which functions exist, not how to call them, and the skills describe
-workflows rather than signatures. Argument lists come from the installed
-package or they come from a guess.
+Before calling any function you have not looked up in this session, verify its
+signature in the installed mizer's documentation using the lookup tools below.
+The bundled API index names available functions and the task skills describe
+workflows, but neither provides argument lists.
 
-The one correction worth making before you read anything else: **`w_inf`,
-`w_repro_max` and `w_max` are three distinct parameters**, not three names for
-the maximum size. The `build-multispecies-model` skill has the difference.
+The one correction worth making before reading anything else: **`w_inf`**,
+**`w_repro_max`** and **`w_max`** are three distinct parameters, not three names
+for the maximum size. The `build-model` skill has the difference.
 
-If the installed mizer disagrees with this file, the installed mizer wins.
-Check with `?name` and say so rather than quietly working around it.
+If the installed mizer disagrees with this card or any skill, the installed
+package wins. Report any discrepancy to the user rather than quietly working
+around it.
 
 ## Key objects
 
 **`MizerParams`** holds all model parameters; **`MizerSim`** is what `project()`
 returns. Never modify slots directly. Every `new…`/`set…`/`match…`/`calibrate…`
 function returns a *new* object, so always reassign — `params <- setFishing(params, ...)`.
-A call whose result you drop on the floor does nothing, silently. This is the
-one mizer idiom that applies to code in every skill below.
 
 <!-- mizerAgents:skills -->
 

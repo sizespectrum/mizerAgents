@@ -317,7 +317,7 @@
             "  and `rm()` reach everything they have open. There is no undo and nothing\n",
             "  warns you. Assign to a new name, or say what you are about to overwrite\n",
             "  first, and do exploratory work in a throwaway environment or a separate\n",
-            "  `Rscript` — keep the session itself for the steps whose result the user\n",
+            "  `Rscript` -- keep the session itself for the steps whose result the user\n",
             "  wants to keep. Say so whenever you do change a global. Long projections\n",
             "  block their console, so keep `t_max` modest unless asked otherwise.\n"
         ) else paste0(

@@ -46,9 +46,19 @@
 
 ## Other changes
 
+* mizer renamed its `build-multispecies-model` skill to `build-model`, and the
+  articles its skills generate from `cheatsheet-*` to `guide-*`. Nothing here
+  needed changing to handle that — a skill that mizer stops shipping is removed
+  from a project on the next run, and the new one installed alongside the rest —
+  but `MIZER-AGENTS.md` pointed at the old skill by name, and the documentation
+  described the articles by their old name. Both now use the new names. A
+  project set up by an earlier version reports `Removed skill (no longer
+  bundled): build-multispecies-model` on its next run; if you had edited that
+  skill it is kept, and is yours to delete.
+
 * The `quick-reference.md` files in mizer's `inst/skills/` are no longer
   installed into `.claude/skills/`. They are website material — mizer's
-  cheatsheet generator appends each one to the matching article as its "Quick
+  guide generator appends each one to the matching article as its "Quick
   reference" section — and no `SKILL.md` points at one, so an agent given a copy
   never read it. A copy left in a project by an earlier version is removed on the
   next `setup_mizer_agent()` or `update_mizer_agent()` run, unless it has been

@@ -40,7 +40,8 @@ test_that("setup_mizer_agent works as expected", {
     # species-parameter sections it used to carry are the skills' job now, and
     # restating them here is how they went stale.
     expect_false(any(grepl("plotSpectra", mizer_content, fixed = TRUE)))
-    expect_false(any(grepl("second_order_w", mizer_content, fixed = TRUE)))
+    expect_false(any(grepl("Numerical scheme for dynamics", mizer_content,
+                           fixed = TRUE)))
 
     # Each instruction file should contain the marked block: a note plus the
     # `@` import. All three carry it, so an agent that reads only its own named

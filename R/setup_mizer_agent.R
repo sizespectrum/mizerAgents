@@ -1,7 +1,7 @@
 # Where the bundled skills come from.
 #
 # The skills are maintained in mizer itself (`inst/skills/`), where each
-# `SKILL.md` doubles as the source of the matching `cheatsheet-*` article on the
+# `SKILL.md` doubles as the source of the matching `guide-*` article on the
 # mizer website. Reading them from the *installed* mizer rather than shipping a
 # copy here means the guidance an agent follows always describes the mizer the
 # user is actually running: a project on CRAN mizer gets the CRAN skills, one on
@@ -17,7 +17,7 @@
 }
 
 # Files under mizer's `inst/skills/` that are not part of the skill an agent
-# follows. A `quick-reference.md` is website material: mizer's cheatsheet
+# follows. A `quick-reference.md` is website material: mizer's guide
 # generator appends it to the article as a "Quick reference" section, and no
 # `SKILL.md` points at it, so an agent that is given one never reads it. Copying
 # it into a project only adds a file the user has to recognise as ours.
@@ -484,7 +484,7 @@
 #'
 #' It also installs a set of Claude Code *skills* into `.claude/skills/` (one
 #' sub-directory with a `SKILL.md` per skill, e.g. `analyse-and-plot` and
-#' `build-multispecies-model`). Claude Code loads these automatically when a
+#' `build-model`). Claude Code loads these automatically when a
 #' task matches, giving step-by-step guidance for common mizer workflows. Like
 #' `MIZER-AGENTS.md`, the skills are package-managed and refreshed on every call
 #' so they stay up to date.
@@ -492,7 +492,7 @@
 #' The skills are taken from the **installed mizer** (`inst/skills/`), not from
 #' this package, so the guidance an agent follows always describes the mizer the
 #' project is actually running. In mizer each `SKILL.md` is also the source of
-#' the matching `cheatsheet-*` article on the mizer website, so the two are the
+#' the matching `guide-*` article on the mizer website, so the two are the
 #' same document. Skills arrived in mizer 3.2.2; against an older mizer this
 #' function still writes everything else and reports that it installed none.
 #'

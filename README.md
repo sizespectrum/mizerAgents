@@ -49,7 +49,7 @@ This creates:
   refreshed on each run; anything you add outside it is preserved, and no
   `@AGENTS.md` import is ever written or removed.
 - **`.claude/skills/`** — Claude Code skills (`analyse-and-plot`,
-  `analyse-stability`, `build-multispecies-model`, `calibrate-model`,
+  `analyse-stability`, `build-model`, `calibrate-model`,
   `run-simulation`, `set-up-fishing`, `change-parameters`, `extend-mizer`)
   that agents read
   automatically when a task matches, giving step-by-step guidance for common
@@ -58,7 +58,7 @@ This creates:
 
   The skills come from the **installed mizer** (`inst/skills/`), not from this
   package, so they always describe the version of mizer your project actually
-  runs. Each is also the source of the matching `cheatsheet-*` article on the
+  runs. Each is also the source of the matching `guide-*` article on the
   mizer website, so the agent and the human documentation are one document.
   Skills arrived in mizer 3.2.2; against an older mizer everything else is still
   set up and `setup_mizer_agent()` reports that it installed none.
