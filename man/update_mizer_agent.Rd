@@ -4,11 +4,14 @@
 \alias{update_mizer_agent}
 \title{Refresh a project's mizer agent files, keeping its settings}
 \usage{
-update_mizer_agent(path = ".", ...)
+update_mizer_agent(path = ".", check_version = TRUE, ...)
 }
 \arguments{
 \item{path}{Directory to refresh. Defaults to the current working directory,
 which should be your R project root.}
+
+\item{check_version}{Logical; whether to check if a newer version of
+\code{mizerAgents} is available on GitHub. Defaults to \code{TRUE}.}
 
 \item{...}{Arguments passed on to \code{\link[=setup_mizer_agent]{setup_mizer_agent()}}, overriding the
 detected settings. \code{path = "."}, for instance, is refreshed with

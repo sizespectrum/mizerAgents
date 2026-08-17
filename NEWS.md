@@ -1,3 +1,12 @@
+# mizerAgents 0.4.1
+
+## New features
+
+* **`update_mizer_agent()` checks whether a newer version of `mizerAgents` is available.**
+  When run with `check_version = TRUE` (the default), it queries GitHub for the
+  latest version of the package without blocking or failing on network errors,
+  and notifies the user with instructions to update if a newer release is found.
+
 # mizerAgents 0.4.0
 
 ## New features

@@ -90,6 +90,41 @@ test_that("setup_mizer_agent reports the settings a re-run changes", {
     expect_true(any(grepl("Now also configured for", msgs, fixed = TRUE)))
 
     # And an update, which changes no setting, does not
-    msgs <- capture_messages(update_mizer_agent(path = tmp_dir))
+    msgs <- capture_messages(update_mizer_agent(path = tmp_dir, check_version = FALSE))
     expect_false(any(grepl("Settings changed", msgs)))
+})
+
+test_that(".check_mizeragents_version reports when a newer version is available", {
+    tmp_desc <- tempfile("DESCRIPTION_test")
+    writeLines(c("Package: mizerAgents", "Version: 99.0.0"), tmp_desc)
+    on.exit(unlink(tmp_desc))
+
+    msgs <- capture_messages(
+        .check_mizeragents_version(url = tmp_desc, local_version = "0.4.1")
+    )
+    expect_true(any(grepl("A newer version of mizerAgents is available", msgs)))
+    expect_true(any(grepl("99.0.0 > 0.4.1", msgs, fixed = TRUE)))
+    expect_true(any(grepl("pak::pak", msgs, fixed = TRUE)))
+
+    # When local is up to date or newer, it says nothing
+    msgs_ok <- capture_messages(
+        .check_mizeragents_version(url = tmp_desc, local_version = "99.0.0")
+    )
+    expect_length(msgs_ok, 0)
+
+    msgs_ahead <- capture_messages(
+        .check_mizeragents_version(url = tmp_desc, local_version = "100.0.0")
+    )
+    expect_length(msgs_ahead, 0)
+})
+
+test_that(".check_mizeragents_version degrades gracefully on error or missing version", {
+    # Non-existent or invalid URL
+    expect_null(.check_mizeragents_version(url = "http://invalid.domain.example/DESCRIPTION"))
+
+    # Malformed file without Version header
+    tmp_empty <- tempfile("DESCRIPTION_empty")
+    writeLines("Package: mizerAgents", tmp_empty)
+    on.exit(unlink(tmp_empty), add = TRUE)
+    expect_null(.check_mizeragents_version(url = tmp_empty))
 })

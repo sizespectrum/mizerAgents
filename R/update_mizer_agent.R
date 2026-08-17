@@ -130,6 +130,40 @@
            "\n  settings a project already has.")
 }
 
+# Check GitHub for a newer version of mizerAgents without blocking or failing on
+# network errors. Internal helper.
+.check_mizeragents_version <- function(
+    timeout_sec = 2,
+    url = "https://raw.githubusercontent.com/sizespectrum/mizerAgents/main/DESCRIPTION",
+    package = "mizerAgents",
+    local_version = NULL) {
+    tryCatch({
+        old_opt <- options(timeout = timeout_sec)
+        on.exit(options(old_opt), add = TRUE)
+
+        lines <- suppressWarnings(readLines(url, warn = FALSE))
+        ver_line <- grep("^Version:\\s*", lines, value = TRUE)
+        if (!length(ver_line)) return(invisible(NULL))
+
+        remote_ver_str <- trimws(sub("^Version:\\s*", "", ver_line[1]))
+        remote_ver <- package_version(remote_ver_str)
+        local_ver <- if (is.null(local_version)) {
+            utils::packageVersion(package)
+        } else {
+            package_version(local_version)
+        }
+
+        if (remote_ver > local_ver) {
+            message(
+                "\nA newer version of mizerAgents is available (", remote_ver,
+                " > ", local_ver, ").\n",
+                "  To update, run: pak::pak(\"sizespectrum/mizerAgents\")"
+            )
+        }
+        invisible(remote_ver)
+    }, error = function(e) invisible(NULL))
+}
+
 #' Refresh a project's mizer agent files, keeping its settings
 #'
 #' Re-runs [setup_mizer_agent()] with the options this project was set up with,
@@ -164,6 +198,8 @@
 #'
 #' @param path Directory to refresh. Defaults to the current working directory,
 #'   which should be your R project root.
+#' @param check_version Logical; whether to check if a newer version of
+#'   `mizerAgents` is available on GitHub. Defaults to `TRUE`.
 #' @param ... Arguments passed on to [setup_mizer_agent()], overriding the
 #'   detected settings. `path = "."`, for instance, is refreshed with
 #'   `update_mizer_agent(run_r = FALSE)` if you want to turn code execution off
@@ -181,7 +217,7 @@
 #' # After upgrading mizer, refresh the skills without changing the setup
 #' update_mizer_agent()
 #' }
-update_mizer_agent <- function(path = ".", ...) {
+update_mizer_agent <- function(path = ".", check_version = TRUE, ...) {
     if (!dir.exists(path)) {
         stop("`path` does not exist: ", path, call. = FALSE)
     }
@@ -217,5 +253,11 @@ update_mizer_agent <- function(path = ".", ...) {
         "\n"
     )
 
-    do.call(setup_mizer_agent, opts)
+    result <- do.call(setup_mizer_agent, opts)
+
+    if (isTRUE(check_version)) {
+        .check_mizeragents_version()
+    }
+
+    invisible(result)
 }
