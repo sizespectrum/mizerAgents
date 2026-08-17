@@ -152,7 +152,9 @@
     rels <- sort(list.files(src, recursive = TRUE))
     hashes <- vapply(rels, function(rel) {
         content <- readLines(file.path(src, rel), warn = FALSE)
-        if (basename(rel) == "SKILL.md") content <- c(content, .skill_footer)
+        if (basename(rel) == "SKILL.md") {
+            content <- c(.strip_article_only(content), .skill_footer)
+        }
         .hash_lines(content)
     }, character(1))
     hashes

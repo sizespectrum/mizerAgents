@@ -6,6 +6,11 @@
   When run with `check_version = TRUE` (the default), it queries GitHub for the
   latest version of the package without blocking or failing on network errors,
   and notifies the user with instructions to update if a newer release is found.
+* **`MIZER-AGENTS.md` directs agents to report mizer bugs upstream.**
+  When an agent encounters a mizer function behaving differently from its help
+  page, the card now instructs the agent not to silently work around the bug, but
+  to construct a minimal reproducible example (reprex) and file an issue on the
+  mizer issue tracker (<https://github.com/sizespectrum/mizer/issues>).
 
 # mizerAgents 0.4.0
 

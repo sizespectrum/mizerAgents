@@ -30,6 +30,26 @@ If the installed mizer disagrees with this card or any skill, the installed
 package wins. Report any discrepancy to the user rather than quietly working
 around it.
 
+## Reporting bugs in mizer
+
+If a mizer function behaves differently from what its installed help page led
+you to expect, treat it as a bug in mizer rather than quietly working around it:
+
+1. **Do not silently patch or work around the discrepancy.**
+2. **Create a minimal reproducible example (reprex)** isolating the unexpected
+   behaviour, noting the installed mizer version (`packageVersion("mizer")`).
+3. **File an issue on the mizer issue tracker** at
+   <https://github.com/sizespectrum/mizer/issues>. If the GitHub CLI (`gh`) is
+   available and authenticated, you may offer to run:
+   ```bash
+   gh issue create --repo sizespectrum/mizer --title "..." --body "..."
+   ```
+   Otherwise, present the ready-to-paste title, description, and reprex to the
+   user with the link.
+
+*(Note: Issues with this agent card, skills, or `mizerAgents` tooling belong on
+<https://github.com/sizespectrum/mizerAgents/issues> instead.)*
+
 ## Key objects
 
 **`MizerParams`** holds all model parameters; **`MizerSim`** is what `project()`

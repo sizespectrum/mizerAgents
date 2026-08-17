@@ -28,6 +28,8 @@ test_that("setup_mizer_agent works as expected", {
                           fixed = TRUE)))
     expect_true(any(grepl("llms.txt", mizer_content, fixed = TRUE)))
     expect_false(any(grepl("llms-full", mizer_content, fixed = TRUE)))
+    expect_true(any(grepl("Reporting bugs in mizer", mizer_content, fixed = TRUE)))
+    expect_true(any(grepl("github.com/sizespectrum/mizer/issues", mizer_content, fixed = TRUE)))
 
     # Every generated section was substituted into its placeholder, and the
     # routing sections come before the reference the card is not: the skills
