@@ -25,6 +25,29 @@
 # `rels` are paths relative to the skills source. Internal helper.
 .skill_payload <- function(rels) rels[basename(rels) != "quick-reference.md"]
 
+# Drop the article-only blocks from a `SKILL.md`.
+#
+# The mirror of the `<!-- agent-only -->` blocks that mizer's guide generator
+# drops on its way to the website: content between `<!-- article-only -->` and
+# `<!-- /article-only -->` belongs to the article and not to the skill. It is
+# typically a worked example whose value is the output it produces, which the
+# article evaluates and shows; an agent cannot see that output and would only
+# have to read past the code.
+#
+# Filtering here rather than in mizer is what lets a topic stay one file:
+# `SKILL.md` holds both halves, each side of the fence takes the half it wants.
+# The markers are dropped along with the block, so a skill from a mizer that
+# does not use them is returned unchanged.
+.strip_article_only <- function(content) {
+    open <- grepl("^\\s*<!--\\s*article-only\\s*-->\\s*$", content)
+    close <- grepl("^\\s*<!--\\s*/article-only\\s*-->\\s*$", content)
+    if (!any(open)) return(content)
+    # cumsum of opens minus closes already consumed: inside the block whenever
+    # an open has been seen and its close has not.
+    inside <- cumsum(open) > cumsum(close)
+    content[!(inside | close)]
+}
+
 # Where the API index comes from, on the same reasoning as `.skills_source()`.
 #
 # `llms.txt` lists every exported mizer function with a one-line description, so
@@ -381,7 +404,9 @@
 
     for (rel in rels) {
         content <- readLines(file.path(skills_src, rel), warn = FALSE)
-        if (basename(rel) == "SKILL.md") content <- c(content, .skill_footer)
+        if (basename(rel) == "SKILL.md") {
+            content <- c(.strip_article_only(content), .skill_footer)
+        }
         want <- .hash_lines(content)
         dest <- file.path(skills_dest, rel)
         side <- paste0(dest, ".new")

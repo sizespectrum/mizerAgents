@@ -700,3 +700,68 @@ test_that("the bundled API index is used against a mizer that predates the move"
     expect_identical(src, bundled)
     expect_true(nzchar(src) && file.exists(src))
 })
+
+test_that("article-only blocks are stripped from an installed SKILL.md", {
+    skill <- c(
+        "# A skill",
+        "",
+        "Body the agent needs.",
+        "",
+        "<!-- article-only -->",
+        "",
+        "## Worked example",
+        "",
+        "```{r label}",
+        "plot(1)",
+        "```",
+        "",
+        "<!-- /article-only -->",
+        "",
+        "The end."
+    )
+    expect_identical(.strip_article_only(skill),
+                     c("# A skill", "", "Body the agent needs.", "",
+                       "", "The end."))
+
+    # Two blocks, and one that runs to the end of the file
+    expect_identical(
+        .strip_article_only(c("a", "<!-- article-only -->", "x",
+                              "<!-- /article-only -->", "b",
+                              "<!-- article-only -->", "y")),
+        c("a", "b"))
+
+    # A skill from a mizer that does not use them is returned untouched, and an
+    # `agent-only` block - which is mizer's to drop, not ours - is left alone.
+    plain <- c("# A skill", "", "<!-- agent-only -->", "Symptom table.",
+               "<!-- /agent-only -->")
+    expect_identical(.strip_article_only(plain), plain)
+})
+
+test_that("no installed skill carries article-only material", {
+    tmp_dir <- tempfile("mizer_agent_article_only")
+    dir.create(tmp_dir)
+    on.exit(unlink(tmp_dir, recursive = TRUE))
+
+    src <- .skills_source()
+    skip_if(!nzchar(src), "the installed mizer ships no skills")
+    marked <- Filter(function(f) {
+        any(grepl("^\\s*<!--\\s*article-only\\s*-->\\s*$",
+                  readLines(f, warn = FALSE)))
+    }, list.files(src, pattern = "^SKILL\\.md$", recursive = TRUE,
+                  full.names = TRUE))
+    skip_if(length(marked) == 0,
+            "the installed mizer ships no article-only blocks")
+
+    suppressMessages(setup_mizer_agent(path = tmp_dir))
+    installed <- list.files(file.path(tmp_dir, ".claude", "skills"),
+                            pattern = "^SKILL\\.md$", recursive = TRUE,
+                            full.names = TRUE)
+    expect_gt(length(installed), 0)
+    for (f in installed) {
+        lines <- readLines(f, warn = FALSE)
+        expect_false(any(grepl("article-only", lines)), label = f)
+    }
+    # Not asserted: that no evaluated ```{r} chunk survives. A skill may define
+    # one in its own body, so that a demonstration inside an article-only block
+    # has something to run without the definition being duplicated into it.
+})

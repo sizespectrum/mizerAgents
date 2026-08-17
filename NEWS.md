@@ -56,6 +56,15 @@
   bundled): build-multispecies-model` on its next run; if you had edited that
   skill it is kept, and is yours to delete.
 
+* An `<!-- article-only -->` block in a `SKILL.md` is dropped as the skill is
+  installed. mizer uses these for material that belongs to the guide article
+  rather than to the skill — a worked example whose point is the output it
+  produces, which the article evaluates and shows, and which an agent can only
+  read past. It is the mirror of the `<!-- agent-only -->` blocks that mizer's
+  own generator drops on the way to the website, and between them a topic stays
+  in a single file. A skill from a mizer that does not use the markers is
+  installed unchanged.
+
 * The `quick-reference.md` files in mizer's `inst/skills/` are no longer
   installed into `.claude/skills/`. They are website material — mizer's
   guide generator appends each one to the matching article as its "Quick
