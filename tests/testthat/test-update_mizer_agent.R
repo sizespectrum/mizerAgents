@@ -128,3 +128,28 @@ test_that(".check_mizeragents_version degrades gracefully on error or missing ve
     on.exit(unlink(tmp_empty), add = TRUE)
     expect_null(.check_mizeragents_version(url = tmp_empty))
 })
+
+test_that("the version check is made once by setup and once by an update", {
+    tmp_dir <- tempfile("mizer_agent_test")
+    dir.create(tmp_dir)
+    on.exit(unlink(tmp_dir, recursive = TRUE))
+
+    calls <- 0L
+    local_mocked_bindings(
+        .check_mizeragents_version = function(...) calls <<- calls + 1L
+    )
+
+    suppressMessages(setup_mizer_agent(path = tmp_dir))
+    expect_identical(calls, 1L)
+
+    suppressMessages(setup_mizer_agent(path = tmp_dir, check_version = FALSE))
+    expect_identical(calls, 1L)
+
+    # `update_mizer_agent()` leaves the check to the `setup_mizer_agent()` it
+    # calls, so a refresh reaches GitHub once, not twice
+    suppressMessages(update_mizer_agent(path = tmp_dir))
+    expect_identical(calls, 2L)
+
+    suppressMessages(update_mizer_agent(path = tmp_dir, check_version = FALSE))
+    expect_identical(calls, 2L)
+})

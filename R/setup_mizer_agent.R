@@ -675,6 +675,10 @@
 #'   project and starting R from a shell does not, so from a terminal either
 #'   start R in the project root or call [connect_mizer_agent()] yourself.
 #'   Ignored when `r_session = FALSE`.
+#' @param check_version Logical; whether to check GitHub for a newer version of
+#'   `mizerAgents` and say so if there is one. Defaults to `TRUE`. The check is
+#'   made after everything else is written, times out after two seconds and
+#'   never fails the setup, but set it to `FALSE` to keep the call offline.
 #'
 #' @return Invisibly returns the path to the `AGENTS.md` file.
 #' @export
@@ -699,7 +703,8 @@
 setup_mizer_agent <- function(path = ".", overwrite = FALSE,
                               r_session = TRUE, run_r = TRUE,
                               pkg_dev = FALSE, rprofile = FALSE,
-                              agents = .agent_choices) {
+                              agents = .agent_choices,
+                              check_version = TRUE) {
     agents <- match.arg(agents, .agent_choices, several.ok = TRUE)
     # How the project is set up now, read before we change it, so that the
     # summary can say which settings this run is re-declaring. The arguments
@@ -806,6 +811,10 @@ setup_mizer_agent <- function(path = ".", overwrite = FALSE,
         "  agy       (Antigravity CLI)\n",
         "  copilot   (GitHub Copilot CLI)"
     )
+
+    if (isTRUE(check_version)) {
+        .check_mizeragents_version()
+    }
 
     invisible(agents_dest)
 }

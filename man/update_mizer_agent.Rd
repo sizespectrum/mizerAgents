@@ -11,7 +11,8 @@ update_mizer_agent(path = ".", check_version = TRUE, ...)
 which should be your R project root.}
 
 \item{check_version}{Logical; whether to check if a newer version of
-\code{mizerAgents} is available on GitHub. Defaults to \code{TRUE}.}
+\code{mizerAgents} is available on GitHub. Defaults to \code{TRUE}. Passed on to
+\code{\link[=setup_mizer_agent]{setup_mizer_agent()}}, which makes the check.}
 
 \item{...}{Arguments passed on to \code{\link[=setup_mizer_agent]{setup_mizer_agent()}}, overriding the
 detected settings. \code{path = "."}, for instance, is refreshed with

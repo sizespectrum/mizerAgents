@@ -199,7 +199,8 @@
 #' @param path Directory to refresh. Defaults to the current working directory,
 #'   which should be your R project root.
 #' @param check_version Logical; whether to check if a newer version of
-#'   `mizerAgents` is available on GitHub. Defaults to `TRUE`.
+#'   `mizerAgents` is available on GitHub. Defaults to `TRUE`. Passed on to
+#'   [setup_mizer_agent()], which makes the check.
 #' @param ... Arguments passed on to [setup_mizer_agent()], overriding the
 #'   detected settings. `path = "."`, for instance, is refreshed with
 #'   `update_mizer_agent(run_r = FALSE)` if you want to turn code execution off
@@ -233,7 +234,7 @@ update_mizer_agent <- function(path = ".", check_version = TRUE, ...) {
         path = path, overwrite = FALSE,
         r_session = detected$r_session, run_r = detected$run_r,
         pkg_dev = detected$pkg_dev, rprofile = detected$rprofile,
-        agents = detected$agents)
+        agents = detected$agents, check_version = check_version)
     opts <- list(...)
     opts <- c(opts, detected_opts[setdiff(names(detected_opts), names(opts))])
 
@@ -253,11 +254,8 @@ update_mizer_agent <- function(path = ".", check_version = TRUE, ...) {
         "\n"
     )
 
+    # `setup_mizer_agent()` does the version check itself, at the end.
     result <- do.call(setup_mizer_agent, opts)
-
-    if (isTRUE(check_version)) {
-        .check_mizeragents_version()
-    }
 
     invisible(result)
 }

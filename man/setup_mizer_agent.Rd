@@ -11,7 +11,8 @@ setup_mizer_agent(
   run_r = TRUE,
   pkg_dev = FALSE,
   rprofile = FALSE,
-  agents = .agent_choices
+  agents = .agent_choices,
+  check_version = TRUE
 )
 }
 \arguments{
@@ -76,6 +77,11 @@ collaborator using a different agent. Any of:\tabular{ll}{
 Positron. Copilot CLI reads MCP config only from the user-wide
 \verb{~/.copilot/mcp-config.json}, so nothing is written for it; you get the
 snippet to paste there instead. Ignored when \code{r_session = FALSE}.}
+
+\item{check_version}{Logical; whether to check GitHub for a newer version of
+\code{mizerAgents} and say so if there is one. Defaults to \code{TRUE}. The check is
+made after everything else is written, times out after two seconds and
+never fails the setup, but set it to \code{FALSE} to keep the call offline.}
 }
 \value{
 Invisibly returns the path to the \code{AGENTS.md} file.
