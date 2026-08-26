@@ -34,6 +34,11 @@ test_that("setup_mizer_agent works as expected", {
                               mizer_content, fixed = TRUE)))
     }
     expect_false(any(grepl("llms-full", mizer_content, fixed = TRUE)))
+    expect_true(any(grepl("btw_tool_docs_help_page", mizer_content,
+                          fixed = TRUE)))
+    expect_true(any(grepl("Rscript -e 'help", mizer_content, fixed = TRUE)))
+    expect_true(any(grepl("args(mizer::functionName)", mizer_content,
+                          fixed = TRUE)))
     expect_true(any(grepl("Reporting bugs in mizer", mizer_content, fixed = TRUE)))
     expect_true(any(grepl("github.com/sizespectrum/mizer/issues", mizer_content, fixed = TRUE)))
 
@@ -454,12 +459,15 @@ test_that("the r-mizer MCP server is configured in .mcp.json", {
     # Package development tools are not
     expect_false(grepl("'pkg'", entry$args[[2]], fixed = TRUE))
 
-    # The live-session section reaches the always-loaded card, and the
-    # "how do I call it?" step routes through btw rather than a shell
+    # The live-session section reaches the always-loaded card. Function lookup
+    # is tool-neutral and lives in the static section instead.
     mizer_content <- readLines(file.path(tmp_dir, "MIZER-AGENTS.md"))
     expect_true(any(grepl("live R session", mizer_content, ignore.case = TRUE)))
     expect_true(any(grepl("btw_tool_docs_help_page", mizer_content,
                           fixed = TRUE)))
+    expect_true(any(grepl("Rscript -e 'help", mizer_content, fixed = TRUE)))
+    expect_false(grepl("btw_tool_docs_help_page",
+                       .r_session_section(TRUE, FALSE), fixed = TRUE))
 
     # run_r = FALSE drops the group and the opt-in environment variable
     suppressMessages(setup_mizer_agent(path = tmp_dir, run_r = FALSE))
@@ -474,12 +482,10 @@ test_that("the r-mizer MCP server is configured in .mcp.json", {
     expect_false(file.exists(mcp_dest))
     mizer_content <- readLines(file.path(tmp_dir, "MIZER-AGENTS.md"))
     expect_false(any(grepl("r-mizer", mizer_content, fixed = TRUE)))
-    # Without the session, the lookup step falls back to a shell command, but
-    # still sends the agent to the installed mizer rather than to a snapshot
-    expect_false(any(grepl("btw_tool_docs_help_page", mizer_content,
-                           fixed = TRUE)))
-    expect_true(any(grepl("help(name, package = \"mizer\")", mizer_content,
+    # Without the session, the same tool-neutral lookup guidance remains.
+    expect_true(any(grepl("btw_tool_docs_help_page", mizer_content,
                           fixed = TRUE)))
+    expect_true(any(grepl("Rscript -e 'help", mizer_content, fixed = TRUE)))
 })
 
 test_that("every agent with a project-level config gets one", {
@@ -739,8 +745,8 @@ test_that("a mizer too old to ship the API index degrades rather than falls back
     # describing a mizer other than the one the project runs is the staleness
     # this lookup exists to prevent. mizer has installed the index since 3.3.0;
     # against anything older the card routes the agent to the online reference
-    # index, and the two steps that do not depend on a local index are still
-    # written.
+    # index, while the static opening section still explains how to inspect the
+    # installed package.
     # `.llms_source()` looks in mizer and nowhere else now, so the mock can
     # answer every lookup the same way.
     local_mocked_bindings(
@@ -751,13 +757,13 @@ test_that("a mizer too old to ship the API index degrades rather than falls back
 
     # The section is filled to the card's width, so the line breaks fall
     # wherever the wrapping puts them: matched against the flattened text.
-    section <- gsub("[[:space:]]+", " ", .function_lookup_section("", TRUE))
+    section <- gsub("[[:space:]]+", " ", .function_lookup_section(""))
     expect_false(grepl("llms.txt", section, fixed = TRUE))
     expect_true(grepl("too old to ship the API index", section, fixed = TRUE))
     expect_true(grepl("https://sizespectrum.org/mizer/reference/", section,
                       fixed = TRUE))
-    expect_true(grepl("btw_tool_docs_help_page", section, fixed = TRUE))
-    expect_true(grepl("Never supply arguments from memory", section,
+    expect_false(grepl("btw_tool_docs_help_page", section, fixed = TRUE))
+    expect_true(grepl("inspect the installed mizer as described above", section,
                       fixed = TRUE))
 })
 

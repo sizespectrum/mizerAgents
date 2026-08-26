@@ -305,21 +305,15 @@
 
 # The section added to `MIZER-AGENTS.md` describing the live session. The MCP
 # server alone changes nothing: without these instructions an agent will still
-# reach for its recollection of the mizer API and write throwaway scripts
-# instead of using the session the user is sitting in front of. Tool names are
-# given as `btw` function names rather than as the agent's own MCP tool names,
-# which vary between clients.
+# write throwaway scripts instead of using the session the user is sitting in
+# front of. Tool names are given as `btw` function names rather than as the
+# agent's own MCP tool names, which vary between clients.
 .r_session_section <- function(run_r, pkg_dev) {
     paste0(
         "## The user's live R session\n\n",
         "This project is configured with an MCP server named `r-mizer` (provided by\n",
         "the [btw](https://posit-dev.github.io/btw/) package) that connects you to the\n",
         "R session the user is working in. Use it:\n\n",
-        "- **Look up mizer functions before calling them.** The docs tools\n",
-        "  (`btw_tool_docs_help_page`, `btw_tool_docs_available_vignettes`,\n",
-        "  `btw_tool_docs_vignette`, `btw_tool_docs_package_news`) read the *installed*\n",
-        "  mizer. That is the authority on argument names and defaults, above this\n",
-        "  card, and far above your own recollection, which is very likely stale.\n",
         "- **Inspect what the user already has.** `btw_tool_env_describe_environment`\n",
         "  lists the objects in their global environment; do not rebuild a\n",
         "  `MizerParams` or re-run a simulation that is already sitting there.\n",

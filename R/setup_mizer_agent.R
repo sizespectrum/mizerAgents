@@ -133,24 +133,17 @@
 # is *not*. The index is a curated map of the API grouped by workflow stage,
 # which no tool can regenerate, and it ages gracefully: a function that has been
 # renamed shows up as a lookup that fails, not as a call that quietly does the
-# wrong thing. Signatures and defaults are the part that rots dangerously, so
-# they are deliberately not bundled: they come from the installed mizer, read
-# through btw when the user's session is connected and through `Rscript` when it
-# is not.
+# wrong thing. Signatures and defaults are deliberately not bundled; the static
+# opening section tells the agent how to read them from the installed mizer.
 #
-# With `llms_src = ""` - a mizer too old to install the index - the first step
-# sends the agent to the online reference index instead. The section still has
-# to be written: the second step, and the warning about arguments recalled from
-# memory, are what keep the agent off its own recollection of the API, and they
-# do not depend on the index being there.
-.function_lookup_section <- function(llms_src, r_session) {
-    # Wrapped here rather than by hand, so that the four combinations of
-    # (index, no index) x (live session, none) all come out evenly filled.
+# With `llms_src = ""` - a mizer too old to install the index - the section
+# sends the agent to the online reference index instead.
+.function_lookup_section <- function(llms_src) {
     wrap <- function(...) paste(strwrap(paste0(...), width = 76, exdent = 3),
                                 collapse = "\n")
     index_step <- if (nzchar(llms_src)) {
         paste0(
-            wrap("1. **Which function do I need?** Grep the mizer API index: ",
+            wrap("Grep the mizer API index to find which function you need. It lists ",
                  "every exported function with a one-line description, grouped ",
                  "by workflow stage (creating a model, tuning the steady state, ",
                  "projecting, plotting). Grep it for a keyword; do not read the ",
@@ -158,7 +151,7 @@
             "\n   ", llms_src, "\n")
     } else {
         paste0(
-            wrap("1. **Which function do I need?** The mizer installed here is ",
+            wrap("The mizer installed here is ",
                  "too old to ship the API index, so there is no local list to ",
                  "grep. Browse the reference index for the current release at ",
                  "<https://sizespectrum.org/mizer/reference/>, and confirm that ",
@@ -168,25 +161,9 @@
     }
     paste0(
         "## Finding the right mizer function\n\n",
-        "Two steps, and they use different sources:\n\n",
         index_step,
-        wrap("2. **How do I call it?** Read the help page for the *installed* ",
-             "mizer ",
-             if (isTRUE(r_session)) "with `btw_tool_docs_help_page`. "
-             else "with `Rscript -e 'help(name, package = \"mizer\")'`. ",
-             if (nzchar(llms_src)) {
-                 paste0("The index above deliberately carries no argument ",
-                        "lists, and this card is not a reference either.")
-             } else {
-                 paste0("The online reference describes the current release ",
-                        "rather than the mizer installed here, and this card ",
-                        "is not a reference at all.")
-             }),
-        "\n",
-        "\nNever supply arguments from memory for a function you have not looked up\n",
-        "in this session. Rendered documentation for the current release is at\n",
-        "<https://sizespectrum.org/mizer/reference/>, but the installed version is\n",
-        "what your code will run against, so prefer the local help page."
+        "\nThe index deliberately carries no argument lists. Once you have the name,\n",
+        "inspect the installed mizer as described above."
     )
 }
 
@@ -755,7 +732,7 @@ setup_mizer_agent <- function(path = ".", overwrite = FALSE,
         card, "r-session",
         if (isTRUE(r_session)) .r_session_section(run_r, pkg_dev) else "")
     card <- .fill_card_section(card, "function-lookup",
-                               .function_lookup_section(llms_src, r_session))
+                               .function_lookup_section(llms_src))
 
     # Always write/overwrite the package-managed MIZER-AGENTS.md file
     writeLines(card, mizer_dest)

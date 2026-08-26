@@ -12,19 +12,17 @@ skill is a summary you will act on while it is out of date.
 
 ## Do not write mizer code from memory
 
-Mizer's API has evolved, and most mizer code in your training data predates
-the version installed here. Recollection that feels solid is often a version
-or two stale, and outdated calls frequently run and return plausible numbers
-while doing the wrong thing.
+Mizer's API has evolved, and outdated calls often still run and return
+plausible results. Before calling a mizer function, inspect the version installed
+in this project rather than relying on memory or online documentation.
 
-Before calling any function you have not looked up in this session, verify its
-signature in the installed mizer's documentation using the lookup tools below.
-The mizer API index names available functions and the task skills describe
-workflows, but neither provides argument lists.
-
-The one correction worth making before reading anything else: **`w_inf`**,
-**`w_repro_max`** and **`w_max`** are three distinct parameters, not three names
-for the maximum size. The `build-model` skill has the difference.
+For the full help page, use
+`Rscript -e 'help("functionName", package = "mizer", help_type = "text")'`.
+Run it from the project directory without --vanilla, so project library
+settings such as renv apply.
+For a quick signature check, use `args(mizer::functionName)`. The
+mizer API index names functions and the task skills describe workflows, but
+neither provides argument lists.
 
 If the installed mizer disagrees with this card or any skill, the installed
 package wins. Report any discrepancy to the user rather than quietly working
