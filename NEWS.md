@@ -24,6 +24,12 @@
 
 ## Bug fixes
 
+* **A plain file where a config directory belongs no longer aborts the setup.**
+  A project with, say, a `.codex` file rather than a `.codex/` directory - which
+  some tools leave behind - failed with `cannot open file .codex/config.toml:
+  Not a directory` part way through `setup_mizer_agent()`, so the configs for
+  the remaining agents were never written and no summary was printed. The file
+  is now reported in a warning naming it, and the rest of the setup goes ahead.
 * **Empty skill directories are no longer left behind.** A skill whose files sit
   in a sub-directory (`upgrade-mizer-code/references/`) left both directories on
   disk after `remove_mizer_agent()`, and after `setup_mizer_agent()` dropped a

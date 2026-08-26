@@ -235,6 +235,27 @@ test_that("a file that imports AGENTS.md is left alone", {
                           fixed = TRUE)))
 })
 
+test_that("a file where a config directory belongs is reported, not fatal", {
+    tmp_dir <- tempfile("mizer_agent_not_a_dir")
+    dir.create(tmp_dir)
+    on.exit(unlink(tmp_dir, recursive = TRUE))
+
+    # Some tools leave a plain `.codex` behind. dir.create() cannot make a
+    # directory there, and the write that follows must not take the whole run
+    # down with it: everything else still gets set up, and the warning names the
+    # file to deal with.
+    codex <- file.path(tmp_dir, ".codex")
+    file.create(codex)
+    expect_warning(suppressMessages(setup_mizer_agent(path = tmp_dir)),
+                   "is a file, not a directory")
+
+    expect_equal(file.size(codex), 0)
+    expect_true(file.exists(file.path(tmp_dir, "MIZER-AGENTS.md")))
+    expect_true(file.exists(file.path(tmp_dir, ".mcp.json")))
+    expect_true(file.exists(file.path(tmp_dir, ".gemini", "settings.json")))
+    expect_true(file.exists(file.path(tmp_dir, ".vscode", "mcp.json")))
+})
+
 test_that("skills are installed with a manifest and a NOTES.md pointer", {
     tmp_dir <- tempfile("mizer_agent_skills")
     dir.create(tmp_dir)

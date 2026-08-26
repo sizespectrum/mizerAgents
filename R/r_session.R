@@ -115,7 +115,7 @@
     if (identical(cfg[[key]][[.mcp_server_name]], entry)) return(FALSE)
 
     cfg[[key]][[.mcp_server_name]] <- entry
-    dir.create(dirname(dest), recursive = TRUE, showWarnings = FALSE)
+    if (!.ensure_dir(dirname(dest))) return(FALSE)
     writeLines(jsonlite::toJSON(cfg, auto_unbox = TRUE, pretty = TRUE), dest)
     TRUE
 }
@@ -150,7 +150,7 @@
         updated <- c(existing, if (length(existing)) "", block)
     }
     if (identical(updated, existing)) return(FALSE)
-    dir.create(dirname(dest), recursive = TRUE, showWarnings = FALSE)
+    if (!.ensure_dir(dirname(dest))) return(FALSE)
     writeLines(updated, dest)
     TRUE
 }

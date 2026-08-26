@@ -382,6 +382,30 @@
     invisible(path)
 }
 
+# Make sure `dir` is there to be written into, reporting rather than failing
+# when it cannot be.
+#
+# A project can have a plain file sitting where a directory of ours belongs - a
+# `.codex` rather than a `.codex/`, which some tools leave behind.
+# `dir.create()` merely fails on one, and the write that followed used to abort
+# the run with `cannot open file ... Not a directory`, half way through setting
+# the project up and with no summary of what had been done. Warning and carrying
+# on leaves the rest of the setup in place and names the file the user has to
+# deal with. Internal helper.
+.ensure_dir <- function(dir) {
+    if (dir.exists(dir)) return(TRUE)
+    dir.create(dir, recursive = TRUE, showWarnings = FALSE)
+    if (dir.exists(dir)) return(TRUE)
+    warning(if (file.exists(dir)) {
+        paste0(dir, " is a file, not a directory, so nothing could be written ",
+               "inside it. Move or delete it and re-run setup_mizer_agent().")
+    } else {
+        paste0("Could not create the directory ", dir, ", so nothing was ",
+               "written inside it.")
+    }, call. = FALSE)
+    FALSE
+}
+
 # Install the bundled skills into `.claude/skills/`, file by file.
 #
 # The unit of management is the file, not the directory: anything else in a
@@ -398,7 +422,7 @@
 .install_skills <- function(skills_src, path) {
     skills_dest <- normalizePath(file.path(path, ".claude", "skills"),
                                  mustWork = FALSE)
-    dir.create(skills_dest, recursive = TRUE, showWarnings = FALSE)
+    if (!.ensure_dir(skills_dest)) return(invisible(character(0)))
     manifest_path <- file.path(skills_dest, .skill_manifest)
     recorded <- .read_skill_manifest(manifest_path)
     # A project set up before the manifest existed has nothing to compare
