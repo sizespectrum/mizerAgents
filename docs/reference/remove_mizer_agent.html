@@ -17,7 +17,7 @@ project, or to get back to a clean slate before setting it up differently."></he
 
     <a class="navbar-brand me-2" href="../index.html">mizerAgents</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.2.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -81,9 +81,11 @@ setup, so there is nothing of yours in it.</p></li>
 <li><p>In <code>AGENTS.md</code>, <code>CLAUDE.md</code> and <code>GEMINI.md</code> only the block between the
 <code>&lt;!-- mizerAgents: start --&gt;</code> and <code>&lt;!-- mizerAgents: end --&gt;</code> markers is
 deleted; your own notes stay. A file that held nothing but the block is
-deleted with it. An <code>@AGENTS.md</code> import is never removed, just as it is
-never written: which of your instruction files import which is your
-business.</p></li>
+deleted with it, as is a <code>CLAUDE.md</code> or <code>GEMINI.md</code> holding nothing but the
+<code>@AGENTS.md</code> import that setup writes into one it creates itself. An
+<code>@AGENTS.md</code> import among notes of your own is never removed, just as one
+is never written into a file you already had: which of your instruction
+files import which is your business.</p></li>
 <li><p>Under <code>.claude/skills/</code>, a file is removed only if it still matches the
 hash recorded in <code>.claude/skills/.mizerAgents.json</code> when it was installed.
 One that has been edited here is kept and reported, as is any <code>NOTES.md</code>,
@@ -124,7 +126,7 @@ and other projects may be using it. Uninstall it yourself with
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
     </footer></div>

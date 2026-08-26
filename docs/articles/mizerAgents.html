@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">mizerAgents</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.2.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -93,10 +93,16 @@ mizer API. You only need to run this once in your R project:</p>
 <p>This creates the following files in your working directory:</p>
 <ul>
 <li>
-<strong><code>MIZER-AGENTS.md</code></strong> — a concise mizer
-reference: core workflow, key object descriptions, a species parameter
-table, and the path to the bundled API index. This file is
-package-managed and can be updated when mizer is upgraded.</li>
+<strong><code>MIZER-AGENTS.md</code></strong> — a short routing
+card, loaded into the agent’s context on every request. It is
+deliberately not a mizer reference: anything it summarised well enough
+to act on would be something the agent used instead of reading the
+skill, and it would go stale a release later. So it carries only what
+has to be said before the agent does anything — that its recollection of
+the mizer API is probably stale, and that setters return a new object —
+and then an index of the skills, the path to the bundled API index, and
+how to use your R session. This file is package-managed and updated when
+mizer is upgraded.</li>
 <li>
 <strong><code>AGENTS.md</code></strong>,
 <strong><code>CLAUDE.md</code></strong> and
@@ -201,9 +207,10 @@ Assistant</a> runs inside RStudio as well as Positron, and connects to
 the same R session this whole mechanism is built around.</p>
 <p>GitHub Copilot CLI is the exception: it reads MCP servers only from
 the user-wide <code>~/.copilot/mcp-config.json</code>, which is not a
-file a project setup function should be editing, so
-<code><a href="../reference/setup_mizer_agent.html">setup_mizer_agent()</a></code> prints the snippet to paste there
-instead.</p>
+file a project setup function should be editing. Pass
+<code>agents = "copilot"</code> and the snippet to paste there is
+printed for you; the default run, which asks for every agent, leaves it
+out rather than print a screenful for everyone.</p>
 <p>The server runs as its own R process, so it does not see your session
 until you hand it over. In your R console — RStudio’s, or whichever one
 you work in — run:</p>
@@ -563,7 +570,7 @@ produce better results than a long chain of unrelated questions.</p>
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
     </footer>

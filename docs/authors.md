@@ -11,12 +11,12 @@ Source:
 [`DESCRIPTION`](https://github.com/sizespectrum/mizerAgents/blob/HEAD/DESCRIPTION)
 
 Delius G (2026). *mizerAgents: AI Agent Support for Mizer*. R package
-version 0.3.2.2, <https://sizespectrum.github.io/mizerAgents/>.
+version 0.4.2, <https://sizespectrum.github.io/mizerAgents/>.
 
     @Manual{,
       title = {mizerAgents: AI Agent Support for Mizer},
       author = {Gustav Delius},
       year = {2026},
-      note = {R package version 0.3.2.2},
+      note = {R package version 0.4.2},
       url = {https://sizespectrum.github.io/mizerAgents/},
     }

@@ -35,10 +35,16 @@ mizerAgents::setup_mizer_agent()
 
 This creates the following files in your working directory:
 
-- **`MIZER-AGENTS.md`** — a concise mizer reference: core workflow, key
-  object descriptions, a species parameter table, and the path to the
-  bundled API index. This file is package-managed and can be updated
-  when mizer is upgraded.
+- **`MIZER-AGENTS.md`** — a short routing card, loaded into the agent’s
+  context on every request. It is deliberately not a mizer reference:
+  anything it summarised well enough to act on would be something the
+  agent used instead of reading the skill, and it would go stale a
+  release later. So it carries only what has to be said before the agent
+  does anything — that its recollection of the mizer API is probably
+  stale, and that setters return a new object — and then an index of the
+  skills, the path to the bundled API index, and how to use your R
+  session. This file is package-managed and updated when mizer is
+  upgraded.
 - **`AGENTS.md`**, **`CLAUDE.md`** and **`GEMINI.md`** — your
   project-specific instruction files. Each is created with a short
   package-managed block at the top that points agents at
@@ -121,9 +127,10 @@ whole mechanism is built around.
 
 GitHub Copilot CLI is the exception: it reads MCP servers only from the
 user-wide `~/.copilot/mcp-config.json`, which is not a file a project
-setup function should be editing, so
-[`setup_mizer_agent()`](https://sizespectrum.github.io/mizerAgents/reference/setup_mizer_agent.md)
-prints the snippet to paste there instead.
+setup function should be editing. Pass `agents = "copilot"` and the
+snippet to paste there is printed for you; the default run, which asks
+for every agent, leaves it out rather than print a screenful for
+everyone.
 
 The server runs as its own R process, so it does not see your session
 until you hand it over. In your R console — RStudio’s, or whichever one

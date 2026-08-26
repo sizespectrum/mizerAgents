@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">mizerAgents</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.2.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -56,9 +56,7 @@
 <li>
 <code>R/r_session.R</code> — per-agent MCP config writers and the <code>.Rprofile</code> hook, for the <code>btw</code> MCP server that connects the agent to the user’s live R session. <code>.agent_configs</code> is the table of paths and schema quirks (which top-level key, whether a <code>type</code> field is documented); add new agents there, and extend the shape test in <code>tests/testthat/test-setup_mizer_agent.R</code> — a config with the wrong key parses fine and silently does nothing.</li>
 <li>
-<code>inst/MIZER-AGENTS.md</code> — mizer reference card (deployed to user projects as <code>MIZER-AGENTS.md</code>)</li>
-<li>
-<code>inst/llms.txt</code> — curated mizer API index, grouped by workflow stage (deployed path appended to <code>MIZER-AGENTS.md</code>). Names and descriptions only: argument lists are intentionally not bundled, because they go stale silently.</li>
+<code>inst/MIZER-AGENTS.md</code> — the routing card deployed to user projects as <code>MIZER-AGENTS.md</code>. Keep it a routing card: it is loaded on every request, and anything it explains well enough to act on is something an agent will act on instead of opening the skill that owns it. Mizer facts belong in a mizer skill (<code>inst/skills/</code> in mizer), not here. Its <code>&lt;!-- mizerAgents:&lt;name&gt; --&gt;</code> lines are where <code><a href="reference/setup_mizer_agent.html">setup_mizer_agent()</a></code> substitutes the generated sections, so the card controls their order; a new section needs a placeholder added here.</li>
 </ul></div>
 <div class="section level2">
 <h2 id="code-conventions">Code conventions<a class="anchor" aria-label="anchor" href="#code-conventions"></a></h2>
@@ -85,7 +83,7 @@
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
     </footer></div>

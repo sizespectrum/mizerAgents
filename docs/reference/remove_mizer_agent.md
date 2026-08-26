@@ -39,9 +39,11 @@ respects when writing:
 - In `AGENTS.md`, `CLAUDE.md` and `GEMINI.md` only the block between the
   `<!-- mizerAgents: start -->` and `<!-- mizerAgents: end -->` markers
   is deleted; your own notes stay. A file that held nothing but the
-  block is deleted with it. An `@AGENTS.md` import is never removed,
-  just as it is never written: which of your instruction files import
-  which is your business.
+  block is deleted with it, as is a `CLAUDE.md` or `GEMINI.md` holding
+  nothing but the `@AGENTS.md` import that setup writes into one it
+  creates itself. An `@AGENTS.md` import among notes of your own is
+  never removed, just as one is never written into a file you already
+  had: which of your instruction files import which is your business.
 
 - Under `.claude/skills/`, a file is removed only if it still matches
   the hash recorded in `.claude/skills/.mizerAgents.json` when it was

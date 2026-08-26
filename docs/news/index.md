@@ -1,6 +1,215 @@
 # Changelog
 
+## mizerAgents 0.4.1
+
+### New features
+
+- **Function lookup guidance is now tool-neutral and always present.**
+  The opening “Do not write mizer code from memory” section offers the
+  installed package’s help page through either `btw_tool_docs_help_page`
+  or a project-local `Rscript` process, with
+  [`args()`](https://rdrr.io/r/base/args.html) as the quick signature
+  check. Documentation lookup is no longer presented as a feature of the
+  user’s live R session, and the separate function-discovery section now
+  concerns only the API index.
+
+- **A `CLAUDE.md` or `GEMINI.md` that does not exist yet is created as a
+  one-line `@AGENTS.md` import.** Previously it got its own copy of the
+  mizer block, leaving a project with three instruction files to keep in
+  step by hand. Now the block lives in `AGENTS.md` alone and the other
+  two just point at it, so project notes have one home whichever agent
+  reads them. Files you already have are unaffected: they are still
+  given their own copy of the block, their own content is left alone,
+  and no `@AGENTS.md` import is written into them or removed.
+  [`remove_mizer_agent()`](https://sizespectrum.github.io/mizerAgents/reference/remove_mizer_agent.md)
+  deletes a `CLAUDE.md` or `GEMINI.md` holding nothing but that import,
+  while one sitting among notes of your own still stays.
+
+- **[`update_mizer_agent()`](https://sizespectrum.github.io/mizerAgents/reference/update_mizer_agent.md)
+  checks whether a newer version of `mizerAgents` is available.** When
+  run with `check_version = TRUE` (the default), it queries GitHub for
+  the latest version of the package without blocking or failing on
+  network errors, and notifies the user with instructions to update if a
+  newer release is found.
+
+- **`MIZER-AGENTS.md` directs agents to report mizer bugs upstream.**
+  When an agent encounters a mizer function behaving differently from
+  its help page, the card now instructs the agent not to silently work
+  around the bug, but to construct a minimal reproducible example
+  (reprex) and file an issue on the mizer issue tracker
+  (<https://github.com/sizespectrum/mizer/issues>).
+
+- **[`setup_mizer_agent()`](https://sizespectrum.github.io/mizerAgents/reference/setup_mizer_agent.md)
+  now reports what it did as a short bulleted list.** It used to print a
+  line per file written, per skill installed and per agent configured,
+  and then a multi-paragraph summary - some fifty lines, more than
+  anyone reads. The same information is now one bulleted list of about
+  ten lines: the files, the skills as a count, the API index, what the
+  live-session connection can do and how to connect it, any setting the
+  run changed, and how to start an agent.
+  [`update_mizer_agent()`](https://sizespectrum.github.io/mizerAgents/reference/update_mizer_agent.md)
+  no longer lists the settings it detected either, since that summary
+  says what they are.
+
+- **The Copilot CLI MCP snippet is printed only when you ask for
+  Copilot.** Copilot has no per-project config, so the only thing setup
+  can do for it is print a twenty-line JSON snippet to paste into
+  `~/.copilot/mcp-config.json`. That went to everyone, because the
+  default asks for every agent. Pass `agents = "copilot"` by name, on
+  its own or alongside others, and you get it.
+
+- **mizer 3.3.0 is now the oldest mizer this package is designed
+  against**, and the copy of `llms.txt` bundled here has been removed
+  with the code that fell back to it. mizer has installed the API index
+  itself since 3.3.0 — the version that also brought the skills; the two
+  were expected as 3.2.2, which was never released — so the fallback
+  only ever served a mizer older than that, and it served it an index
+  describing a different mizer than the project runs, which is the
+  staleness reading the index from the installed mizer exists to
+  prevent.
+  [`setup_mizer_agent()`](https://sizespectrum.github.io/mizerAgents/reference/setup_mizer_agent.md)
+  now reports a missing index the way it already reports missing skills,
+  and the reference card sends the agent to the online reference index
+  instead. The requirement is stated as `mizer (>= 3.3.0)` in
+  `Suggests`.
+
+### Bug fixes
+
+- **A plain file where a config directory belongs no longer aborts the
+  setup.** A project with, say, a `.codex` file rather than a `.codex/`
+  directory - which some tools leave behind - failed with
+  `cannot open file .codex/config.toml: Not a directory` part way
+  through
+  [`setup_mizer_agent()`](https://sizespectrum.github.io/mizerAgents/reference/setup_mizer_agent.md),
+  so the configs for the remaining agents were never written and no
+  summary was printed. The file is now reported in a warning naming it,
+  and the rest of the setup goes ahead.
+- **Empty skill directories are no longer left behind.** A skill whose
+  files sit in a sub-directory (`upgrade-mizer-code/references/`) left
+  both directories on disk after
+  [`remove_mizer_agent()`](https://sizespectrum.github.io/mizerAgents/reference/remove_mizer_agent.md),
+  and after
+  [`setup_mizer_agent()`](https://sizespectrum.github.io/mizerAgents/reference/setup_mizer_agent.md)
+  dropped a skill that is no longer bundled: the cleanup looked only one
+  level deep, so a directory holding nothing but an emptied child looked
+  like one still in use. Empty directories are now pruned deepest first.
+
+## mizerAgents 0.4.0
+
+### New features
+
+- **`MIZER-AGENTS.md` is a routing card, not a reference.** It has gone
+  from 229 lines to 113, and most of what remains is generated from the
+  skills. The core workflow, the species-parameter table, the plotting
+  list, the numerical-scheme note and the extension pointer are all
+  gone: each was a lossy paraphrase of a skill that says it better, and
+  a summary an agent can act on is a summary it acts on *instead of*
+  reading the skill — which is the failure the card’s own opening
+  section warns about. The two facts that lived only in the card have
+  moved upstream into mizer’s `build-multispecies-model` and
+  `run-simulation` skills, where every project gets them.
+
+- **The generated sections now go where the card puts them**,
+  substituted into `<!-- mizerAgents:… -->` placeholders instead of
+  being appended in the order the code builds them. The skills index has
+  moved from line 159 to line 42, so an agent reading top-down under a
+  budget reaches the routing before it runs out of attention.
+
+- The card no longer carries its own copy of the “you are in the user’s
+  global environment” warning. That warning was unconditional while the
+  live-session section it duplicated was not, so with
+  `r_session = FALSE` or `run_r = FALSE` the card told the agent it was
+  running in the user’s session on the same page that told it in-session
+  execution was disabled. It is now stated once, in the `run_r` branch
+  where it is true.
+
+- **The API index now comes from the installed mizer too.** `llms.txt`
+  lists every exported mizer function with a one-line description, so it
+  describes one version of the mizer API and goes stale the moment mizer
+  gains or renames a function — the same problem the skills had before
+  0.3.2.2, and it is fixed the same way.
+  [`setup_mizer_agent()`](https://sizespectrum.github.io/mizerAgents/reference/setup_mizer_agent.md)
+  reads it from `system.file("llms.txt", package = "mizer")`, so the
+  index an agent greps lists the functions the project’s own mizer
+  actually has.
+
+  In mizer the file is generated from the website by
+  `dev_scripts/build_llms.R`, which replaces the badge-laden preamble
+  pkgdown puts on `docs/llms.txt` with a hand-written orientation and
+  installs the result. Previously the index was copied into this
+  repository by hand after every mizer site build, which meant a
+  function added to mizer was missing from the index until someone
+  remembered to make a commit in a different repository.
+
+  mizer began installing the index in 3.2.2. Against an older mizer the
+  copy bundled here is used instead: unlike the skills there is no
+  degraded mode to report, since a slightly stale index still names most
+  functions correctly and the reference card sends the agent to the
+  installed mizer’s help pages for the arguments either way.
+
+### Other changes
+
+- mizer renamed its `build-multispecies-model` skill to `build-model`,
+  and the articles its skills generate from `cheatsheet-*` to `guide-*`.
+  Nothing here needed changing to handle that — a skill that mizer stops
+  shipping is removed from a project on the next run, and the new one
+  installed alongside the rest — but `MIZER-AGENTS.md` pointed at the
+  old skill by name, and the documentation described the articles by
+  their old name. Both now use the new names. A project set up by an
+  earlier version reports
+  `Removed skill (no longer bundled): build-multispecies-model` on its
+  next run; if you had edited that skill it is kept, and is yours to
+  delete.
+
+- An `<!-- article-only -->` block in a `SKILL.md` is dropped as the
+  skill is installed. mizer uses these for material that belongs to the
+  guide article rather than to the skill — a worked example whose point
+  is the output it produces, which the article evaluates and shows, and
+  which an agent can only read past. It is the mirror of the
+  `<!-- agent-only -->` blocks that mizer’s own generator drops on the
+  way to the website, and between them a topic stays in a single file. A
+  skill from a mizer that does not use the markers is installed
+  unchanged.
+
+- The `quick-reference.md` files in mizer’s `inst/skills/` are no longer
+  installed into `.claude/skills/`. They are website material — mizer’s
+  guide generator appends each one to the matching article as its “Quick
+  reference” section — and no `SKILL.md` points at one, so an agent
+  given a copy never read it. A copy left in a project by an earlier
+  version is removed on the next
+  [`setup_mizer_agent()`](https://sizespectrum.github.io/mizerAgents/reference/setup_mizer_agent.md)
+  or
+  [`update_mizer_agent()`](https://sizespectrum.github.io/mizerAgents/reference/update_mizer_agent.md)
+  run, unless it has been edited there.
+
+- The version number no longer tracks mizer’s. The convention that the
+  last three digits matched the mizer version existed because this
+  package shipped mizer content that had to be kept in step by hand.
+  Nothing describing mizer is bundled any more — the skills and the API
+  index both come from the installed mizer — so the convention only
+  forced a release here for every release there. This package is
+  versioned on its own changes from now on, and the mizer it is designed
+  against is stated where it belongs, as `mizer (>= 3.2.2)` in
+  `Suggests`.
+
+- The `@dev` branch has been retired. It existed to hold skills matching
+  the development version of mizer, which the installed-mizer lookup
+  made unnecessary; its one piece of unique content, the
+  `analyse-stability` skill, is now in mizer with the rest. Install from
+  `main` whichever mizer you run.
+
 ## mizerAgents 0.3.2.2
+
+### Bug fixes
+
+- MCP servers launched by agents that strip `XDG_RUNTIME_DIR` now
+  recover the standard Linux per-user runtime directory before starting
+  `btw`. Previously an RStudio or Positron session would register with
+  mcptools under `/run/user/<uid>/mcptools`, while the agent’s server
+  silently fell back to `/tmp/mcptools-<user>` and reported no available
+  R sessions. The generated command respects an explicit
+  `MCPTOOLS_SOCKET_DIR` and any inherited `XDG_RUNTIME_DIR`, so
+  launchers that already worked are unchanged.
 
 ### New features
 

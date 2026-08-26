@@ -11,7 +11,7 @@ project was configured.
 ## Usage
 
 ``` r
-update_mizer_agent(path = ".", ...)
+update_mizer_agent(path = ".", check_version = TRUE, ...)
 ```
 
 ## Arguments
@@ -20,6 +20,13 @@ update_mizer_agent(path = ".", ...)
 
   Directory to refresh. Defaults to the current working directory, which
   should be your R project root.
+
+- check_version:
+
+  Logical; whether to check if a newer version of `mizerAgents` is
+  available on GitHub. Defaults to `TRUE`. Passed on to
+  [`setup_mizer_agent()`](https://sizespectrum.github.io/mizerAgents/reference/setup_mizer_agent.md),
+  which makes the check.
 
 - ...:
 
@@ -62,8 +69,8 @@ Nothing is stored to make this work: `r_session`, `run_r`, `pkg_dev` and
 `agents` are read from the MCP configs, and `rprofile` from the project
 `.Rprofile`, which means it works for projects set up by earlier
 versions of this package too. The one choice that leaves no trace is
-`agents = "copilot"`, which only prints a snippet; pass it again
-yourself if you want it. Pass any argument of
+`agents = "copilot"`, which only prints a snippet; pass it through `...`
+if you want it again. Pass any argument of
 [`setup_mizer_agent()`](https://sizespectrum.github.io/mizerAgents/reference/setup_mizer_agent.md)
 through `...` to override what was detected.
 

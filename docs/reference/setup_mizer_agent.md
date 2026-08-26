@@ -1,13 +1,16 @@
 # Set up an AI agent to help with your mizer project
 
-Creates (or updates) a `MIZER-AGENTS.md` file in your project directory
-containing a concise mizer reference that AI coding agents read
-automatically on startup. The file includes the core mizer workflow, key
-object descriptions, and the path to the bundled API index: a curated
-list of every exported mizer function, grouped by workflow stage, for
-finding the right function. Argument lists are deliberately not bundled:
-those go stale silently, so the card sends agents to the help pages of
-the mizer version you actually have installed.
+Creates (or updates) a `MIZER-AGENTS.md` file in your project directory:
+a short routing card that AI coding agents read automatically on
+startup. It is not a mizer reference, on purpose - a summary complete
+enough to work from is a summary an agent will work from instead of
+reading the skill, and it goes stale a release later. The card carries
+only what has to be said up front, then an index of the task skills, the
+path to mizer's API index (a curated list of every exported mizer
+function, grouped by workflow stage) and how to reach your R session.
+Argument lists are bundled nowhere: those go stale silently, so the card
+sends agents to the help pages of the mizer version you actually have
+installed.
 
 ## Usage
 
@@ -19,7 +22,8 @@ setup_mizer_agent(
   run_r = TRUE,
   pkg_dev = FALSE,
   rprofile = FALSE,
-  agents = .agent_choices
+  agents = .agent_choices,
+  check_version = TRUE
 )
 ```
 
@@ -33,10 +37,12 @@ setup_mizer_agent(
 - overwrite:
 
   If `TRUE`, replace existing `AGENTS.md`, `CLAUDE.md` and `GEMINI.md`
-  files entirely with a clean shim, discarding your project notes. If
-  `FALSE` (the default), keep the rest of each file and only refresh the
-  marked mizer block, adding it at the top if it is not there yet.
-  `MIZER-AGENTS.md` is always overwritten to ensure it stays up-to-date.
+  files entirely with what a fresh setup would write, discarding your
+  project notes: the block for `AGENTS.md` and a bare `@AGENTS.md`
+  import for the other two. If `FALSE` (the default), keep the rest of
+  each file and only refresh the marked mizer block, adding it at the
+  top if it is not there yet. `MIZER-AGENTS.md` is always overwritten to
+  ensure it stays up-to-date.
 
 - r_session:
 
@@ -87,22 +93,32 @@ setup_mizer_agent(
   interfere with each other, so a project set up on your machine works
   for a collaborator using a different agent. Any of:
 
-  |                 |                                  |
-  |-----------------|----------------------------------|
-  | Value           | File written                     |
-  | `"claude"`      | `.mcp.json`                      |
-  | `"codex"`       | `.codex/config.toml`             |
-  | `"gemini"`      | `.gemini/settings.json`          |
-  | `"antigravity"` | `.agents/mcp_config.json`        |
-  | `"cursor"`      | `.cursor/mcp.json`               |
-  | `"vscode"`      | `.vscode/mcp.json`               |
-  | `"posit"`       | `.posit/assistant/settings.json` |
-  | `"copilot"`     | *(none; instructions printed)*   |
+  |                 |                                      |
+  |-----------------|--------------------------------------|
+  | Value           | File written                         |
+  | `"claude"`      | `.mcp.json`                          |
+  | `"codex"`       | `.codex/config.toml`                 |
+  | `"gemini"`      | `.gemini/settings.json`              |
+  | `"antigravity"` | `.agents/mcp_config.json`            |
+  | `"cursor"`      | `.cursor/mcp.json`                   |
+  | `"vscode"`      | `.vscode/mcp.json`                   |
+  | `"posit"`       | `.posit/assistant/settings.json`     |
+  | `"copilot"`     | *(none; snippet printed on request)* |
 
   `"posit"` covers Posit Assistant, which runs in RStudio as well as
   Positron. Copilot CLI reads MCP config only from the user-wide
-  `~/.copilot/mcp-config.json`, so nothing is written for it; you get
-  the snippet to paste there instead. Ignored when `r_session = FALSE`.
+  `~/.copilot/mcp-config.json`, so nothing is written for it. Pass
+  `agents = "copilot"` explicitly (on its own or alongside others) and
+  the snippet to paste there is printed; the default, which asks for
+  every agent, leaves it out rather than print a screenful for everyone.
+  Ignored when `r_session = FALSE`.
+
+- check_version:
+
+  Logical; whether to check GitHub for a newer version of `mizerAgents`
+  and say so if there is one. Defaults to `TRUE`. The check is made
+  after everything else is written, times out after two seconds and
+  never fails the setup, but set it to `FALSE` to keep the call offline.
 
 ## Value
 
@@ -111,40 +127,51 @@ Invisibly returns the path to the `AGENTS.md` file.
 ## Details
 
 It also creates (or updates) the instruction files agents read at
-startup - `AGENTS.md`, `CLAUDE.md` and `GEMINI.md` - adding to each a
-short note and a `@MIZER-AGENTS.md` import, so that agents read both the
-project-specific instructions and the mizer reference. Agents that
-resolve `@` imports (Claude Code, Gemini CLI) pick the reference up
-automatically at startup; the note tells those that do not (Codex,
-Copilot) to read the file themselves. All three files are handled alike,
-because none of them is a fallback for another: Claude Code reads
-`CLAUDE.md` and not `AGENTS.md`, and Gemini CLI reads `GEMINI.md`, so an
-agent that looks only for its own named file still finds the block. The
-block is delimited by `<!-- mizerAgents: start -->` and
-`<!-- mizerAgents: end -->` comments and is refreshed in place on every
-run, so that improvements to it reach existing projects. Add your own
-project notes outside those markers, where they will be left untouched.
+startup - `AGENTS.md`, `CLAUDE.md` and `GEMINI.md` - so that agents read
+both the project-specific instructions and the mizer reference. All
+three are handled, because none of them is a fallback for another:
+Claude Code reads `CLAUDE.md` and not `AGENTS.md`, and Gemini CLI reads
+`GEMINI.md`, so an agent that looks only for its own named file still
+has to find something.
 
-The block is the only thing added: no `@AGENTS.md` import is ever
-written or removed, so which of your own instructions reach which agent
-is unchanged. If one of these files already imports `AGENTS.md`, whether
-you wrote that yourself or an earlier version of this package did, it is
-left untouched - the block reaches the agent through the import.
+`AGENTS.md` gets a short note and a `@MIZER-AGENTS.md` import. Agents
+that resolve `@` imports (Claude Code, Gemini CLI) pick the reference up
+automatically at startup; the note tells those that do not (Codex,
+Copilot) to read the file themselves. The block is delimited by
+`<!-- mizerAgents: start -->` and `<!-- mizerAgents: end -->` comments
+and is refreshed in place on every run, so that improvements to it reach
+existing projects. Add your own project notes outside those markers,
+where they will be left untouched.
+
+`CLAUDE.md` and `GEMINI.md` are treated differently depending on whether
+your project already has them:
+
+- If the file is not there, it is created containing the single line
+  `@AGENTS.md` and nothing else. Your project instructions then have one
+  home, `AGENTS.md`, rather than three copies to keep in step by hand.
+
+- If the file is already there, it gets its own copy of the block,
+  exactly as `AGENTS.md` does, and the rest of the file is left alone.
+  No `@AGENTS.md` import is written into it and none is removed, so
+  which of your own instructions reach which agent is unchanged. If it
+  already imports `AGENTS.md`, whether you wrote that yourself or an
+  earlier version of this package did, the file is left untouched - the
+  block reaches the agent through the import.
 
 It also installs a set of Claude Code *skills* into `.claude/skills/`
 (one sub-directory with a `SKILL.md` per skill, e.g. `analyse-and-plot`
-and `build-multispecies-model`). Claude Code loads these automatically
-when a task matches, giving step-by-step guidance for common mizer
-workflows. Like `MIZER-AGENTS.md`, the skills are package-managed and
-refreshed on every call so they stay up to date.
+and `build-model`). Claude Code loads these automatically when a task
+matches, giving step-by-step guidance for common mizer workflows. Like
+`MIZER-AGENTS.md`, the skills are package-managed and refreshed on every
+call so they stay up to date.
 
 The skills are taken from the **installed mizer** (`inst/skills/`), not
 from this package, so the guidance an agent follows always describes the
 mizer the project is actually running. In mizer each `SKILL.md` is also
-the source of the matching `cheatsheet-*` article on the mizer website,
-so the two are the same document. Skills arrived in mizer 3.2.2; against
-an older mizer this function still writes everything else and reports
-that it installed none.
+the source of the matching `guide-*` article on the mizer website, so
+the two are the same document. Skills arrived in mizer 3.3.0; against an
+older mizer this function still writes everything else and reports that
+it installed none.
 
 What a project learns about mizer is kept separate from them, so that
 neither overwrites the other. Each skill's directory may hold a
