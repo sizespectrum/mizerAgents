@@ -200,10 +200,10 @@
 
 # The instruction files agents read at startup. None of them is a fallback for
 # another: Claude Code reads `CLAUDE.md` and not `AGENTS.md`, and Gemini CLI
-# reads `GEMINI.md` unless `context.fileName` says otherwise. So each file gets
-# its own copy of the block rather than an import of a neighbouring one, and an
-# agent that reads only its own named file still finds the mizer context,
-# whether or not that file existed before we ran.
+# reads `GEMINI.md` unless `context.fileName` says otherwise. So all three are
+# handled, and an agent that reads only its own named file still finds the mizer
+# context - through the block itself in a file the project already had, or
+# through an `@AGENTS.md` import in one we create ourselves.
 .instruction_files <- c("AGENTS.md", "CLAUDE.md", "GEMINI.md")
 
 # Marker comments delimiting the package-managed block inside the user's
@@ -251,19 +251,31 @@
 # Write the package-managed block into one instruction file, leaving the user's
 # own content alone unless `overwrite` says otherwise.
 #
-# Which of a project's instructions reach which agent is the user's business,
-# not ours, so the block is the only thing we add and an `@` import is never
-# written or removed: adding one would feed an agent notes it was not seeing
-# before, and dropping one would cut off notes it was. `defers_to` names an
-# import that already carries our block into this file - `@AGENTS.md` for
-# `CLAUDE.md` and `GEMINI.md`, including the one-line shims written by 0.3.2 and
-# earlier. A file with that import is left untouched: the agent reading it gets
-# the mizer context through the import, so a second copy would be pure
-# duplication. Internal helper.
+# Which of a project's *existing* instructions reach which agent is the user's
+# business, not ours, so in a file that is already there the block is the only
+# thing we add and an `@` import is never written or removed: adding one would
+# feed an agent notes it was not seeing before, and dropping one would cut off
+# notes it was.
+#
+# `defers_to` names an import that carries our block into this file from a
+# neighbour - `@AGENTS.md` for `CLAUDE.md` and `GEMINI.md`, which is what the
+# one-line shims written by 0.3.2 and earlier hold. It does two things. An
+# existing file that already has that import is left untouched: the agent
+# reading it gets the mizer context through the import, so a second copy would
+# be pure duplication. And a file that does not exist yet is created holding
+# that import and nothing else, rather than a second copy of the block: nothing
+# in the project is relying on `CLAUDE.md` yet, so pointing it at `AGENTS.md`
+# gives the project one place to keep its instructions instead of three that
+# have to be kept in step by hand. Internal helper.
 .write_instruction_file <- function(dest, shim, overwrite, defers_to = NULL) {
     if (!file.exists(dest) || isTRUE(overwrite)) {
-        writeLines(shim, dest)
-        message("Created ", dest, " with shim pointing to MIZER-AGENTS.md")
+        if (is.null(defers_to)) {
+            writeLines(shim, dest)
+            message("Created ", dest, " with shim pointing to MIZER-AGENTS.md")
+        } else {
+            writeLines(defers_to, dest)
+            message("Created ", dest, " importing AGENTS.md")
+        }
         return(invisible(dest))
     }
 
@@ -488,24 +500,34 @@
 #' version you actually have installed.
 #'
 #' It also creates (or updates) the instruction files agents read at startup -
-#' `AGENTS.md`, `CLAUDE.md` and `GEMINI.md` - adding to each a short note and a
-#' `@MIZER-AGENTS.md` import, so that agents read both the project-specific
-#' instructions and the mizer reference. Agents that resolve `@` imports (Claude
-#' Code, Gemini CLI) pick the reference up automatically at startup; the note
-#' tells those that do not (Codex, Copilot) to read the file themselves. All
-#' three files are handled alike, because none of them is a fallback for
-#' another: Claude Code reads `CLAUDE.md` and not `AGENTS.md`, and Gemini CLI
-#' reads `GEMINI.md`, so an agent that looks only for its own named file still
-#' finds the block. The block is delimited by `<!-- mizerAgents: start -->` and
-#' `<!-- mizerAgents: end -->` comments and is refreshed in place on every run,
-#' so that improvements to it reach existing projects. Add your own project
-#' notes outside those markers, where they will be left untouched.
+#' `AGENTS.md`, `CLAUDE.md` and `GEMINI.md` - so that agents read both the
+#' project-specific instructions and the mizer reference. All three are handled,
+#' because none of them is a fallback for another: Claude Code reads `CLAUDE.md`
+#' and not `AGENTS.md`, and Gemini CLI reads `GEMINI.md`, so an agent that looks
+#' only for its own named file still has to find something.
 #'
-#' The block is the only thing added: no `@AGENTS.md` import is ever written or
-#' removed, so which of your own instructions reach which agent is unchanged. If
-#' one of these files already imports `AGENTS.md`, whether you wrote that
-#' yourself or an earlier version of this package did, it is left untouched -
-#' the block reaches the agent through the import.
+#' `AGENTS.md` gets a short note and a `@MIZER-AGENTS.md` import. Agents that
+#' resolve `@` imports (Claude Code, Gemini CLI) pick the reference up
+#' automatically at startup; the note tells those that do not (Codex, Copilot)
+#' to read the file themselves. The block is delimited by
+#' `<!-- mizerAgents: start -->` and `<!-- mizerAgents: end -->` comments and is
+#' refreshed in place on every run, so that improvements to it reach existing
+#' projects. Add your own project notes outside those markers, where they will
+#' be left untouched.
+#'
+#' `CLAUDE.md` and `GEMINI.md` are treated differently depending on whether your
+#' project already has them:
+#'
+#' * If the file is not there, it is created containing the single line
+#'   `@AGENTS.md` and nothing else. Your project instructions then have one
+#'   home, `AGENTS.md`, rather than three copies to keep in step by hand.
+#' * If the file is already there, it gets its own copy of the block, exactly as
+#'   `AGENTS.md` does, and the rest of the file is left alone. No `@AGENTS.md`
+#'   import is written into it and none is removed, so which of your own
+#'   instructions reach which agent is unchanged. If it already imports
+#'   `AGENTS.md`, whether you wrote that yourself or an earlier version of this
+#'   package did, the file is left untouched - the block reaches the agent
+#'   through the import.
 #'
 #' It also installs a set of Claude Code *skills* into `.claude/skills/` (one
 #' sub-directory with a `SKILL.md` per skill, e.g. `analyse-and-plot` and
@@ -581,10 +603,12 @@
 #' @param path Directory in which to create or update the agent files. Defaults
 #'   to the current working directory, which should be your R project root.
 #' @param overwrite If `TRUE`, replace existing `AGENTS.md`, `CLAUDE.md` and
-#'   `GEMINI.md` files entirely with a clean shim, discarding your project
-#'   notes. If `FALSE` (the default), keep the rest of each file and only
-#'   refresh the marked mizer block, adding it at the top if it is not there
-#'   yet. `MIZER-AGENTS.md` is always overwritten to ensure it stays up-to-date.
+#'   `GEMINI.md` files entirely with what a fresh setup would write, discarding
+#'   your project notes: the block for `AGENTS.md` and a bare `@AGENTS.md`
+#'   import for the other two. If `FALSE` (the default), keep the rest of each
+#'   file and only refresh the marked mizer block, adding it at the top if it is
+#'   not there yet. `MIZER-AGENTS.md` is always overwritten to ensure it stays
+#'   up-to-date.
 #' @param r_session If `TRUE` (the default), configure the `r-mizer` MCP server
 #'   so that the agent can read mizer's documentation, your global environment
 #'   and, in RStudio or Positron, the open document. Set to `FALSE` to write no
@@ -688,8 +712,10 @@ setup_mizer_agent <- function(path = ".", overwrite = FALSE,
     # Handle the instruction files. Unlike MIZER-AGENTS.md these belong to the
     # user, so only the marked block is package-managed: it is refreshed in
     # place on every run, wherever in the file it sits, and the rest is left
-    # untouched. All three are treated alike, so that an agent reading only its
-    # own named file still finds the block.
+    # untouched. `CLAUDE.md` and `GEMINI.md` are created as a bare `@AGENTS.md`
+    # import when the project has none, so that an agent reading only its own
+    # named file still finds the block without the project having to maintain
+    # three copies of its instructions.
     shim <- c(.shim_begin, .shim_note, .shim_end)
     for (f in .instruction_files) {
         .write_instruction_file(

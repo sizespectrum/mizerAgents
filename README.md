@@ -40,14 +40,17 @@ This creates:
   on startup. It does not try to teach mizer: it warns the agent that its
   recollection of the mizer API is probably stale, and points it at the skills
   below and at the bundled API index for anything it actually needs to know.
-- **`AGENTS.md`**, **`CLAUDE.md`** and **`GEMINI.md`** — your project
-  instruction files, each updated to include a short package-managed block
-  pointing agents at `MIZER-AGENTS.md`. All three are handled the same way,
-  since Claude Code reads `CLAUDE.md` and Gemini CLI reads `GEMINI.md` rather
-  than falling back to `AGENTS.md`. Only the block between the
-  `<!-- mizerAgents: start -->` and `<!-- mizerAgents: end -->` markers is
-  refreshed on each run; anything you add outside it is preserved, and no
-  `@AGENTS.md` import is ever written or removed.
+- **`AGENTS.md`** — your project instruction file, updated to include a short
+  package-managed block pointing agents at `MIZER-AGENTS.md`. Only the block
+  between the `<!-- mizerAgents: start -->` and `<!-- mizerAgents: end -->`
+  markers is refreshed on each run; anything you add outside it is preserved.
+- **`CLAUDE.md`** and **`GEMINI.md`** — created, if you do not have them, with
+  the single line `@AGENTS.md`, so that Claude Code and Gemini CLI read your
+  `AGENTS.md`, which neither of them falls back to on its own. Your project
+  instructions then live in one file rather than three. If you already have
+  either file it is treated exactly like `AGENTS.md` instead: it gets its own
+  copy of the marked block, the rest is left alone, and no `@AGENTS.md` import
+  is written into it or removed from it.
 - **`.claude/skills/`** — Claude Code skills (`analyse-and-plot`,
   `analyse-stability`, `build-model`, `calibrate-model`,
   `run-simulation`, `set-up-fishing`, `change-parameters`, `extend-mizer`)
@@ -198,7 +201,9 @@ marked block in the instruction files, the bundled skills, the `r-mizer` entry
 in each agent's MCP config, and the `btw_mcp_session()` call in `.Rprofile`.
 Only what this package wrote comes out. Your own notes outside the markers stay,
 as do other MCP servers you configured in those files; a file that held nothing
-but our block is deleted with it, and directories left empty are removed. A
+but our block — or nothing but the `@AGENTS.md` import we wrote into a
+`CLAUDE.md` or `GEMINI.md` we created — is deleted with it, and directories left
+empty are removed. A
 skill file you have edited, and any `NOTES.md`, are kept and reported rather
 than deleted — see below.
 
@@ -215,8 +220,9 @@ package never touches.
   treat it as taking precedence, and to record what they learn there rather than
   in `SKILL.md`. Nothing in this package ever writes it. Commit it: it is
   project knowledge, and your collaborators' agents get it too.
-- **`AGENTS.md` / `CLAUDE.md` / `GEMINI.md`, outside the markers** — project
-  notes that belong to no single skill.
+- **`AGENTS.md`, outside the markers** (or `CLAUDE.md` / `GEMINI.md`, if you
+  keep separate instructions for those agents) — project notes that belong to no
+  single skill.
 - **[An issue on this repo](https://github.com/sizespectrum/mizerAgents/issues)**
   — for a lesson that is true of mizer in general rather than of your project.
   The skills tell agents to offer this, so that the next release carries it to

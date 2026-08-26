@@ -31,9 +31,11 @@ setup, so there is nothing of yours in it.
 \item In \code{AGENTS.md}, \code{CLAUDE.md} and \code{GEMINI.md} only the block between the
 \verb{<!-- mizerAgents: start -->} and \verb{<!-- mizerAgents: end -->} markers is
 deleted; your own notes stay. A file that held nothing but the block is
-deleted with it. An \verb{@AGENTS.md} import is never removed, just as it is
-never written: which of your instruction files import which is your
-business.
+deleted with it, as is a \code{CLAUDE.md} or \code{GEMINI.md} holding nothing but the
+\verb{@AGENTS.md} import that setup writes into one it creates itself. An
+\verb{@AGENTS.md} import among notes of your own is never removed, just as one
+is never written into a file you already had: which of your instruction
+files import which is your business.
 \item Under \verb{.claude/skills/}, a file is removed only if it still matches the
 hash recorded in \code{.claude/skills/.mizerAgents.json} when it was installed.
 One that has been edited here is kept and reported, as is any \code{NOTES.md},

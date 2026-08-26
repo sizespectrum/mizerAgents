@@ -2,6 +2,16 @@
 
 ## New features
 
+* **A `CLAUDE.md` or `GEMINI.md` that does not exist yet is created as a
+  one-line `@AGENTS.md` import.** Previously it got its own copy of the mizer
+  block, leaving a project with three instruction files to keep in step by hand.
+  Now the block lives in `AGENTS.md` alone and the other two just point at it,
+  so project notes have one home whichever agent reads them. Files you already
+  have are unaffected: they are still given their own copy of the block, their
+  own content is left alone, and no `@AGENTS.md` import is written into them or
+  removed. `remove_mizer_agent()` deletes a `CLAUDE.md` or `GEMINI.md` holding
+  nothing but that import, while one sitting among notes of your own still
+  stays.
 * **`update_mizer_agent()` checks whether a newer version of `mizerAgents` is available.**
   When run with `check_version = TRUE` (the default), it queries GitHub for the
   latest version of the package without blocking or failing on network errors,

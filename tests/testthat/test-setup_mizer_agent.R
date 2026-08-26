@@ -45,19 +45,18 @@ test_that("setup_mizer_agent works as expected", {
     expect_false(any(grepl("Numerical scheme for dynamics", mizer_content,
                            fixed = TRUE)))
 
-    # Each instruction file should contain the marked block: a note plus the
-    # `@` import. All three carry it, so an agent that reads only its own named
-    # file still gets the mizer context.
-    for (dest in c(agents_dest, claude_dest, gemini_dest)) {
-        content <- readLines(dest)
-        expect_true("@MIZER-AGENTS.md" %in% content, info = dest)
-        expect_true(any(grepl("Read `MIZER-AGENTS.md`", content, fixed = TRUE)),
-                    info = dest)
-        expect_true(any(grepl("mizerAgents: start", content, fixed = TRUE)),
-                    info = dest)
-        expect_true(any(grepl("mizerAgents: end", content, fixed = TRUE)),
-                    info = dest)
-    }
+    # AGENTS.md gets the marked block: a note plus the `@` import.
+    content <- readLines(agents_dest)
+    expect_true("@MIZER-AGENTS.md" %in% content)
+    expect_true(any(grepl("Read `MIZER-AGENTS.md`", content, fixed = TRUE)))
+    expect_true(any(grepl("mizerAgents: start", content, fixed = TRUE)))
+    expect_true(any(grepl("mizerAgents: end", content, fixed = TRUE)))
+
+    # CLAUDE.md and GEMINI.md did not exist, so they are created as a bare
+    # import of AGENTS.md: the project keeps its instructions in one file, and
+    # an agent that reads only its own named file still gets the mizer context.
+    expect_identical(readLines(claude_dest), "@AGENTS.md")
+    expect_identical(readLines(gemini_dest), "@AGENTS.md")
     agents_content <- readLines(agents_dest)
 
     # 2. Existing AGENTS.md with custom content and overwrite = FALSE
@@ -178,11 +177,38 @@ test_that("existing CLAUDE.md and GEMINI.md are updated like AGENTS.md", {
     suppressMessages(setup_mizer_agent(path = tmp_dir))
     expect_identical(readLines(claude_dest), before)
 
-    # overwrite = TRUE discards the user's content in these files too
+    # overwrite = TRUE discards the user's content in these files too, leaving
+    # what a fresh setup would have written: the import of AGENTS.md
     suppressMessages(setup_mizer_agent(path = tmp_dir, overwrite = TRUE))
-    claude_content <- readLines(claude_dest)
-    expect_false(any(grepl("House rules", claude_content, fixed = TRUE)))
-    expect_true("@MIZER-AGENTS.md" %in% claude_content)
+    expect_identical(readLines(claude_dest), "@AGENTS.md")
+    expect_identical(readLines(gemini_dest), "@AGENTS.md")
+})
+
+test_that("a CLAUDE.md or GEMINI.md created by setup only imports AGENTS.md", {
+    tmp_dir <- tempfile("mizer_agent_fresh")
+    dir.create(tmp_dir)
+    on.exit(unlink(tmp_dir, recursive = TRUE))
+    claude_dest <- file.path(tmp_dir, "CLAUDE.md")
+    gemini_dest <- file.path(tmp_dir, "GEMINI.md")
+
+    # A project with an AGENTS.md of its own but no CLAUDE.md or GEMINI.md
+    writeLines(c("# House rules", "", "Use tidyverse style."),
+               file.path(tmp_dir, "AGENTS.md"))
+    suppressMessages(setup_mizer_agent(path = tmp_dir))
+
+    expect_identical(readLines(claude_dest), "@AGENTS.md")
+    expect_identical(readLines(gemini_dest), "@AGENTS.md")
+
+    # Re-running leaves them alone: the block arrives through the import
+    suppressMessages(setup_mizer_agent(path = tmp_dir))
+    expect_identical(readLines(claude_dest), "@AGENTS.md")
+    expect_identical(readLines(gemini_dest), "@AGENTS.md")
+
+    # And the user's own AGENTS.md notes are still there, below the block
+    agents_content <- readLines(file.path(tmp_dir, "AGENTS.md"))
+    expect_true(any(grepl("mizerAgents: start", agents_content, fixed = TRUE)))
+    expect_identical(tail(agents_content, 3),
+                     c("# House rules", "", "Use tidyverse style."))
 })
 
 test_that("a file that imports AGENTS.md is left alone", {

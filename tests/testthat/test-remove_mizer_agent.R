@@ -107,6 +107,26 @@ test_that("remove_mizer_agent removes the pre-marker bare import", {
     expect_identical(readLines(file.path(tmp_dir, "AGENTS.md")), "# My project")
 })
 
+test_that("remove_mizer_agent takes the @AGENTS.md shim but not the user's", {
+    tmp_dir <- tempfile("mizer_agent_remove_import")
+    dir.create(tmp_dir)
+    on.exit(unlink(tmp_dir, recursive = TRUE))
+
+    # The whole of CLAUDE.md is the import setup writes into a file it creates
+    # itself, so it goes; the same import among the user's own notes stays,
+    # since wiring GEMINI.md to AGENTS.md was their decision, not ours
+    writeLines("@AGENTS.md", file.path(tmp_dir, "CLAUDE.md"))
+    user_gemini <- c("# House rules", "", "@AGENTS.md")
+    writeLines(user_gemini, file.path(tmp_dir, "GEMINI.md"))
+    writeLines("# My project", file.path(tmp_dir, "AGENTS.md"))
+
+    suppressMessages(remove_mizer_agent(path = tmp_dir))
+
+    expect_false(file.exists(file.path(tmp_dir, "CLAUDE.md")))
+    expect_identical(readLines(file.path(tmp_dir, "GEMINI.md")), user_gemini)
+    expect_identical(readLines(file.path(tmp_dir, "AGENTS.md")), "# My project")
+})
+
 test_that("remove_mizer_agent leaves an unparseable config alone", {
     tmp_dir <- tempfile("mizer_agent_remove_bad_json")
     dir.create(tmp_dir)

@@ -64,14 +64,22 @@
 
 # Take the package-managed block out of one instruction file. The bare
 # `@MIZER-AGENTS.md` import that versions before the markers wrote is removed
-# too, since setup would have adopted and rewritten it. The one-line
-# `@AGENTS.md` shims that 0.3.2 and earlier put in `CLAUDE.md` and `GEMINI.md`
-# are left alone for the same reason setup leaves them alone: which of a
-# project's instruction files import which is the user's business.
-# Internal helper.
-.clean_instruction_file <- function(dest) {
+# too, since setup would have adopted and rewritten it.
+#
+# `defers_to` names the import setup writes as the whole content of a
+# `CLAUDE.md` or `GEMINI.md` it creates itself (`@AGENTS.md`, which is also what
+# the one-line shims of 0.3.2 and earlier hold). A file holding that and nothing
+# else is one of ours, so it goes; the same import sitting among notes of the
+# user's own is left alone, for the reason setup never writes one into a file
+# that already exists: which of a project's instruction files import which is
+# the user's business. Internal helper.
+.clean_instruction_file <- function(dest, defers_to = NULL) {
     if (!file.exists(dest)) return(character(0))
     existing <- readLines(dest, warn = FALSE)
+    if (!is.null(defers_to) &&
+        identical(.trim_blank_edges(existing), defers_to)) {
+        return(.rewrite_or_remove(dest, character(0), existing))
+    }
     updated <- .strip_block(existing, .shim_begin, .shim_end)
     if (identical(updated, existing)) {
         at <- which(updated == "@MIZER-AGENTS.md")
@@ -228,9 +236,11 @@
 #' * In `AGENTS.md`, `CLAUDE.md` and `GEMINI.md` only the block between the
 #'   `<!-- mizerAgents: start -->` and `<!-- mizerAgents: end -->` markers is
 #'   deleted; your own notes stay. A file that held nothing but the block is
-#'   deleted with it. An `@AGENTS.md` import is never removed, just as it is
-#'   never written: which of your instruction files import which is your
-#'   business.
+#'   deleted with it, as is a `CLAUDE.md` or `GEMINI.md` holding nothing but the
+#'   `@AGENTS.md` import that setup writes into one it creates itself. An
+#'   `@AGENTS.md` import among notes of your own is never removed, just as one
+#'   is never written into a file you already had: which of your instruction
+#'   files import which is your business.
 #' * Under `.claude/skills/`, a file is removed only if it still matches the
 #'   hash recorded in `.claude/skills/.mizerAgents.json` when it was installed.
 #'   One that has been edited here is kept and reported, as is any `NOTES.md`,
@@ -280,7 +290,8 @@ remove_mizer_agent <- function(path = ".") {
 
     for (f in .instruction_files) {
         changed <- c(changed, .clean_instruction_file(
-            normalizePath(file.path(path, f), mustWork = FALSE)))
+            normalizePath(file.path(path, f), mustWork = FALSE),
+            defers_to = if (f != "AGENTS.md") "@AGENTS.md"))
     }
 
     skills <- .remove_skills(path)
