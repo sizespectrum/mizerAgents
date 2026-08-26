@@ -95,7 +95,7 @@ short routing card that AI coding agents read automatically on startup. It is
 not a mizer reference, on purpose - a summary complete enough to work from is
 a summary an agent will work from instead of reading the skill, and it goes
 stale a release later. The card carries only what has to be said up front,
-then an index of the task skills, the path to the bundled API index (a
+then an index of the task skills, the path to mizer's API index (a
 curated list of every exported mizer function, grouped by workflow stage) and
 how to reach your R session. Argument lists are bundled nowhere: those go
 stale silently, so the card sends agents to the help pages of the mizer
@@ -144,7 +144,7 @@ The skills are taken from the \strong{installed mizer} (\verb{inst/skills/}), no
 this package, so the guidance an agent follows always describes the mizer the
 project is actually running. In mizer each \code{SKILL.md} is also the source of
 the matching \verb{guide-*} article on the mizer website, so the two are the
-same document. Skills arrived in mizer 3.2.2; against an older mizer this
+same document. Skills arrived in mizer 3.3.0; against an older mizer this
 function still writes everything else and reports that it installed none.
 
 What a project learns about mizer is kept separate from them, so that neither

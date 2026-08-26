@@ -20,6 +20,9 @@ with a single function call.
 pak::pak("sizespectrum/mizerAgents")
 ```
 
+You also need **mizer 3.3.0 or newer**, which is where the skills and the API
+index deployed into your project are maintained.
+
 The same install works whichever mizer you run. The skills and the API index are
 read from the mizer you have installed rather than bundled here, so the CRAN
 version and the development version from GitHub each get guidance matching
@@ -39,7 +42,7 @@ This creates:
 - **`MIZER-AGENTS.md`** — a short routing card that AI agents read automatically
   on startup. It does not try to teach mizer: it warns the agent that its
   recollection of the mizer API is probably stale, and points it at the skills
-  below and at the bundled API index for anything it actually needs to know.
+  below and at mizer's API index for anything it actually needs to know.
 - **`AGENTS.md`** — your project instruction file, updated to include a short
   package-managed block pointing agents at `MIZER-AGENTS.md`. Only the block
   between the `<!-- mizerAgents: start -->` and `<!-- mizerAgents: end -->`
@@ -63,7 +66,7 @@ This creates:
   package, so they always describe the version of mizer your project actually
   runs. Each is also the source of the matching `guide-*` article on the
   mizer website, so the agent and the human documentation are one document.
-  Skills arrived in mizer 3.2.2; against an older mizer everything else is still
+  Skills arrived in mizer 3.3.0; against an older mizer everything else is still
   set up and `setup_mizer_agent()` reports that it installed none.
 - **MCP configuration** for an `r-mizer` server that connects the agent to your
   live R session (see below), written in each agent's own format — Claude Code,
@@ -250,16 +253,16 @@ were edited here.
 | File | Description |
 |------|-------------|
 | `inst/MIZER-AGENTS.md` | Mizer reference card deployed by `setup_mizer_agent()` |
-| `inst/llms.txt` | Fallback copy of the mizer API index, for a mizer too old to ship its own |
 
 Everything that describes mizer rather than the agent setup is maintained in
 mizer and read from the installed copy, so it always matches the version your
 project runs. The skills come from `system.file("skills", package = "mizer")`,
 and the API index — every exported function with a one-line description,
 grouped by workflow stage — from `system.file("llms.txt", package = "mizer")`,
-where it is generated from the website by `dev_scripts/build_llms.R`. mizer
-began installing that index in 3.2.2; the copy bundled here is used against
-anything older.
+where it is generated from the website by `dev_scripts/build_llms.R`. Both
+arrived in mizer 3.3.0, which is the oldest mizer this package is designed
+against; against anything older it writes everything else and reports what the
+installed mizer does not ship.
 
 Argument lists are deliberately not bundled anywhere. A snapshot of them goes
 stale as soon as mizer moves on, and it fails quietly — an outdated call often

@@ -34,9 +34,6 @@ devtools::check()         # Full R CMD check
   (`inst/skills/` in mizer), not here. Its `<!-- mizerAgents:<name> -->` lines
   are where `setup_mizer_agent()` substitutes the generated sections, so the
   card controls their order; a new section needs a placeholder added here.
-- `inst/llms.txt` — curated mizer API index, grouped by workflow stage
-  (deployed path written into `MIZER-AGENTS.md`). Names and descriptions only:
-  argument lists are intentionally not bundled, because they go stale silently.
 
 ## Code conventions
 

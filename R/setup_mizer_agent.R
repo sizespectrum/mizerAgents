@@ -56,14 +56,13 @@
 # and installed there, so the index an agent greps matches the mizer the project
 # actually runs.
 #
-# Falls back to the copy bundled here for a mizer predating that move. Unlike the
-# skills there is always a source, so this never returns "": a stale index still
-# names most functions correctly, and the card sends the agent to the installed
-# mizer's help pages for anything it finds.
+# Returns "" when the installed mizer is too old to ship it, which the caller
+# reports the same way it reports missing skills. There is deliberately no copy
+# bundled here to fall back to: an index that describes a different mizer than
+# the project runs is the failure this lookup exists to prevent.
 .llms_source <- function() {
     src <- system.file("llms.txt", package = "mizer")
-    if (nzchar(src) && file.exists(src)) return(src)
-    system.file("llms.txt", package = "mizerAgents")
+    if (nzchar(src) && file.exists(src)) src else ""
 }
 
 # Extract the `description` field from a SKILL.md YAML frontmatter block.
@@ -130,7 +129,7 @@
     )
 }
 
-# The section pointing at the bundled API index, explicit about what that index
+# The section pointing at mizer's API index, explicit about what that index
 # is *not*. The index is a curated map of the API grouped by workflow stage,
 # which no tool can regenerate, and it ages gracefully: a function that has been
 # renamed shows up as a lookup that fails, not as a call that quietly does the
@@ -138,30 +137,52 @@
 # they are deliberately not bundled: they come from the installed mizer, read
 # through btw when the user's session is connected and through `Rscript` when it
 # is not.
+#
+# With `llms_src = ""` - a mizer too old to install the index - the first step
+# sends the agent to the online reference index instead. The section still has
+# to be written: the second step, and the warning about arguments recalled from
+# memory, are what keep the agent off its own recollection of the API, and they
+# do not depend on the index being there.
 .function_lookup_section <- function(llms_src, r_session) {
+    # Wrapped here rather than by hand, so that the four combinations of
+    # (index, no index) x (live session, none) all come out evenly filled.
+    wrap <- function(...) paste(strwrap(paste0(...), width = 76, exdent = 3),
+                                collapse = "\n")
+    index_step <- if (nzchar(llms_src)) {
+        paste0(
+            wrap("1. **Which function do I need?** Grep the mizer API index: ",
+                 "every exported function with a one-line description, grouped ",
+                 "by workflow stage (creating a model, tuning the steady state, ",
+                 "projecting, plotting). Grep it for a keyword; do not read the ",
+                 "whole file:"),
+            "\n   ", llms_src, "\n")
+    } else {
+        paste0(
+            wrap("1. **Which function do I need?** The mizer installed here is ",
+                 "too old to ship the API index, so there is no local list to ",
+                 "grep. Browse the reference index for the current release at ",
+                 "<https://sizespectrum.org/mizer/reference/>, and confirm that ",
+                 "what you find exists in the installed version before you use ",
+                 "it."),
+            "\n")
+    }
     paste0(
         "## Finding the right mizer function\n\n",
         "Two steps, and they use different sources:\n\n",
-        "1. **Which function do I need?** Grep the bundled API index: every\n",
-        "   exported function with a one-line description, grouped by workflow\n",
-        "   stage (creating a model, tuning the steady state, projecting,\n",
-        "   plotting). Grep it for a keyword; do not read the whole file:\n",
-        "   ", llms_src, "\n",
-        "2. **How do I call it?** ",
-        if (isTRUE(r_session)) {
-            paste0(
-                "Read the help page for the *installed* mizer with\n",
-                "   `btw_tool_docs_help_page`. The index above deliberately carries no\n",
-                "   argument lists, and this card is not a reference either.\n"
-            )
-        } else {
-            paste0(
-                "Read the help page for the *installed* mizer:\n",
-                "   `Rscript -e 'help(name, package = \"mizer\")'`. The index above\n",
-                "   deliberately carries no argument lists, and this card is not a\n",
-                "   reference either.\n"
-            )
-        },
+        index_step,
+        wrap("2. **How do I call it?** Read the help page for the *installed* ",
+             "mizer ",
+             if (isTRUE(r_session)) "with `btw_tool_docs_help_page`. "
+             else "with `Rscript -e 'help(name, package = \"mizer\")'`. ",
+             if (nzchar(llms_src)) {
+                 paste0("The index above deliberately carries no argument ",
+                        "lists, and this card is not a reference either.")
+             } else {
+                 paste0("The online reference describes the current release ",
+                        "rather than the mizer installed here, and this card ",
+                        "is not a reference at all.")
+             }),
+        "\n",
         "\nNever supply arguments from memory for a function you have not looked up\n",
         "in this session. Rendered documentation for the current release is at\n",
         "<https://sizespectrum.org/mizer/reference/>, but the installed version is\n",
@@ -511,7 +532,7 @@
 #' not a mizer reference, on purpose - a summary complete enough to work from is
 #' a summary an agent will work from instead of reading the skill, and it goes
 #' stale a release later. The card carries only what has to be said up front,
-#' then an index of the task skills, the path to the bundled API index (a
+#' then an index of the task skills, the path to mizer's API index (a
 #' curated list of every exported mizer function, grouped by workflow stage) and
 #' how to reach your R session. Argument lists are bundled nowhere: those go
 #' stale silently, so the card sends agents to the help pages of the mizer
@@ -558,7 +579,7 @@
 #' this package, so the guidance an agent follows always describes the mizer the
 #' project is actually running. In mizer each `SKILL.md` is also the source of
 #' the matching `guide-*` article on the mizer website, so the two are the
-#' same document. Skills arrived in mizer 3.2.2; against an older mizer this
+#' same document. Skills arrived in mizer 3.3.0; against an older mizer this
 #' function still writes everything else and reports that it installed none.
 #'
 #' What a project learns about mizer is kept separate from them, so that neither
@@ -792,9 +813,15 @@ setup_mizer_agent <- function(path = ".", overwrite = FALSE,
     } else {
         bullets <- c(bullets, paste0(
             "No skills installed: the installed mizer does not ship them.\n",
-            "  They arrived in mizer 3.2.2; upgrade mizer and re-run to get them."))
+            "  They arrived in mizer 3.3.0; upgrade mizer and re-run to get them."))
     }
-    bullets <- c(bullets, paste0("Mizer API index for agents: ", llms_src))
+    if (nzchar(llms_src)) {
+        bullets <- c(bullets, paste0("Mizer API index for agents: ", llms_src))
+    } else {
+        bullets <- c(bullets, paste0(
+            "No API index: the installed mizer does not ship one.\n",
+            "  It arrived in mizer 3.3.0; upgrade mizer and re-run to get it."))
+    }
     if (length(kept)) {
         bullets <- c(bullets, paste0(
             "Kept ", .count(length(kept), "skill file"),

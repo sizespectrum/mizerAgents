@@ -36,6 +36,18 @@
   That went to everyone, because the default asks for every agent. Pass
   `agents = "copilot"` by name, on its own or alongside others, and you get it.
 
+* **mizer 3.3.0 is now the oldest mizer this package is designed against**, and
+  the copy of `llms.txt` bundled here has been removed with the code that fell
+  back to it. mizer has installed the API index itself since 3.3.0 — the
+  version that also brought the skills; the two were expected as 3.2.2, which
+  was never released — so the fallback only ever served a mizer older than
+  that, and it served it an index describing a different mizer than the project
+  runs, which is the staleness reading the index from the installed mizer
+  exists to prevent. `setup_mizer_agent()` now reports a missing index the way
+  it already reports missing skills, and the reference card sends the agent to
+  the online reference index instead. The requirement is stated as
+  `mizer (>= 3.3.0)` in `Suggests`.
+
 ## Bug fixes
 
 * **A plain file where a config directory belongs no longer aborts the setup.**

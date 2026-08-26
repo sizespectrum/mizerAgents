@@ -19,7 +19,7 @@ while doing the wrong thing.
 
 Before calling any function you have not looked up in this session, verify its
 signature in the installed mizer's documentation using the lookup tools below.
-The bundled API index names available functions and the task skills describe
+The mizer API index names available functions and the task skills describe
 workflows, but neither provides argument lists.
 
 The one correction worth making before reading anything else: **`w_inf`**,

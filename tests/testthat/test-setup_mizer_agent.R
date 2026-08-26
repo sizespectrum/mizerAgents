@@ -20,13 +20,19 @@ test_that("setup_mizer_agent works as expected", {
     expect_true(file.exists(claude_dest))
     expect_true(file.exists(gemini_dest))
 
-    # MIZER-AGENTS.md should contain mizer documentation and point at the
-    # bundled API index, but never at a bundled argument reference
+    # MIZER-AGENTS.md should contain mizer documentation and point at the API
+    # index installed with mizer, but never at a bundled argument reference. A
+    # mizer too old to ship the index sends the agent online instead.
     mizer_content <- readLines(mizer_dest)
     expect_true(any(grepl("Mizer", mizer_content)))
     expect_true(any(grepl("Finding the right mizer function", mizer_content,
                           fixed = TRUE)))
-    expect_true(any(grepl("llms.txt", mizer_content, fixed = TRUE)))
+    if (nzchar(.llms_source())) {
+        expect_true(any(grepl("llms.txt", mizer_content, fixed = TRUE)))
+    } else {
+        expect_true(any(grepl("sizespectrum.org/mizer/reference/",
+                              mizer_content, fixed = TRUE)))
+    }
     expect_false(any(grepl("llms-full", mizer_content, fixed = TRUE)))
     expect_true(any(grepl("Reporting bugs in mizer", mizer_content, fixed = TRUE)))
     expect_true(any(grepl("github.com/sizespectrum/mizer/issues", mizer_content, fixed = TRUE)))
@@ -728,26 +734,31 @@ test_that("the API index is taken from the installed mizer when it ships one", {
     expect_identical(.llms_source(), fake)
 })
 
-test_that("the bundled API index is used against a mizer that predates the move", {
-    # mizer only began installing llms.txt in 3.2.2. Against an older one the
-    # copy shipped here is still a usable index, so unlike the skills there is
-    # no degraded mode to report: a source is always found.
-    # Captured before the mock is installed: inside it, `base::system.file`
-    # resolves to the mock itself and would recurse. Unqualified, so that under
-    # `load_all()` this is devtools' shim, which finds `inst/` in the source
-    # tree - the same function `.llms_source()` is calling.
-    real_system_file <- system.file
-    bundled <- real_system_file("llms.txt", package = "mizerAgents")
-
+test_that("a mizer too old to ship the API index degrades rather than falls back", {
+    # There is no copy bundled here to fall back to any more: an index
+    # describing a mizer other than the one the project runs is the staleness
+    # this lookup exists to prevent. mizer has installed the index since 3.3.0;
+    # against anything older the card routes the agent to the online reference
+    # index, and the two steps that do not depend on a local index are still
+    # written.
+    # `.llms_source()` looks in mizer and nowhere else now, so the mock can
+    # answer every lookup the same way.
     local_mocked_bindings(
-        system.file = function(..., package = "base") {
-            if (identical(package, "mizer")) "" else real_system_file(..., package = package)
-        },
+        system.file = function(..., package = "base") "",
         .package = "base"
     )
-    src <- .llms_source()
-    expect_identical(src, bundled)
-    expect_true(nzchar(src) && file.exists(src))
+    expect_identical(.llms_source(), "")
+
+    # The section is filled to the card's width, so the line breaks fall
+    # wherever the wrapping puts them: matched against the flattened text.
+    section <- gsub("[[:space:]]+", " ", .function_lookup_section("", TRUE))
+    expect_false(grepl("llms.txt", section, fixed = TRUE))
+    expect_true(grepl("too old to ship the API index", section, fixed = TRUE))
+    expect_true(grepl("https://sizespectrum.org/mizer/reference/", section,
+                      fixed = TRUE))
+    expect_true(grepl("btw_tool_docs_help_page", section, fixed = TRUE))
+    expect_true(grepl("Never supply arguments from memory", section,
+                      fixed = TRUE))
 })
 
 test_that("article-only blocks are stripped from an installed SKILL.md", {

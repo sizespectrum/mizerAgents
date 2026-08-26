@@ -20,7 +20,7 @@ Imports:
 Suggests:
     btw,
     mcptools,
-    mizer (>= 3.2.1),
+    mizer (>= 3.3.0),
     testthat (>= 3.0.0),
     pkgdown,
     roxygen2,
