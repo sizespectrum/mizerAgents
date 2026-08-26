@@ -472,11 +472,7 @@
     # Only a directory we have emptied is a skill that has gone; removing a
     # single file from a skill we still install is not worth a message.
     removed <- setdiff(removed, sub("/.*$", "", rels))
-    for (d in list.dirs(skills_dest, recursive = FALSE)) {
-        if (length(list.files(d, all.files = TRUE, no.. = TRUE)) == 0) {
-            unlink(d, recursive = TRUE)
-        }
-    }
+    .prune_empty_dirs(skills_dest)
 
     for (s in unique(installed)) message("Installed skill: ", s)
     for (s in unique(removed)) {

@@ -22,6 +22,15 @@
   to construct a minimal reproducible example (reprex) and file an issue on the
   mizer issue tracker (<https://github.com/sizespectrum/mizer/issues>).
 
+## Bug fixes
+
+* **Empty skill directories are no longer left behind.** A skill whose files sit
+  in a sub-directory (`upgrade-mizer-code/references/`) left both directories on
+  disk after `remove_mizer_agent()`, and after `setup_mizer_agent()` dropped a
+  skill that is no longer bundled: the cleanup looked only one level deep, so a
+  directory holding nothing but an emptied child looked like one still in use.
+  Empty directories are now pruned deepest first.
+
 # mizerAgents 0.4.0
 
 ## New features

@@ -10,9 +10,11 @@ test_that("remove_mizer_agent undoes a plain setup completely", {
                    "Removed") |> suppressMessages()
 
     # A project that had nothing of its own is left with nothing of ours,
-    # including the directories the config files sat in
+    # including the directories the config files sat in. `include.dirs` matters:
+    # without it an empty directory left behind goes unnoticed.
     expect_identical(
-        list.files(tmp_dir, recursive = TRUE, all.files = TRUE, no.. = TRUE),
+        list.files(tmp_dir, recursive = TRUE, all.files = TRUE, no.. = TRUE,
+                   include.dirs = TRUE),
         character(0)
     )
 

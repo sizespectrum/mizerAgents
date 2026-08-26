@@ -48,6 +48,24 @@
     dest
 }
 
+# Remove every empty directory under `root`, deepest first, so that one whose
+# only content was itself an empty directory goes too. A skill's files can sit
+# in sub-directories (`upgrade-mizer-code/references/`), and clearing those
+# leaves the parent holding nothing but an empty child - which a single pass
+# over the top level reads as a directory still in use. `root` itself is left
+# to the caller. Internal helper.
+.prune_empty_dirs <- function(root) {
+    dirs <- setdiff(list.dirs(root, recursive = TRUE), root)
+    # Deepest first: a path is always longer than the parent it extends.
+    for (d in dirs[order(nchar(dirs), decreasing = TRUE)]) {
+        if (dir.exists(d) &&
+            length(list.files(d, all.files = TRUE, no.. = TRUE)) == 0) {
+            unlink(d, recursive = TRUE)
+        }
+    }
+    invisible(NULL)
+}
+
 # Remove `dir` if it holds nothing, then each of its parents for the same
 # reason, stopping before `stop_at` so that the project directory itself is
 # never a candidate. Internal helper.
@@ -134,9 +152,7 @@
         removed <- c(removed, manifest_path)
     }
 
-    for (d in list.dirs(skills_dest, recursive = FALSE)) {
-        .remove_empty_dirs(d, skills_dest)
-    }
+    .prune_empty_dirs(skills_dest)
     .remove_empty_dirs(skills_dest, normalizePath(path, mustWork = FALSE))
 
     for (s in unique(sub("/.*$", "", removed_rels))) {
