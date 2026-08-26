@@ -128,9 +128,10 @@ Posit Assistant runs in RStudio as well as Positron, so you do not have to
 leave the IDE to use this.
 
 Copilot CLI reads MCP servers only from the user-wide
-`~/.copilot/mcp-config.json`, so nothing is written for it; `setup_mizer_agent()`
-prints the JSON snippet to paste there. Use the `agents` argument if you want
-fewer files, e.g. `setup_mizer_agent(agents = "claude")`.
+`~/.copilot/mcp-config.json`, so nothing is written for it. Ask for it by name,
+with `setup_mizer_agent(agents = "copilot")`, and the JSON snippet to paste
+there is printed. Use the `agents` argument if you want fewer files, e.g.
+`setup_mizer_agent(agents = "claude")`.
 
 Then, in your R console, hand your session to the server:
 

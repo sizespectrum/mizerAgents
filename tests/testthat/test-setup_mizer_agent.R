@@ -7,7 +7,7 @@ test_that("setup_mizer_agent works as expected", {
     # 1. Clean run: files should be created
     expect_message(
         setup_mizer_agent(path = tmp_dir),
-        "Created"
+        "Wrote MIZER-AGENTS.md"
     ) |> suppressMessages()
 
     mizer_dest  <- file.path(tmp_dir, "MIZER-AGENTS.md")
@@ -67,7 +67,7 @@ test_that("setup_mizer_agent works as expected", {
     # Run setup again
     expect_message(
         setup_mizer_agent(path = tmp_dir, overwrite = FALSE),
-        "Prepended @MIZER-AGENTS.md shim"
+        "Added the mizer block to AGENTS.md"
     ) |> suppressMessages()
 
     # Custom notes should be preserved below the shim
@@ -81,7 +81,7 @@ test_that("setup_mizer_agent works as expected", {
     before <- agents_content
     expect_message(
         setup_mizer_agent(path = tmp_dir, overwrite = FALSE),
-        "Created"
+        "Wrote MIZER-AGENTS.md"
     ) |> suppressMessages()
     agents_content <- readLines(agents_dest)
     expect_identical(agents_content, before)

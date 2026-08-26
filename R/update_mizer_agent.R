@@ -79,29 +79,26 @@
 # Report the settings a run of `setup_mizer_agent()` is about to change relative
 # to what the project already had, so that a re-run meant as a refresh does not
 # silently re-declare them. Says nothing on a first run, or when nothing
-# changes. Returns a string to append to the summary. Internal helper.
+# changes. Returns bullets to add to the summary. Internal helper.
 .setting_changes <- function(before, r_session, run_r, pkg_dev, agents) {
-    if (!isTRUE(before$found)) return("")
+    if (!isTRUE(before$found)) return(character(0))
     changes <- character(0)
     onoff <- function(x) if (isTRUE(x)) "on" else "off"
 
     if (!identical(isTRUE(before$r_session), isTRUE(r_session))) {
         changes <- c(changes, paste0(
-            "\n  Live R session: ", onoff(before$r_session), " -> ",
+            "live R session ", onoff(before$r_session), " -> ",
             onoff(r_session)))
     }
     if (isTRUE(r_session) && isTRUE(before$r_session)) {
         if (!identical(isTRUE(before$run_r), isTRUE(run_r))) {
             changes <- c(changes, paste0(
-                "\n  Code execution in your session: ", onoff(before$run_r),
-                " -> ", onoff(run_r),
-                if (isTRUE(run_r)) {
-                    "\n    (the agent can now overwrite your objects)"
-                } else ""))
+                "code execution in your session ", onoff(before$run_r),
+                " -> ", onoff(run_r)))
         }
         if (!identical(isTRUE(before$pkg_dev), isTRUE(pkg_dev))) {
             changes <- c(changes, paste0(
-                "\n  Package development tools: ", onoff(before$pkg_dev),
+                "package development tools ", onoff(before$pkg_dev),
                 " -> ", onoff(pkg_dev)))
         }
     }
@@ -113,21 +110,24 @@
         dropped <- setdiff(intersect(before$agents, names(.agent_configs)),
                            agents)
         if (length(added)) {
-            changes <- c(changes, paste0("\n  Now also configured for: ",
+            changes <- c(changes, paste0("now also configured for ",
                                          paste(label(added), collapse = ", ")))
         }
         if (length(dropped)) {
             changes <- c(changes, paste0(
-                "\n  Not requested this time, but left in place: ",
+                "not requested this time but left in place: ",
                 paste(label(dropped), collapse = ", "),
-                "\n    (remove_mizer_agent() takes those entries out again)"))
+                " (remove_mizer_agent() takes those out again)"))
         }
     }
-    if (!length(changes)) return("")
-    paste0("\n\nSettings changed from how this project was set up:",
-           paste(changes, collapse = ""),
-           "\n  update_mizer_agent() refreshes the files while keeping the",
-           "\n  settings a project already has.")
+    if (!length(changes)) return(character(0))
+    # Wrapped here rather than left to the terminal, so that the continuation
+    # lines line up under the bullet.
+    paste0(paste(strwrap(paste0(
+        "Changed from how this project was set up: ",
+        paste(changes, collapse = "; "), "."), width = 74), collapse = "\n  "),
+        "\n  update_mizer_agent() refreshes the files while keeping a ",
+        "project's settings")
 }
 
 # Check GitHub for a newer version of mizerAgents without blocking or failing on
@@ -193,8 +193,9 @@
 #' `agents` are read from the MCP configs, and `rprofile` from the project
 #' `.Rprofile`, which means it works for projects set up by earlier versions of
 #' this package too. The one choice that leaves no trace is `agents = "copilot"`,
-#' which only prints a snippet; pass it again yourself if you want it. Pass any
-#' argument of `setup_mizer_agent()` through `...` to override what was detected.
+#' which only prints a snippet; pass it through `...` if you want it again. Pass
+#' any argument of `setup_mizer_agent()` through `...` to override what was
+#' detected.
 #'
 #' @param path Directory to refresh. Defaults to the current working directory,
 #'   which should be your R project root.
@@ -238,21 +239,9 @@ update_mizer_agent <- function(path = ".", check_version = TRUE, ...) {
     opts <- list(...)
     opts <- c(opts, detected_opts[setdiff(names(detected_opts), names(opts))])
 
-    message(
-        "Refreshing with the settings this project already has:",
-        if (isTRUE(opts$r_session)) {
-            paste0(
-                "\n  Live R session: on",
-                "\n  Code execution: ", if (isTRUE(opts$run_r)) "on" else "off",
-                if (isTRUE(opts$pkg_dev)) "\n  Package development tools: on" else "",
-                "\n  Agents: ",
-                paste(vapply(.agent_configs[intersect(opts$agents,
-                                                      names(.agent_configs))],
-                             `[[`, character(1), "label"), collapse = ", "))
-        } else "\n  Live R session: off",
-        if (isTRUE(opts$rprofile)) "\n  .Rprofile connects the session on startup" else "",
-        "\n"
-    )
+    # The settings themselves are not listed here: the summary that
+    # `setup_mizer_agent()` prints at the end says what they are.
+    message("Refreshing with the settings this project already has.")
 
     # `setup_mizer_agent()` does the version check itself, at the end.
     result <- do.call(setup_mizer_agent, opts)

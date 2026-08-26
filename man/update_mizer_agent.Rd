@@ -52,8 +52,9 @@ Nothing is stored to make this work: \code{r_session}, \code{run_r}, \code{pkg_d
 \code{agents} are read from the MCP configs, and \code{rprofile} from the project
 \code{.Rprofile}, which means it works for projects set up by earlier versions of
 this package too. The one choice that leaves no trace is \code{agents = "copilot"},
-which only prints a snippet; pass it again yourself if you want it. Pass any
-argument of \code{setup_mizer_agent()} through \code{...} to override what was detected.
+which only prints a snippet; pass it through \code{...} if you want it again. Pass
+any argument of \code{setup_mizer_agent()} through \code{...} to override what was
+detected.
 }
 \examples{
 \dontrun{

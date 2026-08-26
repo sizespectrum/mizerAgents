@@ -221,10 +221,10 @@
     json <- jsonlite::toJSON(list(mcpServers = stats::setNames(
         list(entry), .mcp_server_name)), auto_unbox = TRUE, pretty = TRUE)
     paste0(
-        "\n\nCopilot CLI has no per-project MCP config, so add this to\n",
-        "~/.copilot/mcp-config.json yourself (merge into any `mcpServers` you\n",
-        "already have):\n\n",
-        paste0("  ", strsplit(as.character(json), "\n")[[1]], collapse = "\n")
+        "Copilot CLI has no per-project MCP config, so add this to ",
+        "~/.copilot/mcp-config.json\n  yourself, merging it into any ",
+        "`mcpServers` you already have:\n",
+        paste0("    ", strsplit(as.character(json), "\n")[[1]], collapse = "\n")
     )
 }
 
@@ -245,39 +245,61 @@
     TRUE
 }
 
-# The part of the setup summary covering the live session. Spells out the two
+# Wrap a comma-separated list to `width`, breaking only between items: agent
+# labels like "VS Code / Copilot" contain spaces, and `strwrap()` splits them
+# down the middle. Internal helper.
+.wrap_list <- function(items, width = 74) {
+    lines <- character(0)
+    current <- ""
+    for (i in seq_along(items)) {
+        item <- paste0(items[i], if (i < length(items)) ",")
+        if (!nzchar(current)) {
+            current <- item
+        } else if (nchar(current) + 1 + nchar(item) <= width) {
+            current <- paste(current, item)
+        } else {
+            lines <- c(lines, current)
+            current <- item
+        }
+    }
+    c(lines, current)
+}
+
+# The bullets of the setup summary covering the live session. Spells out the two
 # things that are easy to miss: `btw` is not installed for you, and the server
 # sees nothing until the session registers itself. Internal helper.
 .r_session_message <- function(run_r, rprofile, pkg_dev, agents) {
-    paste0(
-        "\n\nLive R session for the agent (MCP server `", .mcp_server_name, "`):",
-        {
-            configured <- intersect(agents, names(.agent_configs))
+    configured <- intersect(agents, names(.agent_configs))
+    c(
+        paste0(
+            "The MCP server `", .mcp_server_name,
+            "` hands your R session to the agent",
             if (length(configured)) {
-                paste0("\n  Configured for: ",
-                       paste(vapply(.agent_configs[configured], `[[`,
-                                    character(1), "label"), collapse = ", "))
-            } else ""
+                # The list of agents can be long, so wrap it to the width of
+                # the bullet's continuation indent rather than let it run on.
+                paste0(",\n  set up for ", paste(.wrap_list(
+                    vapply(.agent_configs[configured], `[[`, character(1),
+                           "label")), collapse = "\n  "))
+            } else ""),
+        if (isTRUE(rprofile)) {
+            "The session connects itself on startup, via .Rprofile (restart R for that)"
+        } else {
+            "Run connect_mizer_agent() in this console to connect the session; rprofile = TRUE\n  does it on every startup"
+        },
+        if (run_r) {
+            "Code execution is ENABLED: the agent can overwrite your objects (run_r = FALSE\n  makes it read-only)"
+        } else {
+            "Read-only: docs, your environment and the open document (run_r = TRUE also lets\n  the agent run mizer code and see the plots)"
+        },
+        if (pkg_dev) {
+            "Package tools enabled: load_all(), document(), test(), check(), coverage"
         },
         if (!requireNamespace("btw", quietly = TRUE)) {
             # `requireNamespace()` also fails when btw is installed but cannot
             # be loaded (typically an out-of-date dependency), so do not claim
             # it is missing.
-            "\n  ! The btw package is not available. Run: install.packages(\"btw\")\n    (if it is already installed, `library(btw)` will show why it fails)"
-        } else "",
-        if (isTRUE(rprofile)) {
-            "\n  Connects automatically: .Rprofile now calls btw::btw_mcp_session()\n  (restart R for this to take effect)"
-        } else {
-            "\n  Run connect_mizer_agent() in this console to connect it\n  (a wrapper around btw::btw_mcp_session()), or re-run with\n  rprofile = TRUE to do that on every startup"
-        },
-        if (run_r) {
-            "\n  Code execution in your session is ENABLED: the agent can overwrite\n  your objects. Re-run with run_r = FALSE to make it read-only."
-        } else {
-            "\n  Read-only: docs, your environment and the open document. Use\n  run_r = TRUE to also let the agent run mizer code and see the plots."
-        },
-        if (pkg_dev) {
-            "\n  Package tools enabled: the agent can run load_all(), document(),\n  test(), check() and coverage on this project."
-        } else ""
+            "! The btw package is not available. Run: install.packages(\"btw\")\n  (if it is already installed, `library(btw)` will show why it fails)"
+        }
     )
 }
 

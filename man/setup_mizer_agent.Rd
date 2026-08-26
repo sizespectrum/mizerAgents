@@ -69,14 +69,17 @@ collaborator using a different agent. Any of:\tabular{ll}{
    \code{"cursor"} \tab \code{.cursor/mcp.json} \cr
    \code{"vscode"} \tab \code{.vscode/mcp.json} \cr
    \code{"posit"} \tab \code{.posit/assistant/settings.json} \cr
-   \code{"copilot"} \tab \emph{(none; instructions printed)} \cr
+   \code{"copilot"} \tab \emph{(none; snippet printed on request)} \cr
 }
 
 
 \code{"posit"} covers Posit Assistant, which runs in RStudio as well as
 Positron. Copilot CLI reads MCP config only from the user-wide
-\verb{~/.copilot/mcp-config.json}, so nothing is written for it; you get the
-snippet to paste there instead. Ignored when \code{r_session = FALSE}.}
+\verb{~/.copilot/mcp-config.json}, so nothing is written for it. Pass
+\code{agents = "copilot"} explicitly (on its own or alongside others) and the
+snippet to paste there is printed; the default, which asks for every
+agent, leaves it out rather than print a screenful for everyone. Ignored
+when \code{r_session = FALSE}.}
 
 \item{check_version}{Logical; whether to check GitHub for a newer version of
 \code{mizerAgents} and say so if there is one. Defaults to \code{TRUE}. The check is

@@ -266,39 +266,35 @@
 # that import and nothing else, rather than a second copy of the block: nothing
 # in the project is relying on `CLAUDE.md` yet, so pointing it at `AGENTS.md`
 # gives the project one place to keep its instructions instead of three that
-# have to be kept in step by hand. Internal helper.
+# have to be kept in step by hand.
+#
+# Returns what it did - "created", "added", "refreshed" or "unchanged" - so that
+# the caller can report all of the files in one line instead of one message
+# each. Internal helper.
 .write_instruction_file <- function(dest, shim, overwrite, defers_to = NULL) {
     if (!file.exists(dest) || isTRUE(overwrite)) {
-        if (is.null(defers_to)) {
-            writeLines(shim, dest)
-            message("Created ", dest, " with shim pointing to MIZER-AGENTS.md")
-        } else {
-            writeLines(defers_to, dest)
-            message("Created ", dest, " importing AGENTS.md")
-        }
-        return(invisible(dest))
+        writeLines(if (is.null(defers_to)) shim else defers_to, dest)
+        return("created")
     }
 
     existing <- readLines(dest, warn = FALSE)
     range <- .shim_range(existing)
     if (is.null(range)) {
         if (!is.null(defers_to) && any(trimws(existing) == defers_to)) {
-            return(invisible(dest))
+            return("unchanged")
         }
         updated <- c(shim, "", existing)
-        action <- "Prepended @MIZER-AGENTS.md shim to existing "
+        action <- "added"
     } else {
         updated <- c(existing[seq_len(range[1] - 1)], shim,
                      existing[-seq_len(range[2])])
-        action <- "Refreshed the mizer block in "
+        action <- "refreshed"
     }
     # Leave the file alone when nothing would change, so that re-running setup
     # does not dirty a tracked file or bump its mtime.
-    if (!identical(updated, existing)) {
-        writeLines(updated, dest)
-        message(action, dest)
-    }
-    invisible(dest)
+    if (identical(updated, existing)) return("unchanged")
+    writeLines(updated, dest)
+    action
 }
 
 # Appended to every deployed `SKILL.md`. The skills are package-managed and
@@ -382,6 +378,9 @@
     invisible(path)
 }
 
+# "1 skill", "3 skills": counted nouns in the setup summary. Internal helper.
+.count <- function(n, noun) paste0(n, " ", noun, if (n != 1) "s")
+
 # Make sure `dir` is there to be written into, reporting rather than failing
 # when it cannot be.
 #
@@ -417,12 +416,15 @@
 # stop shipping are removed if unmodified, so that a dropped skill does not
 # linger for ever.
 #
-# Returns the relative paths of the files whose local edits were kept, so the
-# caller can report them. Internal helper.
+# Returns, for the caller to report, a list with the skills installed, the ones
+# removed, and the relative paths of the files whose local edits were kept.
+# Internal helper.
 .install_skills <- function(skills_src, path) {
     skills_dest <- normalizePath(file.path(path, ".claude", "skills"),
                                  mustWork = FALSE)
-    if (!.ensure_dir(skills_dest)) return(invisible(character(0)))
+    none <- list(installed = character(0), removed = character(0),
+                 kept = character(0))
+    if (!.ensure_dir(skills_dest)) return(none)
     manifest_path <- file.path(skills_dest, .skill_manifest)
     recorded <- .read_skill_manifest(manifest_path)
     # A project set up before the manifest existed has nothing to compare
@@ -498,12 +500,8 @@
     removed <- setdiff(removed, sub("/.*$", "", rels))
     .prune_empty_dirs(skills_dest)
 
-    for (s in unique(installed)) message("Installed skill: ", s)
-    for (s in unique(removed)) {
-        message("Removed skill (no longer bundled): ", s)
-    }
     .write_skill_manifest(manifest_path, hashes)
-    invisible(kept)
+    list(installed = unique(installed), removed = unique(removed), kept = kept)
 }
 
 #' Set up an AI agent to help with your mizer project
@@ -647,12 +645,15 @@
 #'   | `"cursor"` | `.cursor/mcp.json` |
 #'   | `"vscode"` | `.vscode/mcp.json` |
 #'   | `"posit"` | `.posit/assistant/settings.json` |
-#'   | `"copilot"` | *(none; instructions printed)* |
+#'   | `"copilot"` | *(none; snippet printed on request)* |
 #'
 #'   `"posit"` covers Posit Assistant, which runs in RStudio as well as
 #'   Positron. Copilot CLI reads MCP config only from the user-wide
-#'   `~/.copilot/mcp-config.json`, so nothing is written for it; you get the
-#'   snippet to paste there instead. Ignored when `r_session = FALSE`.
+#'   `~/.copilot/mcp-config.json`, so nothing is written for it. Pass
+#'   `agents = "copilot"` explicitly (on its own or alongside others) and the
+#'   snippet to paste there is printed; the default, which asks for every
+#'   agent, leaves it out rather than print a screenful for everyone. Ignored
+#'   when `r_session = FALSE`.
 #' @param run_r If `TRUE` (the default), let the agent *evaluate* R code in your
 #'   session, which is what allows it to project or calibrate a model and see
 #'   the resulting plots. The code runs in your global environment with no
@@ -705,6 +706,11 @@ setup_mizer_agent <- function(path = ".", overwrite = FALSE,
                               pkg_dev = FALSE, rprofile = FALSE,
                               agents = .agent_choices,
                               check_version = TRUE) {
+    # Copilot CLI has no per-project config, so the only thing we can do for it
+    # is print a snippet to paste into the user-wide one. That is a screenful,
+    # and every default run would carry it, so it is printed only for someone
+    # who asked for Copilot by name.
+    copilot_snippet <- !missing(agents) && "copilot" %in% agents
     agents <- match.arg(agents, .agent_choices, several.ok = TRUE)
     # How the project is set up now, read before we change it, so that the
     # summary can say which settings this run is re-declaring. The arguments
@@ -732,7 +738,10 @@ setup_mizer_agent <- function(path = ".", overwrite = FALSE,
 
     # Always write/overwrite the package-managed MIZER-AGENTS.md file
     writeLines(card, mizer_dest)
-    message("Created ", mizer_dest)
+
+    # Everything this run did is reported as one bulleted list at the end
+    # rather than as a message per file, which was longer than anyone reads.
+    bullets <- character(0)
 
     # Handle the instruction files. Unlike MIZER-AGENTS.md these belong to the
     # user, so only the marked block is package-managed: it is refreshed in
@@ -742,12 +751,23 @@ setup_mizer_agent <- function(path = ".", overwrite = FALSE,
     # named file still finds the block without the project having to maintain
     # three copies of its instructions.
     shim <- c(.shim_begin, .shim_note, .shim_end)
-    for (f in .instruction_files) {
+    done <- vapply(.instruction_files, function(f) {
         .write_instruction_file(
             normalizePath(file.path(path, f), mustWork = FALSE),
             shim, overwrite,
             defers_to = if (f != "AGENTS.md") "@AGENTS.md"
         )
+    }, character(1))
+    written <- c("MIZER-AGENTS.md", names(done)[done == "created"])
+    bullets <- c(bullets, paste0("Wrote ", paste(written, collapse = ", ")))
+    for (a in c("added", "refreshed")) {
+        files <- names(done)[done == a]
+        if (length(files)) {
+            bullets <- c(bullets, paste0(
+                if (a == "added") "Added the mizer block to "
+                else "Refreshed the mizer block in ",
+                paste(files, collapse = ", ")))
+        }
     }
 
     # Deploy the bundled Claude skills into `.claude/skills/`. Each skill is a
@@ -756,11 +776,33 @@ setup_mizer_agent <- function(path = ".", overwrite = FALSE,
     # file by file, and only where nothing has edited them here.
     kept <- character(0)
     if (nzchar(skills_src) && dir.exists(skills_src)) {
-        kept <- .install_skills(skills_src, path)
+        skills <- .install_skills(skills_src, path)
+        kept <- skills$kept
+        if (length(skills$installed)) {
+            bullets <- c(bullets, paste0(
+                "Installed ", .count(length(skills$installed), "skill"),
+                " in .claude/skills/ (Claude Code loads them itself)"))
+        }
+        if (length(skills$removed)) {
+            bullets <- c(bullets, paste0(
+                "Removed ", .count(length(skills$removed), "skill"),
+                " no longer bundled: ",
+                paste(skills$removed, collapse = ", ")))
+        }
     } else {
-        message("No skills installed: the installed mizer does not ship them.\n",
-                "  They arrived in mizer 3.2.2; upgrade mizer and re-run to ",
-                "get them.")
+        bullets <- c(bullets, paste0(
+            "No skills installed: the installed mizer does not ship them.\n",
+            "  They arrived in mizer 3.2.2; upgrade mizer and re-run to get them."))
+    }
+    bullets <- c(bullets, paste0("Mizer API index for agents: ", llms_src))
+    if (length(kept)) {
+        bullets <- c(bullets, paste0(
+            "Kept ", .count(length(kept), "skill file"),
+            " edited here, with the new version",
+            if (length(kept) == 1) " beside it" else " of each beside it",
+            "\n  as <file>.new to merge by hand (project notes live better in ",
+            "the skill's\n  NOTES.md, which is never overwritten):\n    ",
+            paste(kept, collapse = "\n    ")))
     }
 
     # Configure the MCP server that connects the agent to the user's R session,
@@ -768,49 +810,27 @@ setup_mizer_agent <- function(path = ".", overwrite = FALSE,
     # `AGENTS.md`, only our own entry is managed; anything else in those files
     # belongs to the user.
     if (isTRUE(r_session)) {
-        written <- .write_agent_configs(path, agents, run_r, pkg_dev)
-        for (i in seq_along(written)) {
-            message("Configured the ", .mcp_server_name, " MCP server for ",
-                    names(written)[i], " in ", written[i])
-        }
+        .write_agent_configs(path, agents, run_r, pkg_dev)
         if (isTRUE(rprofile)) {
-            rprofile_dest <- normalizePath(file.path(path, ".Rprofile"),
-                                           mustWork = FALSE)
-            if (.write_rprofile(rprofile_dest)) {
-                message("Added btw::btw_mcp_session() to ", rprofile_dest)
-            }
+            .write_rprofile(normalizePath(file.path(path, ".Rprofile"),
+                                          mustWork = FALSE))
+        }
+        bullets <- c(bullets, .r_session_message(run_r, rprofile, pkg_dev,
+                                                 agents))
+        if (copilot_snippet) {
+            bullets <- c(bullets, .copilot_snippet(run_r, pkg_dev))
         }
     }
+    bullets <- c(bullets, .setting_changes(before, r_session, run_r, pkg_dev,
+                                           agents))
 
-    message(
-        "\nMizer API documentation for AI agents:",
-        "\n  API index: ", llms_src,
-        if (nzchar(skills_src) && dir.exists(skills_src)) {
-            "\n  Skills:    .claude/skills/ (loaded automatically by Claude Code)"
-        } else "",
-        if (length(kept)) {
-            paste0(
-                "\n\nThese skill files have been edited in this project, so they",
-                "\nwere kept and the new version of each was written beside it:\n  ",
-                paste(paste0(kept, "  ->  ", basename(kept), ".new"),
-                      collapse = "\n  "),
-                "\nMerge what you want to keep, then delete the .new file.",
-                "\nNotes that belong to this project are better kept in the",
-                "\nskill's NOTES.md, which is never overwritten."
-            )
-        } else "",
-        if (isTRUE(r_session)) {
-            paste0(.r_session_message(run_r, rprofile, pkg_dev, agents),
-                   if ("copilot" %in% agents) .copilot_snippet(run_r, pkg_dev))
-        } else "",
-        .setting_changes(before, r_session, run_r, pkg_dev, agents),
-        "\n\nStart your AI coding agent from the terminal, e.g.:\n",
-        "  claude    (Claude Code)\n",
-        "  codex     (Codex CLI)\n",
-        "  gemini    (Gemini CLI)\n",
-        "  agy       (Antigravity CLI)\n",
-        "  copilot   (GitHub Copilot CLI)"
-    )
+    bullets <- c(bullets, paste0(
+        "Now start your AI coding agent in a terminal here: claude, codex,",
+        "\n  gemini, agy or copilot"))
+
+    message("mizerAgents set up in ",
+            normalizePath(path, mustWork = FALSE), ":\n- ",
+            paste(bullets, collapse = "\n- "))
 
     if (isTRUE(check_version)) {
         .check_mizeragents_version()

@@ -76,22 +76,26 @@ test_that("setup_mizer_agent reports the settings a re-run changes", {
     dir.create(tmp_dir)
     on.exit(unlink(tmp_dir, recursive = TRUE))
 
+    # The report is wrapped to the width of its bullet, so match it against the
+    # message with the line breaks and indents squeezed out
+    flat <- function(msgs) gsub("\\s+", " ", paste(msgs, collapse = " "))
+
     # A first run has nothing to compare against, so it says nothing
     msgs <- capture_messages(setup_mizer_agent(path = tmp_dir, run_r = FALSE,
                                                agents = "claude"))
-    expect_false(any(grepl("Settings changed", msgs)))
+    expect_false(grepl("Changed from how this project was set up", flat(msgs)))
 
     # A plain re-run switches code execution back on, adds the other agents,
     # and now says so
-    msgs <- capture_messages(setup_mizer_agent(path = tmp_dir))
-    expect_true(any(grepl("Settings changed", msgs)))
-    expect_true(any(grepl("Code execution in your session: off -> on", msgs,
-                          fixed = TRUE)))
-    expect_true(any(grepl("Now also configured for", msgs, fixed = TRUE)))
+    msgs <- flat(capture_messages(setup_mizer_agent(path = tmp_dir)))
+    expect_true(grepl("Changed from how this project was set up", msgs))
+    expect_true(grepl("code execution in your session off -> on", msgs,
+                      fixed = TRUE))
+    expect_true(grepl("now also configured for", msgs, fixed = TRUE))
 
     # And an update, which changes no setting, does not
     msgs <- capture_messages(update_mizer_agent(path = tmp_dir, check_version = FALSE))
-    expect_false(any(grepl("Settings changed", msgs)))
+    expect_false(grepl("Changed from how this project was set up", flat(msgs)))
 })
 
 test_that(".check_mizeragents_version reports when a newer version is available", {

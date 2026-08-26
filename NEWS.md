@@ -22,6 +22,20 @@
   to construct a minimal reproducible example (reprex) and file an issue on the
   mizer issue tracker (<https://github.com/sizespectrum/mizer/issues>).
 
+* **`setup_mizer_agent()` now reports what it did as a short bulleted list.**
+  It used to print a line per file written, per skill installed and per agent
+  configured, and then a multi-paragraph summary - some fifty lines, more than
+  anyone reads. The same information is now one bulleted list of about ten
+  lines: the files, the skills as a count, the API index, what the live-session
+  connection can do and how to connect it, any setting the run changed, and how
+  to start an agent. `update_mizer_agent()` no longer lists the settings it
+  detected either, since that summary says what they are.
+* **The Copilot CLI MCP snippet is printed only when you ask for Copilot.**
+  Copilot has no per-project config, so the only thing setup can do for it is
+  print a twenty-line JSON snippet to paste into `~/.copilot/mcp-config.json`.
+  That went to everyone, because the default asks for every agent. Pass
+  `agents = "copilot"` by name, on its own or alongside others, and you get it.
+
 ## Bug fixes
 
 * **A plain file where a config directory belongs no longer aborts the setup.**

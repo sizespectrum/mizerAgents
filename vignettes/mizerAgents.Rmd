@@ -127,8 +127,9 @@ around.
 
 GitHub Copilot CLI is the exception: it reads MCP servers only from the
 user-wide `~/.copilot/mcp-config.json`, which is not a file a project setup
-function should be editing, so `setup_mizer_agent()` prints the snippet to
-paste there instead.
+function should be editing. Pass `agents = "copilot"` and the snippet to paste
+there is printed for you; the default run, which asks for every agent, leaves
+it out rather than print a screenful for everyone.
 
 The server runs as its own R process, so it does not see your session until you
 hand it over. In your R console — RStudio's, or whichever one you work in —
