@@ -1,4 +1,4 @@
-# mizerAgents (development version)
+# mizerAgents 0.4.3
 
 ## New features
 
