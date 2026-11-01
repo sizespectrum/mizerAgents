@@ -25,7 +25,7 @@
   each, neither seeing the other's. Notes already kept there stay where they
   are.
 
-# mizerAgents 0.4.1
+# mizerAgents 0.4.2
 
 ## New features
 
@@ -45,10 +45,10 @@
   removed. `remove_mizer_agent()` deletes a `CLAUDE.md` or `GEMINI.md` holding
   nothing but that import, while one sitting among notes of your own still
   stays.
-* **`update_mizer_agent()` checks whether a newer version of `mizerAgents` is available.**
-  When run with `check_version = TRUE` (the default), it queries GitHub for the
-  latest version of the package without blocking or failing on network errors,
-  and notifies the user with instructions to update if a newer release is found.
+* **`setup_mizer_agent()` checks for a newer version of `mizerAgents` too**, as
+  `update_mizer_agent()` already did. The check runs after everything else is
+  written, times out after two seconds and never fails the setup;
+  `check_version = FALSE` keeps the call offline.
 * **`MIZER-AGENTS.md` directs agents to report mizer bugs upstream.**
   When an agent encounters a mizer function behaving differently from its help
   page, the card now instructs the agent not to silently work around the bug, but
@@ -95,6 +95,15 @@
   skill that is no longer bundled: the cleanup looked only one level deep, so a
   directory holding nothing but an emptied child looked like one still in use.
   Empty directories are now pruned deepest first.
+
+# mizerAgents 0.4.1
+
+## New features
+
+* **`update_mizer_agent()` checks whether a newer version of `mizerAgents` is available.**
+  When run with `check_version = TRUE` (the default), it queries GitHub for the
+  latest version of the package without blocking or failing on network errors,
+  and notifies the user with instructions to update if a newer release is found.
 
 # mizerAgents 0.4.0
 
