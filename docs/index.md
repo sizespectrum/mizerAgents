@@ -12,7 +12,6 @@ any mizer project with a single function call.
 ## Installation
 
 ``` r
-
 # install.packages("pak")
 pak::pak("sizespectrum/mizerAgents")
 ```
@@ -31,7 +30,6 @@ get guidance matching themselves. (Earlier releases needed a separate
 Run once in the root of your mizer project:
 
 ``` r
-
 mizerAgents::setup_mizer_agent()
 ```
 
@@ -58,11 +56,15 @@ This creates:
   rest is left alone, and no `@AGENTS.md` import is written into it or
   removed from it.
 
-- **`.claude/skills/`** — Claude Code skills (`analyse-and-plot`,
-  `analyse-stability`, `build-model`, `calibrate-model`,
-  `run-simulation`, `set-up-fishing`, `change-parameters`,
-  `extend-mizer`) that agents read automatically when a task matches,
-  giving step-by-step guidance for common mizer workflows. They are
+- **`.claude/skills/`** and **`.agents/skills/`** — agent skills
+  (`analyse-and-plot`, `analyse-stability`, `build-model`,
+  `calibrate-model`, `run-simulation`, `set-up-fishing`,
+  `change-parameters`, `extend-mizer`, …) that agents read automatically
+  when a task matches, giving step-by-step guidance for common mizer
+  workflows. Claude Code looks for skills in `.claude/skills/`, Codex
+  and Gemini CLI in `.agents/skills/`, so each skill is installed in
+  both as an identical copy. (Copies rather than links, which are
+  unreliable on Windows, on network drives and under OneDrive.) They are
   refreshed on each run, but only file by file and only where nothing
   has edited them: see [What your project
   learns](#what-your-project-learns).
@@ -118,7 +120,6 @@ To give it that, install the [btw](https://posit-dev.github.io/btw/)
 package:
 
 ``` r
-
 install.packages("btw")
 ```
 
@@ -149,7 +150,6 @@ fewer files, e.g. `setup_mizer_agent(agents = "claude")`.
 Then, in your R console, hand your session to the server:
 
 ``` r
-
 mizerAgents::connect_mizer_agent()
 ```
 
@@ -179,7 +179,6 @@ no execution — use `setup_mizer_agent(run_r = FALSE)`, and
 ### If your project is a mizer extension package
 
 ``` r
-
 setup_mizer_agent(pkg_dev = TRUE)
 ```
 
@@ -193,7 +192,6 @@ project.
 ### Keeping it up to date
 
 ``` r
-
 mizerAgents::update_mizer_agent()
 ```
 
@@ -220,7 +218,6 @@ e.g. `update_mizer_agent(run_r = FALSE)`.
 ### Undoing the setup
 
 ``` r
-
 mizerAgents::remove_mizer_agent()
 ```
 
@@ -247,9 +244,10 @@ skill has a home for that which the package never touches.
 - **`.claude/skills/<name>/NOTES.md`** — findings about *this* project.
   Every bundled `SKILL.md` ends by telling agents to read this file
   alongside it, to treat it as taking precedence, and to record what
-  they learn there rather than in `SKILL.md`. Nothing in this package
-  ever writes it. Commit it: it is project knowledge, and your
-  collaborators’ agents get it too.
+  they learn there rather than in `SKILL.md`. The copy in
+  `.agents/skills/` names the same file, so Claude Code and Codex share
+  one set of notes. Nothing in this package ever writes it. Commit it:
+  it is project knowledge, and your collaborators’ agents get it too.
 - **`AGENTS.md`, outside the markers** (or `CLAUDE.md` / `GEMINI.md`, if
   you keep separate instructions for those agents) — project notes that
   belong to no single skill.
@@ -261,14 +259,14 @@ skill has a home for that which the package never touches.
 
 Skills are refreshed file by file, never by replacing whole directories,
 so a `NOTES.md` — or a skill of your own invention — is left alone. The
-hashes of the files installed are recorded in
-`.claude/skills/.mizerAgents.json`. If a `SKILL.md` has been edited
-since, it is recognised, kept, and reported, with the new version
-written beside it as `SKILL.md.new` for you to merge:
+hashes of the files installed are recorded in a `.mizerAgents.json` in
+each skills directory. If a `SKILL.md` has been edited since, it is
+recognised, kept, and reported, with the new version written beside it
+as `SKILL.md.new` for you to merge:
 
     These skill files have been edited in this project, so they
     were kept and the new version of each was written beside it:
-      run-simulation/SKILL.md  ->  SKILL.md.new
+      .claude/skills/run-simulation/SKILL.md  ->  SKILL.md.new
 
 Delete the `.new` file when you are done and the skill goes back under
 package management. Skills that later versions stop shipping are
@@ -276,8 +274,8 @@ removed, unless they were edited here.
 
 ## What’s included
 
-| File | Description |
-|----|----|
+| File                   | Description                                                                                                                         |
+|------------------------|-------------------------------------------------------------------------------------------------------------------------------------|
 | `inst/MIZER-AGENTS.md` | Mizer reference card deployed by [`setup_mizer_agent()`](https://sizespectrum.github.io/mizerAgents/reference/setup_mizer_agent.md) |
 
 Everything that describes mizer rather than the agent setup is

@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <title>Using AI Agents with Mizer • mizerAgents</title>
-<script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<script src="../deps/jquery-3.6.1/jquery-3.6.1.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
 <script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">mizerAgents</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.3</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -100,7 +100,7 @@ to act on would be something the agent used instead of reading the
 skill, and it would go stale a release later. So it carries only what
 has to be said before the agent does anything — that its recollection of
 the mizer API is probably stale, and that setters return a new object —
-and then an index of the skills, the path to the bundled API index, and
+and then where the skills are, the path to the bundled API index, and
 how to use your R session. This file is package-managed and updated when
 mizer is upgraded.</li>
 <li>
@@ -116,6 +116,13 @@ so an agent that looks only for its own named file should still find the
 mizer context. The block is the only thing added to these files: no
 <code>@AGENTS.md</code> import is written or removed, so which of your
 own instructions reach which agent stays exactly as you had it.</li>
+<li>
+<strong><code>.claude/skills/</code></strong> and
+<strong><code>.agents/skills/</code></strong> — the task skills, one
+directory per skill, which agents discover and load themselves when a
+task matches. Claude Code looks in the first, Codex and Gemini CLI in
+the second, so each skill is installed in both as an identical
+copy.</li>
 <li>
 <strong>MCP configuration</strong> for a server named
 <code>r-mizer</code> that connects the agent to your R session,
@@ -432,14 +439,19 @@ working: that this model only settles with a smaller
 <code>steady()</code> tolerance, that one species’ <code>beta</code> is
 doing something odd, that a scenario has to be run a particular way. It
 will want to write that down, and it writes where it was reading — in
-the skill it was following, under <code>.claude/skills/</code>. Those
-skill files are installed by <code><a href="../reference/setup_mizer_agent.html">setup_mizer_agent()</a></code> and
-refreshed when you run it again, so that is the wrong place for it.</p>
-<p>Each skill therefore has a <code>NOTES.md</code> beside it that this
-package never writes. The skills tell agents to read it alongside the
+the skill it was following, under <code>.claude/skills/</code> or
+<code>.agents/skills/</code>. Those skill files are installed by
+<code><a href="../reference/setup_mizer_agent.html">setup_mizer_agent()</a></code> and refreshed when you run it again, so
+that is the wrong place for it.</p>
+<p>Each skill therefore has a <code>NOTES.md</code> that this package
+never writes. The skills tell agents to read it alongside the
 <code>SKILL.md</code>, to treat it as taking precedence where the two
-disagree, and to record project-specific findings there:</p>
+disagree, and to record project-specific findings there. Both copies of
+a skill name the same file, the one under <code>.claude/skills/</code>,
+so that Claude Code and Codex keep one set of notes between them rather
+than one each:</p>
 <pre><code><span><span class="va">.claude</span><span class="op">/</span><span class="va">skills</span><span class="op">/</span><span class="va">calibrate</span><span class="op">-</span><span class="va">model</span><span class="op">/</span><span class="va">SKILL.md</span>    <span class="co"># ours, refreshed</span></span>
+<span><span class="va">.agents</span><span class="op">/</span><span class="va">skills</span><span class="op">/</span><span class="va">calibrate</span><span class="op">-</span><span class="va">model</span><span class="op">/</span><span class="va">SKILL.md</span>    <span class="co"># ours, an identical copy</span></span>
 <span><span class="va">.claude</span><span class="op">/</span><span class="va">skills</span><span class="op">/</span><span class="va">calibrate</span><span class="op">-</span><span class="va">model</span><span class="op">/</span><span class="va">NOTES.md</span>    <span class="co"># yours, never touched</span></span></code></pre>
 <p>Commit those files. They are as much a part of the project as the
 code, and a collaborator’s agent picks them up too. If you or your agent
