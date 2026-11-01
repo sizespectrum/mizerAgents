@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <title>mizerAgents — AI Agent Support for Mizer • mizerAgents</title>
-<script src="deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<script src="deps/jquery-3.6.1/jquery-3.6.1.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
 <script src="deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
@@ -24,7 +24,7 @@
 
     <a class="navbar-brand me-2" href="index.html">mizerAgents</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.3</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -78,7 +78,7 @@
 <li><p><strong><code>AGENTS.md</code></strong> — your project instruction file, updated to include a short package-managed block pointing agents at <code>MIZER-AGENTS.md</code>. Only the block between the <code>&lt;!-- mizerAgents: start --&gt;</code> and <code>&lt;!-- mizerAgents: end --&gt;</code> markers is refreshed on each run; anything you add outside it is preserved.</p></li>
 <li><p><strong><code>CLAUDE.md</code></strong> and <strong><code>GEMINI.md</code></strong> — created, if you do not have them, with the single line <code>@AGENTS.md</code>, so that Claude Code and Gemini CLI read your <code>AGENTS.md</code>, which neither of them falls back to on its own. Your project instructions then live in one file rather than three. If you already have either file it is treated exactly like <code>AGENTS.md</code> instead: it gets its own copy of the marked block, the rest is left alone, and no <code>@AGENTS.md</code> import is written into it or removed from it.</p></li>
 <li>
-<p><strong><code>.claude/skills/</code></strong> — Claude Code skills (<code>analyse-and-plot</code>, <code>analyse-stability</code>, <code>build-model</code>, <code>calibrate-model</code>, <code>run-simulation</code>, <code>set-up-fishing</code>, <code>change-parameters</code>, <code>extend-mizer</code>) that agents read automatically when a task matches, giving step-by-step guidance for common mizer workflows. They are refreshed on each run, but only file by file and only where nothing has edited them: see <a href="#what-your-project-learns">What your project learns</a>.</p>
+<p><strong><code>.claude/skills/</code></strong> and <strong><code>.agents/skills/</code></strong> — agent skills (<code>analyse-and-plot</code>, <code>analyse-stability</code>, <code>build-model</code>, <code>calibrate-model</code>, <code>run-simulation</code>, <code>set-up-fishing</code>, <code>change-parameters</code>, <code>extend-mizer</code>, …) that agents read automatically when a task matches, giving step-by-step guidance for common mizer workflows. Claude Code looks for skills in <code>.claude/skills/</code>, Codex and Gemini CLI in <code>.agents/skills/</code>, so each skill is installed in both as an identical copy. (Copies rather than links, which are unreliable on Windows, on network drives and under OneDrive.) They are refreshed on each run, but only file by file and only where nothing has edited them: see <a href="#what-your-project-learns">What your project learns</a>.</p>
 <p>The skills come from the <strong>installed mizer</strong> (<code>inst/skills/</code>), not from this package, so they always describe the version of mizer your project actually runs. Each is also the source of the matching <code>guide-*</code> article on the mizer website, so the agent and the human documentation are one document. Skills arrived in mizer 3.3.0; against an older mizer everything else is still set up and <code><a href="reference/setup_mizer_agent.html">setup_mizer_agent()</a></code> reports that it installed none.</p>
 </li>
 <li><p><strong>MCP configuration</strong> for an <code>r-mizer</code> server that connects the agent to your live R session (see below), written in each agent’s own format — Claude Code, Codex, Gemini CLI, Antigravity, Cursor, VS Code and Posit Assistant all keep it somewhere different. Only the <code>r-mizer</code> entry is package-managed; other servers you configure in those files are left alone. Commit them, and a collaborator using a different agent gets the same setup.</p></li>
@@ -104,40 +104,40 @@
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"btw"</span><span class="op">)</span></span></code></pre></div>
 <p><code><a href="reference/setup_mizer_agent.html">setup_mizer_agent()</a></code> has already registered btw’s MCP server under the name <code>r-mizer</code> — in every agent’s config format, so it does not matter which one you use:</p>
 <table class="table">
-<thead><tr>
+<thead><tr class="header">
 <th>Agent</th>
 <th>File</th>
 </tr></thead>
 <tbody>
-<tr>
+<tr class="odd">
 <td>Claude Code</td>
 <td><code>.mcp.json</code></td>
 </tr>
-<tr>
+<tr class="even">
 <td>Codex CLI</td>
 <td><code>.codex/config.toml</code></td>
 </tr>
-<tr>
+<tr class="odd">
 <td>Gemini CLI</td>
 <td><code>.gemini/settings.json</code></td>
 </tr>
-<tr>
+<tr class="even">
 <td>Antigravity CLI</td>
 <td><code>.agents/mcp_config.json</code></td>
 </tr>
-<tr>
+<tr class="odd">
 <td>Cursor</td>
 <td><code>.cursor/mcp.json</code></td>
 </tr>
-<tr>
+<tr class="even">
 <td>VS Code / Copilot</td>
 <td><code>.vscode/mcp.json</code></td>
 </tr>
-<tr>
+<tr class="odd">
 <td>Posit Assistant</td>
 <td><code>.posit/assistant/settings.json</code></td>
 </tr>
-<tr>
+<tr class="even">
 <td>GitHub Copilot CLI</td>
 <td>
 <em>no project-level config</em> — see below</td>
@@ -181,16 +181,16 @@
 <p>The files this package installs are refreshed on every update, so nothing you or your agent writes into them survives. But an agent that discovers something about your model wants to write it down, and it writes it where it was reading: in the skill it was following. So each skill has a home for that which the package never touches.</p>
 <ul>
 <li>
-<strong><code>.claude/skills/&lt;name&gt;/NOTES.md</code></strong> — findings about <em>this</em> project. Every bundled <code>SKILL.md</code> ends by telling agents to read this file alongside it, to treat it as taking precedence, and to record what they learn there rather than in <code>SKILL.md</code>. Nothing in this package ever writes it. Commit it: it is project knowledge, and your collaborators’ agents get it too.</li>
+<strong><code>.claude/skills/&lt;name&gt;/NOTES.md</code></strong> — findings about <em>this</em> project. Every bundled <code>SKILL.md</code> ends by telling agents to read this file alongside it, to treat it as taking precedence, and to record what they learn there rather than in <code>SKILL.md</code>. The copy in <code>.agents/skills/</code> names the same file, so Claude Code and Codex share one set of notes. Nothing in this package ever writes it. Commit it: it is project knowledge, and your collaborators’ agents get it too.</li>
 <li>
 <strong><code>AGENTS.md</code>, outside the markers</strong> (or <code>CLAUDE.md</code> / <code>GEMINI.md</code>, if you keep separate instructions for those agents) — project notes that belong to no single skill.</li>
 <li>
 <strong><a href="https://github.com/sizespectrum/mizerAgents/issues" class="external-link">An issue on this repo</a></strong> — for a lesson that is true of mizer in general rather than of your project. The skills tell agents to offer this, so that the next release carries it to everyone rather than leaving it buried in one project.</li>
 </ul>
-<p>Skills are refreshed file by file, never by replacing whole directories, so a <code>NOTES.md</code> — or a skill of your own invention — is left alone. The hashes of the files installed are recorded in <code>.claude/skills/.mizerAgents.json</code>. If a <code>SKILL.md</code> has been edited since, it is recognised, kept, and reported, with the new version written beside it as <code>SKILL.md.new</code> for you to merge:</p>
+<p>Skills are refreshed file by file, never by replacing whole directories, so a <code>NOTES.md</code> — or a skill of your own invention — is left alone. The hashes of the files installed are recorded in a <code>.mizerAgents.json</code> in each skills directory. If a <code>SKILL.md</code> has been edited since, it is recognised, kept, and reported, with the new version written beside it as <code>SKILL.md.new</code> for you to merge:</p>
 <pre><code>These skill files have been edited in this project, so they
 were kept and the new version of each was written beside it:
-  run-simulation/SKILL.md  -&gt;  SKILL.md.new</code></pre>
+  .claude/skills/run-simulation/SKILL.md  -&gt;  SKILL.md.new</code></pre>
 <p>Delete the <code>.new</code> file when you are done and the skill goes back under package management. Skills that later versions stop shipping are removed, unless they were edited here.</p>
 </div>
 <div class="section level2">
@@ -201,11 +201,11 @@ were kept and the new version of each was written beside it:
 <col width="31%">
 <col width="68%">
 </colgroup>
-<thead><tr>
+<thead><tr class="header">
 <th>File</th>
 <th>Description</th>
 </tr></thead>
-<tbody><tr>
+<tbody><tr class="odd">
 <td><code>inst/MIZER-AGENTS.md</code></td>
 <td>Mizer reference card deployed by <code><a href="reference/setup_mizer_agent.html">setup_mizer_agent()</a></code>
 </td>

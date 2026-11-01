@@ -95,7 +95,7 @@ short routing card that AI coding agents read automatically on startup. It is
 not a mizer reference, on purpose - a summary complete enough to work from is
 a summary an agent will work from instead of reading the skill, and it goes
 stale a release later. The card carries only what has to be said up front,
-then an index of the task skills, the path to mizer's API index (a
+then where the task skills are, the path to mizer's API index (a
 curated list of every exported mizer function, grouped by workflow stage) and
 how to reach your R session. Argument lists are bundled nowhere: those go
 stale silently, so the card sends agents to the help pages of the mizer
@@ -133,12 +133,15 @@ package did, the file is left untouched - the block reaches the agent
 through the import.
 }
 
-It also installs a set of Claude Code \emph{skills} into \verb{.claude/skills/} (one
-sub-directory with a \code{SKILL.md} per skill, e.g. \code{analyse-and-plot} and
-\code{build-model}). Claude Code loads these automatically when a
-task matches, giving step-by-step guidance for common mizer workflows. Like
-\code{MIZER-AGENTS.md}, the skills are package-managed and refreshed on every call
-so they stay up to date.
+It also installs a set of agent \emph{skills} (one sub-directory with a \code{SKILL.md}
+per skill, e.g. \code{analyse-and-plot} and \code{build-model}), giving step-by-step
+guidance for common mizer workflows. Agents discover these themselves and
+load one when a task matches, but they look in different places: Claude Code
+in \verb{.claude/skills/}, Codex and Gemini CLI in \verb{.agents/skills/}. So the skills
+are installed in both, as two identical copies. (Copies rather than links,
+because links are unreliable on Windows, on network drives and under
+OneDrive.) Like \code{MIZER-AGENTS.md}, the skills are package-managed and
+refreshed on every call so they stay up to date.
 
 The skills are taken from the \strong{installed mizer} (\verb{inst/skills/}), not from
 this package, so the guidance an agent follows always describes the mizer the
@@ -148,29 +151,33 @@ same document. Skills arrived in mizer 3.3.0; against an older mizer this
 function still writes everything else and reports that it installed none.
 
 What a project learns about mizer is kept separate from them, so that neither
-overwrites the other. Each skill's directory may hold a \code{NOTES.md}, which this
-package never writes and which the \code{SKILL.md} tells agents to read alongside
-it and to treat as taking precedence: that is where an agent should record
-what it discovers about \emph{your} model. Findings that are true of mizer in
+overwrites the other. Each skill has a \code{NOTES.md}, at
+\verb{.claude/skills/<name>/NOTES.md}, which this package never writes and which
+the \code{SKILL.md} tells agents to read alongside it and to treat as taking
+precedence: that is where an agent should record what it discovers about
+\emph{your} model. Both copies of a skill name that one file, so that Claude Code
+and Codex share one set of notes rather than keeping one each. Findings that
+are true of mizer in
 general belong upstream instead, and the skills tell agents to offer to report
 them at \url{https://github.com/sizespectrum/mizerAgents/issues}, so that every
 project gets them in the next release.
 
 Refreshing works file by file rather than by replacing whole directories, so
 a \code{NOTES.md}, or a skill of your own, is left alone. The hashes of the files
-installed are recorded in \code{.claude/skills/.mizerAgents.json}; a file that has
-since been edited is recognised, kept, and reported, with the new version
-written beside it as \verb{<file>.new} for you to merge, rather than silently
-overwritten. (A project set up by version 0.3.2 or earlier has no such record,
-so the first run after upgrading refreshes the skills as it always did and
-starts keeping one.) Files that later versions stop shipping are removed if
-they are unmodified.
+installed are recorded in a \code{.mizerAgents.json} in each of the two
+directories; a file that has since been edited is recognised, kept, and
+reported, with the new version written beside it as \verb{<file>.new} for you to
+merge, rather than silently overwritten. A skill of another tool's in
+\verb{.agents/skills/} that happens to share a name with one of ours is treated
+the same way. (A project set up by version 0.3.2 or earlier has no record in
+\verb{.claude/skills/}, so the first run after upgrading refreshes the skills there
+as it always did and starts keeping one.) Files that later versions stop
+shipping are removed if they are unmodified.
 
-So that agents other than Claude Code (which do not discover \verb{.claude/skills/}
-natively) can use the skills too, an index of them (each skill's
-name, one-line description, and path) is generated from the skills' own frontmatter
-and added to \code{MIZER-AGENTS.md}. Those agents can then read the relevant
-\code{SKILL.md} on demand when a task matches.
+\code{MIZER-AGENTS.md} does not list the skills, since every agent set up here
+already lists the ones it finds. It tells agents to read the matching skill
+before starting a task, and tells an agent without skill support where to
+look.
 
 Finally, unless \code{r_session = FALSE}, it configures an MCP server named
 \code{r-mizer} so that the agent can reach your live R session. Agents have not

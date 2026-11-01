@@ -1,13 +1,64 @@
 # Changelog
 
-## mizerAgents 0.4.1
+## mizerAgents 0.4.3
+
+### New features
+
+- **The skills are also installed in `.agents/skills/`, so Codex, Gemini
+  CLI and Copilot discover them themselves.** Those agents look for
+  skills in `.agents/skills/` and never in `.claude/skills/`, where
+  Claude Code looks, so each skill is now installed in both as an
+  identical copy, with a manifest of its own. Copies rather than links:
+  a link on Windows would be a junction, which cannot be made on a
+  network drive or a FAT-formatted stick, points at a path that breaks
+  when the project moves, and is mishandled by OneDrive and git.
+  `.agents/skills/` is shared with other tools’ skills, so one of theirs
+  that shares a name with one of ours is kept and reported rather than
+  overwritten.
+  [`remove_mizer_agent()`](https://sizespectrum.github.io/mizerAgents/reference/remove_mizer_agent.md)
+  removes both copies.
+- **`MIZER-AGENTS.md` no longer lists the skills.** Every agent set up
+  here now lists the skills it finds, with the same names and
+  descriptions, so the index in the card was a second copy of that list,
+  loaded on every request: about 2,500 tokens with the 13 skills mizer
+  currently ships. The card now just says where the skills are, tells
+  agents to read the matching one before starting a task, and tells an
+  agent without skill support to choose one from the descriptions under
+  `.agents/skills/`.
+- **Each skill names its `NOTES.md` by path:
+  `.claude/skills/<name>/NOTES.md`.** The footer used to say “beside
+  this one”, which with two copies would have given Claude Code and
+  Codex a set of notes each, neither seeing the other’s. Notes already
+  kept there stay where they are.
+- **With the R session configured, the card points agents at
+  `btw_tool_docs_help_page` for help pages.** It returns the same page
+  as the `Rscript` command the card gives every project, without
+  starting a new R process for each lookup. It is named only in the
+  session section, so a project set up with `r_session = FALSE` is never
+  sent to a tool it lacks.
+- **[`connect_mizer_agent()`](https://sizespectrum.github.io/mizerAgents/reference/connect_mizer_agent.md)
+  says when the project’s agent files are out of date**, that is, when
+  [`update_mizer_agent()`](https://sizespectrum.github.io/mizerAgents/reference/update_mizer_agent.md)
+  would change the reference card or a skill because mizer or
+  mizerAgents has been upgraded since the project was set up. Upgrading
+  either package changes no project, and until now nothing said so. It
+  only reports: refreshing rewrites files you may have committed, so
+  [`update_mizer_agent()`](https://sizespectrum.github.io/mizerAgents/reference/update_mizer_agent.md)
+  is still yours to run. Skill files edited in the project do not count,
+  since an update keeps them.
+- **The message announcing a newer mizerAgents now says to run
+  [`update_mizer_agent()`](https://sizespectrum.github.io/mizerAgents/reference/update_mizer_agent.md)
+  in each project** after upgrading, since installing the new version
+  refreshes none of them.
+
+## mizerAgents 0.4.2
 
 ### New features
 
 - **Function lookup guidance is now tool-neutral and always present.**
-  The opening “Do not write mizer code from memory” section offers the
-  installed package’s help page through either `btw_tool_docs_help_page`
-  or a project-local `Rscript` process, with
+  The opening “Do not write mizer code from memory” section sends agents
+  to the installed package’s help page through a project-local `Rscript`
+  process, which works whatever tools the agent has, with
   [`args()`](https://rdrr.io/r/base/args.html) as the quick signature
   check. Documentation lookup is no longer presented as a feature of the
   user’s live R session, and the separate function-discovery section now
@@ -25,12 +76,12 @@
   deletes a `CLAUDE.md` or `GEMINI.md` holding nothing but that import,
   while one sitting among notes of your own still stays.
 
-- **[`update_mizer_agent()`](https://sizespectrum.github.io/mizerAgents/reference/update_mizer_agent.md)
-  checks whether a newer version of `mizerAgents` is available.** When
-  run with `check_version = TRUE` (the default), it queries GitHub for
-  the latest version of the package without blocking or failing on
-  network errors, and notifies the user with instructions to update if a
-  newer release is found.
+- **[`setup_mizer_agent()`](https://sizespectrum.github.io/mizerAgents/reference/setup_mizer_agent.md)
+  checks for a newer version of `mizerAgents` too**, as
+  [`update_mizer_agent()`](https://sizespectrum.github.io/mizerAgents/reference/update_mizer_agent.md)
+  already did. The check runs after everything else is written, times
+  out after two seconds and never fails the setup;
+  `check_version = FALSE` keeps the call offline.
 
 - **`MIZER-AGENTS.md` directs agents to report mizer bugs upstream.**
   When an agent encounters a mizer function behaving differently from
@@ -93,6 +144,17 @@
   dropped a skill that is no longer bundled: the cleanup looked only one
   level deep, so a directory holding nothing but an emptied child looked
   like one still in use. Empty directories are now pruned deepest first.
+
+## mizerAgents 0.4.1
+
+### New features
+
+- **[`update_mizer_agent()`](https://sizespectrum.github.io/mizerAgents/reference/update_mizer_agent.md)
+  checks whether a newer version of `mizerAgents` is available.** When
+  run with `check_version = TRUE` (the default), it queries GitHub for
+  the latest version of the package without blocking or failing on
+  network errors, and notifies the user with instructions to update if a
+  newer release is found.
 
 ## mizerAgents 0.4.0
 

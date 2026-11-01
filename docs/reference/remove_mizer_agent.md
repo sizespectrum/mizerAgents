@@ -3,8 +3,9 @@
 Removes the mizer agent support that
 [`setup_mizer_agent()`](https://sizespectrum.github.io/mizerAgents/reference/setup_mizer_agent.md)
 installed in a project: the `MIZER-AGENTS.md` reference card, the mizer
-block in the instruction files, the bundled skills in `.claude/skills/`,
-the `r-mizer` MCP server in each agent's config, and the
+block in the instruction files, the bundled skills in `.claude/skills/`
+and `.agents/skills/`, the `r-mizer` MCP server in each agent's config,
+and the
 [`btw::btw_mcp_session()`](https://posit-dev.github.io/btw/reference/mcp.html)
 call in the project `.Rprofile`. Use it when you no longer want the
 agent support in a project, or to get back to a clean slate before
@@ -45,14 +46,15 @@ respects when writing:
   never removed, just as one is never written into a file you already
   had: which of your instruction files import which is your business.
 
-- Under `.claude/skills/`, a file is removed only if it still matches
-  the hash recorded in `.claude/skills/.mizerAgents.json` when it was
-  installed. One that has been edited here is kept and reported, as is
-  any `NOTES.md`, which this package never writes. Directories left
-  empty are removed. (In a project set up by version 0.3.2 or earlier
-  there is no record, so files are identified by comparing them with
-  what the installed mizer's skills would have produced; anything that
-  does not match is kept.)
+- Under `.claude/skills/` and `.agents/skills/`, a file is removed only
+  if it still matches the hash recorded in that directory's
+  `.mizerAgents.json` when it was installed. One that has been edited
+  here is kept and reported, as is any `NOTES.md`, which this package
+  never writes, and any skill of another tool's. Directories left empty
+  are removed. (In a project set up by version 0.3.2 or earlier there is
+  no record, so files are identified by comparing them with what the
+  installed mizer's skills would have produced; anything that does not
+  match is kept.)
 
 - In each agent's MCP config only the `r-mizer` entry is removed; other
   servers you configured there stay, and the file is deleted only if

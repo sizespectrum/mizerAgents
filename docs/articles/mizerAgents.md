@@ -28,7 +28,6 @@ mizerAgents bundles everything an AI agent needs to understand the mizer
 API. You only need to run this once in your R project:
 
 ``` r
-
 pak::pak("sizespectrum/mizerAgents")
 mizerAgents::setup_mizer_agent()
 ```
@@ -41,8 +40,8 @@ This creates the following files in your working directory:
   agent used instead of reading the skill, and it would go stale a
   release later. So it carries only what has to be said before the agent
   does anything — that its recollection of the mizer API is probably
-  stale, and that setters return a new object — and then an index of the
-  skills, the path to the bundled API index, and how to use your R
+  stale, and that setters return a new object — and then where the
+  skills are, the path to the bundled API index, and how to use your R
   session. This file is package-managed and updated when mizer is
   upgraded.
 - **`AGENTS.md`**, **`CLAUDE.md`** and **`GEMINI.md`** — your
@@ -55,6 +54,10 @@ This creates the following files in your working directory:
   still find the mizer context. The block is the only thing added to
   these files: no `@AGENTS.md` import is written or removed, so which of
   your own instructions reach which agent stays exactly as you had it.
+- **`.claude/skills/`** and **`.agents/skills/`** — the task skills, one
+  directory per skill, which agents discover and load themselves when a
+  task matches. Claude Code looks in the first, Codex and Gemini CLI in
+  the second, so each skill is installed in both as an identical copy.
 - **MCP configuration** for a server named `r-mizer` that connects the
   agent to your R session, described in the next section. Every agent
   uses a different file for this, so all of them are written:
@@ -90,7 +93,6 @@ half: an MCP server that lets the agent read the documentation of your
 *installed* packages, along with your R session. Install it once:
 
 ``` r
-
 install.packages("btw")
 ```
 
@@ -116,7 +118,6 @@ along with `AGENTS.md`. If you would rather have fewer files, name the
 ones you use:
 
 ``` r
-
 mizerAgents::setup_mizer_agent(agents = c("claude", "posit"))
 ```
 
@@ -137,7 +138,6 @@ until you hand it over. In your R console — RStudio’s, or whichever one
 you work in — run:
 
 ``` r
-
 mizerAgents::connect_mizer_agent()
 ```
 
@@ -159,7 +159,6 @@ right and is not.
 To have every new session connect itself, run
 
 ``` r
-
 mizerAgents::setup_mizer_agent(rprofile = TRUE)
 ```
 
@@ -245,7 +244,6 @@ it. If you would rather have a read-only connection — documentation and
 inspection, but no execution — use
 
 ``` r
-
 mizerAgents::setup_mizer_agent(run_r = FALSE)
 ```
 
@@ -258,7 +256,6 @@ When you are writing an extension package rather than a model, add btw’s
 package development tools:
 
 ``` r
-
 mizerAgents::setup_mizer_agent(pkg_dev = TRUE)
 ```
 
@@ -372,16 +369,20 @@ that this model only settles with a smaller `steady()` tolerance, that
 one species’ `beta` is doing something odd, that a scenario has to be
 run a particular way. It will want to write that down, and it writes
 where it was reading — in the skill it was following, under
-`.claude/skills/`. Those skill files are installed by
+`.claude/skills/` or `.agents/skills/`. Those skill files are installed
+by
 [`setup_mizer_agent()`](https://sizespectrum.github.io/mizerAgents/reference/setup_mizer_agent.md)
 and refreshed when you run it again, so that is the wrong place for it.
 
-Each skill therefore has a `NOTES.md` beside it that this package never
-writes. The skills tell agents to read it alongside the `SKILL.md`, to
-treat it as taking precedence where the two disagree, and to record
-project-specific findings there:
+Each skill therefore has a `NOTES.md` that this package never writes.
+The skills tell agents to read it alongside the `SKILL.md`, to treat it
+as taking precedence where the two disagree, and to record
+project-specific findings there. Both copies of a skill name the same
+file, the one under `.claude/skills/`, so that Claude Code and Codex
+keep one set of notes between them rather than one each:
 
     .claude/skills/calibrate-model/SKILL.md    # ours, refreshed
+    .agents/skills/calibrate-model/SKILL.md    # ours, an identical copy
     .claude/skills/calibrate-model/NOTES.md    # yours, never touched
 
 Commit those files. They are as much a part of the project as the code,

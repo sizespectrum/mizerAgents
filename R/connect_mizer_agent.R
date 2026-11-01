@@ -99,6 +99,14 @@
 #' handing over a session that nothing is set up to reach otherwise fails
 #' silently.
 #'
+#' It also tells you when the project's agent files are out of date: when
+#' [update_mizer_agent()] would change the reference card or a skill, because
+#' mizer or mizerAgents has been upgraded since the project was set up. It does
+#' not refresh them itself, since that rewrites files you may have committed;
+#' run [update_mizer_agent()] when it suits you. Skill files you have edited do
+#' not count, as an update keeps them. A project that connects through the
+#' `.Rprofile` never calls this function, so it is not told.
+#'
 #' Call it once per session. A second call in the same session does not refresh
 #' the connection but breaks it, so this function checks and refuses; see
 #' "Connecting twice" below.
@@ -201,5 +209,14 @@ connect_mizer_agent <- function(path = ".") {
                 call. = FALSE)
     }
     .connect_preflight(path)
+    # This is the call a user makes in a project every session, so it is where
+    # a project left behind by an upgrade of mizer or mizerAgents gets noticed.
+    # Only noticed: refreshing rewrites files the user may have committed, which
+    # is theirs to start. A failed check must never cost them the connection.
+    if (isTRUE(tryCatch(.project_is_stale(path), error = function(e) FALSE))) {
+        message("This project's agent files are out of date with the ",
+                "installed mizer\n  or mizerAgents. Run update_mizer_agent() ",
+                "to refresh them; your own\n  notes and edits are kept.")
+    }
     invisible(btw::btw_mcp_session())
 }

@@ -63,7 +63,7 @@
     }, logical(1)))
     found <- length(configured) > 0 || instruction_block ||
         file.exists(file.path(path, "MIZER-AGENTS.md")) ||
-        file.exists(file.path(path, ".claude", "skills", .skill_manifest))
+        any(file.exists(file.path(path, .skill_dirs, .skill_manifest)))
 
     list(
         found     = found,
@@ -74,6 +74,55 @@
         rprofile  = file.exists(rprofile_dest) &&
             .rprofile_line %in% readLines(rprofile_dest, warn = FALSE)
     )
+}
+
+# Whether `update_mizer_agent()` would change anything of ours in a project set
+# up earlier: a reference card that differs from the one it would write now, or
+# a skill file it would install, refresh or remove.
+#
+# Upgrading mizerAgents changes no project, and nor does upgrading mizer, whose
+# skills these are, so a project goes stale without anyone touching it. Comparing
+# with what setup would write now catches both, with no record of which versions
+# wrote the project. A skill file edited here does not count: an update keeps it,
+# so reporting it would repeat on every call until the edit was undone.
+#
+# `FALSE` for a project that was never set up. Internal helper.
+.project_is_stale <- function(path) {
+    card <- file.path(path, "MIZER-AGENTS.md")
+    if (!file.exists(card)) return(FALSE)
+    opts <- .detect_options(path)
+    if (!identical(readLines(card, warn = FALSE),
+                   .build_card(opts$r_session, opts$run_r, opts$pkg_dev))) {
+        return(TRUE)
+    }
+
+    src <- .skills_source()
+    if (!nzchar(src)) return(FALSE)
+    rels <- .skill_payload(sort(list.files(src, recursive = TRUE)))
+    want <- vapply(rels, function(rel) .hash_lines(.skill_content(src, rel)),
+                   character(1))
+    for (d in .skill_dirs) {
+        dest <- file.path(path, d)
+        recorded <- .read_skill_manifest(file.path(dest, .skill_manifest))
+        # Nothing installed here yet, as in `.agents/skills/` before 0.4.3
+        if (is.null(recorded)) return(TRUE)
+        for (rel in rels) {
+            f <- file.path(dest, rel)
+            if (!file.exists(f)) return(TRUE)
+            have <- .hash_file(f)
+            if (identical(have, unname(want[rel]))) next
+            if (identical(have, unname(recorded[rel]))) return(TRUE)
+        }
+        # Skills no longer bundled, which an update removes unless edited
+        for (rel in setdiff(names(recorded), rels)) {
+            f <- file.path(dest, rel)
+            if (file.exists(f) &&
+                identical(.hash_file(f), unname(recorded[rel]))) {
+                return(TRUE)
+            }
+        }
+    }
+    FALSE
 }
 
 # Report the settings a run of `setup_mizer_agent()` is about to change relative
@@ -157,7 +206,9 @@
             message(
                 "\nA newer version of mizerAgents is available (", remote_ver,
                 " > ", local_ver, ").\n",
-                "  To update, run: pak::pak(\"sizespectrum/mizerAgents\")"
+                "  To update, run: pak::pak(\"sizespectrum/mizerAgents\")\n",
+                "  and then update_mizer_agent() in each project, since\n",
+                "  upgrading the package changes none of their files."
             )
         }
         invisible(remote_ver)
