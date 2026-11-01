@@ -72,7 +72,9 @@
         pkg_dev   = if (is.na(call)) FALSE else grepl("'pkg'", call, fixed = TRUE),
         agents    = if (length(configured)) configured else .agent_choices,
         rprofile  = file.exists(rprofile_dest) &&
-            .rprofile_line %in% readLines(rprofile_dest, warn = FALSE)
+            .rprofile_line %in% readLines(rprofile_dest, warn = FALSE),
+        gitignore = !is.null(.read_gitignore_block(
+            normalizePath(file.path(path, ".gitignore"), mustWork = FALSE)))
     )
 }
 
@@ -97,6 +99,12 @@
     }
 
     src <- .skills_source()
+    block <- .read_gitignore_block(file.path(path, ".gitignore"))
+    if (!is.null(block) &&
+        !identical(block, .gitignore_block(.skill_names(src)))) {
+        return(TRUE)
+    }
+
     if (!nzchar(src)) return(FALSE)
     rels <- .skill_payload(sort(list.files(src, recursive = TRUE)))
     want <- vapply(rels, function(rel) .hash_lines(.skill_content(src, rel)),
@@ -241,8 +249,8 @@
 #' at least says what it did.)
 #'
 #' Nothing is stored to make this work: `r_session`, `run_r`, `pkg_dev` and
-#' `agents` are read from the MCP configs, and `rprofile` from the project
-#' `.Rprofile`, which means it works for projects set up by earlier versions of
+#' `agents` are read from the MCP configs, `rprofile` from the project
+#' `.Rprofile` and `gitignore` from the project `.gitignore`, which means it works for projects set up by earlier versions of
 #' this package too. The one choice that leaves no trace is `agents = "copilot"`,
 #' which only prints a snippet; pass it through `...` if you want it again. Pass
 #' any argument of `setup_mizer_agent()` through `...` to override what was
@@ -286,7 +294,8 @@ update_mizer_agent <- function(path = ".", check_version = TRUE, ...) {
         path = path, overwrite = FALSE,
         r_session = detected$r_session, run_r = detected$run_r,
         pkg_dev = detected$pkg_dev, rprofile = detected$rprofile,
-        agents = detected$agents, check_version = check_version)
+        agents = detected$agents, gitignore = detected$gitignore,
+        check_version = check_version)
     opts <- list(...)
     opts <- c(opts, detected_opts[setdiff(names(detected_opts), names(opts))])
 

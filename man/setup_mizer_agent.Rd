@@ -12,6 +12,7 @@ setup_mizer_agent(
   pkg_dev = FALSE,
   rprofile = FALSE,
   agents = .agent_choices,
+  gitignore = FALSE,
   check_version = TRUE
 )
 }
@@ -80,6 +81,21 @@ Positron. Copilot CLI reads MCP config only from the user-wide
 snippet to paste there is printed; the default, which asks for every
 agent, leaves it out rather than print a screenful for everyone. Ignored
 when \code{r_session = FALSE}.}
+
+\item{gitignore}{If \code{TRUE}, add a marked block to the project \code{.gitignore}
+that keeps out of git what this function regenerates: \code{MIZER-AGENTS.md}
+and the skills it installs, with their \code{.mizerAgents.json} records. The
+skills come from whichever mizer is installed, so committing them means
+that upgrading mizer produces large diffs, and collaborators on different
+mizer versions overwrite each other's copies. Each skill's \code{NOTES.md},
+which holds what was learned in this project, is not ignored. Neither are
+the instruction files, the MCP configs or \code{.Rprofile}, which hold content
+of your own besides ours. A collaborator who clones the project then runs
+\code{\link[=update_mizer_agent]{update_mizer_agent()}} to get the ignored files. \code{FALSE} by default. Once
+the block is there it is refreshed on every run, whatever this says; take
+it out with \code{\link[=remove_mizer_agent]{remove_mizer_agent()}} or by hand. Files that git already
+tracks stay tracked until you remove them from the index, so they are
+listed with the command that does it.}
 
 \item{check_version}{Logical; whether to check GitHub for a newer version of
 \code{mizerAgents} and say so if there is one. Defaults to \code{TRUE}. The check is

@@ -872,3 +872,82 @@ test_that("no installed skill carries article-only material", {
     # one in its own body, so that a demonstration inside an article-only block
     # has something to run without the definition being duplicated into it.
 })
+
+test_that("gitignore = TRUE ignores what setup regenerates, and only that", {
+    skip_if(!nzchar(Sys.which("git")), "git is not installed")
+    skip_if(!nzchar(.skills_source()), "the installed mizer ships no skills")
+    tmp_dir <- tempfile("mizer_agent_gitignore")
+    dir.create(tmp_dir)
+    on.exit(unlink(tmp_dir, recursive = TRUE))
+    system2("git", c("-C", tmp_dir, "init", "-q"))
+    gitignore <- file.path(tmp_dir, ".gitignore")
+    writeLines("*.Rhistory", gitignore)
+
+    suppressMessages(setup_mizer_agent(path = tmp_dir, gitignore = TRUE))
+    lines <- readLines(gitignore)
+    expect_identical(lines[1], "*.Rhistory")
+    expect_identical(.read_gitignore_block(gitignore), .gitignore_block())
+
+    skill <- .skill_names()[1]
+    notes <- file.path(".claude/skills", skill, "NOTES.md")
+    writeLines("A note", file.path(tmp_dir, notes))
+    dir.create(file.path(tmp_dir, ".agents/skills/someone-elses"),
+               recursive = TRUE)
+    writeLines("x", file.path(tmp_dir, ".agents/skills/someone-elses/SKILL.md"))
+    ignored <- function(f) {
+        out <- suppressWarnings(system2(
+            "git", c("-C", tmp_dir, "check-ignore", "-q", f)))
+        identical(as.integer(out), 0L)
+    }
+    expect_true(ignored("MIZER-AGENTS.md"))
+    expect_true(ignored(file.path(".claude/skills", skill, "SKILL.md")))
+    expect_true(ignored(file.path(".agents/skills", skill, "SKILL.md")))
+    expect_true(ignored(".claude/skills/.mizerAgents.json"))
+    expect_false(ignored(notes))
+    expect_false(ignored(".agents/skills/someone-elses/SKILL.md"))
+    expect_false(ignored("AGENTS.md"))
+    expect_false(ignored(".mcp.json"))
+
+    # A re-run without the argument keeps the block, and an update detects it
+    suppressMessages(setup_mizer_agent(path = tmp_dir))
+    expect_identical(readLines(gitignore), lines)
+    expect_true(.detect_options(tmp_dir)$gitignore)
+    expect_false(.project_is_stale(tmp_dir))
+
+    # A block that no longer matches the skills makes the project stale
+    writeLines(c("*.Rhistory", "", .gitignore_block(character(0))), gitignore)
+    expect_true(.project_is_stale(tmp_dir))
+    suppressMessages(update_mizer_agent(path = tmp_dir, check_version = FALSE))
+    expect_identical(readLines(gitignore), lines)
+
+    suppressMessages(remove_mizer_agent(path = tmp_dir))
+    expect_identical(readLines(gitignore), "*.Rhistory")
+})
+
+test_that("gitignore = TRUE names the files git already tracks", {
+    skip_if(!nzchar(Sys.which("git")), "git is not installed")
+    tmp_dir <- tempfile("mizer_agent_gitignore_tracked")
+    dir.create(tmp_dir)
+    on.exit(unlink(tmp_dir, recursive = TRUE))
+    system2("git", c("-C", tmp_dir, "init", "-q"))
+    suppressMessages(setup_mizer_agent(path = tmp_dir, r_session = FALSE,
+                                       check_version = FALSE))
+    system2("git", c("-C", tmp_dir, "add", "MIZER-AGENTS.md"))
+
+    expect_message(
+        setup_mizer_agent(path = tmp_dir, r_session = FALSE, gitignore = TRUE,
+                          check_version = FALSE),
+        "1 file that .gitignore now covers is still tracked")
+    expect_identical(.tracked_ignored(tmp_dir), "MIZER-AGENTS.md")
+})
+
+test_that("remove_mizer_agent deletes a .gitignore that held only our block", {
+    tmp_dir <- tempfile("mizer_agent_gitignore_remove")
+    dir.create(tmp_dir)
+    on.exit(unlink(tmp_dir, recursive = TRUE))
+    suppressMessages(setup_mizer_agent(path = tmp_dir, r_session = FALSE,
+                                       gitignore = TRUE, check_version = FALSE))
+    expect_true(file.exists(file.path(tmp_dir, ".gitignore")))
+    suppressMessages(remove_mizer_agent(path = tmp_dir))
+    expect_false(file.exists(file.path(tmp_dir, ".gitignore")))
+})

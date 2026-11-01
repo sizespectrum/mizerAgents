@@ -19,7 +19,8 @@ Removes the mizer agent support that \code{\link[=setup_mizer_agent]{setup_mizer
 project: the \code{MIZER-AGENTS.md} reference card, the mizer block in the
 instruction files, the bundled skills in \verb{.claude/skills/} and
 \verb{.agents/skills/}, the \code{r-mizer} MCP server in each agent's config, and the
-\code{btw::btw_mcp_session()} call in the project \code{.Rprofile}. Use it when you no longer want the agent support in a
+\code{btw::btw_mcp_session()} call in the project \code{.Rprofile}, and the block in
+the project \code{.gitignore}. Use it when you no longer want the agent support in a
 project, or to get back to a clean slate before setting it up differently.
 }
 \details{
@@ -50,6 +51,8 @@ entry was all it held. A config file that cannot be parsed is left alone
 with a warning rather than risking your other servers.
 \item In \code{.Rprofile} only the guarded \code{btw::btw_mcp_session()} call and its
 comment are removed.
+\item In \code{.gitignore} only the block between the \verb{# mizerAgents: start} and
+\verb{# mizerAgents: end} comments is removed, which \code{gitignore = TRUE} added.
 }
 
 The \code{btw} package is not touched: it is an ordinary R package you installed,

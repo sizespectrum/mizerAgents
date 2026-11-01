@@ -2,6 +2,18 @@
 
 ## New features
 
+* **`setup_mizer_agent(gitignore = TRUE)` keeps the regenerated files out of
+  git.** It adds a marked block to the project `.gitignore` covering
+  `MIZER-AGENTS.md` and the installed skills, but not the skills' `NOTES.md`,
+  skills of the user's own or other tools', or the files that hold the user's
+  content as well as ours. The skills come from the installed mizer, so
+  committing them meant large diffs on every mizer upgrade. A collaborator who
+  clones the project runs `update_mizer_agent()`, which detects the block and
+  keeps it. Once added, the block is refreshed on every run, and a project
+  whose block no longer matches the bundled skills is reported as out of date.
+  Files that git already tracks are listed, with the command that stops
+  tracking them. `remove_mizer_agent()` takes the block out again.
+
 * **The skills are also installed in `.agents/skills/`, so Codex, Gemini CLI
   and Copilot discover them themselves.** Those agents look for skills in
   `.agents/skills/` and never in `.claude/skills/`, where Claude Code looks, so
