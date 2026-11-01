@@ -498,12 +498,16 @@ test_that("the r-mizer MCP server is configured in .mcp.json", {
     expect_false(grepl("'pkg'", entry$args[[2]], fixed = TRUE))
 
     # The live-session section reaches the always-loaded card. Function lookup
-    # is tool-neutral and lives in the static section instead.
+    # is tool-neutral and lives in the static section; the session section
+    # adds the faster route through the session's own help tool, which only a
+    # project with the session has.
     mizer_content <- readLines(file.path(tmp_dir, "MIZER-AGENTS.md"))
     expect_true(any(grepl("live R session", mizer_content, ignore.case = TRUE)))
     expect_true(any(grepl("Rscript -e 'help", mizer_content, fixed = TRUE)))
-    expect_false(grepl("btw_tool_docs_help_page",
-                       .r_session_section(TRUE, FALSE), fixed = TRUE))
+    expect_true(grepl("btw_tool_docs_help_page",
+                      .r_session_section(TRUE, FALSE), fixed = TRUE))
+    expect_true(any(grepl("btw_tool_docs_help_page", mizer_content,
+                          fixed = TRUE)))
 
     # run_r = FALSE drops the group and the opt-in environment variable
     suppressMessages(setup_mizer_agent(path = tmp_dir, run_r = FALSE))

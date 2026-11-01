@@ -322,6 +322,9 @@
         "  vague request refers to. It works only when the user is in RStudio or\n",
         "  Positron; in any other editor it errors, which tells you nothing about\n",
         "  the rest of the session. Ask them which file they mean instead.\n",
+        "- **Look functions up through it.** `btw_tool_docs_help_page` returns the\n",
+        "  same help page as the `Rscript` command above, without starting a new R\n",
+        "  process for each lookup.\n",
         if (run_r) paste0(
             "- **Run mizer code in their session, not in a scratch script.**\n",
             "  `btw_tool_run_r` evaluates in their global environment, so results\n",

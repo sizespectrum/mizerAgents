@@ -24,6 +24,11 @@
   which with two copies would have given Claude Code and Codex a set of notes
   each, neither seeing the other's. Notes already kept there stay where they
   are.
+* **With the R session configured, the card points agents at
+  `btw_tool_docs_help_page` for help pages.** It returns the same page as the
+  `Rscript` command the card gives every project, without starting a new R
+  process for each lookup. It is named only in the session section, so a
+  project set up with `r_session = FALSE` is never sent to a tool it lacks.
 
 # mizerAgents 0.4.2
 
