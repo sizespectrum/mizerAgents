@@ -229,13 +229,24 @@
     .rewrite_or_remove(dest, .trim_blank_edges(updated), existing)
 }
 
+# Take our block back out of the project `.gitignore`. Returns the path if the
+# file changed. Internal helper.
+.remove_gitignore <- function(dest) {
+    if (!file.exists(dest)) return(character(0))
+    existing <- readLines(dest, warn = FALSE)
+    updated <- .trim_blank_edges(.strip_block(existing, .gitignore_begin,
+                                              .gitignore_end))
+    .rewrite_or_remove(dest, updated, existing)
+}
+
 #' Undo what `setup_mizer_agent()` did
 #'
 #' Removes the mizer agent support that [setup_mizer_agent()] installed in a
 #' project: the `MIZER-AGENTS.md` reference card, the mizer block in the
 #' instruction files, the bundled skills in `.claude/skills/` and
 #' `.agents/skills/`, the `r-mizer` MCP server in each agent's config, and the
-#' `btw::btw_mcp_session()` call in the project `.Rprofile`. Use it when you no longer want the agent support in a
+#' `btw::btw_mcp_session()` call in the project `.Rprofile`, and the block in
+#' the project `.gitignore`. Use it when you no longer want the agent support in a
 #' project, or to get back to a clean slate before setting it up differently.
 #'
 #' Only what this package wrote is removed, following the same boundary
@@ -265,6 +276,8 @@
 #'   with a warning rather than risking your other servers.
 #' * In `.Rprofile` only the guarded `btw::btw_mcp_session()` call and its
 #'   comment are removed.
+#' * In `.gitignore` only the block between the `# mizerAgents: start` and
+#'   `# mizerAgents: end` comments is removed, which `gitignore = TRUE` added.
 #'
 #' The `btw` package is not touched: it is an ordinary R package you installed,
 #' and other projects may be using it. Uninstall it yourself with
@@ -320,6 +333,9 @@ remove_mizer_agent <- function(path = ".") {
 
     changed <- c(changed, .remove_rprofile(
         normalizePath(file.path(path, ".Rprofile"), mustWork = FALSE)))
+
+    changed <- c(changed, .remove_gitignore(
+        normalizePath(file.path(path, ".gitignore"), mustWork = FALSE)))
 
     changed <- c(changed, skills$removed)
     if (!length(changed) && !length(skills$kept)) {
