@@ -30,9 +30,10 @@
 ## New features
 
 * **Function lookup guidance is now tool-neutral and always present.** The
-  opening "Do not write mizer code from memory" section offers the installed
-  package's help page through either `btw_tool_docs_help_page` or a project-local
-  `Rscript` process, with `args()` as the quick signature check. Documentation
+  opening "Do not write mizer code from memory" section sends agents to the
+  installed package's help page through a project-local `Rscript` process,
+  which works whatever tools the agent has, with `args()` as the quick
+  signature check. Documentation
   lookup is no longer presented as a feature of the user's live R session, and
   the separate function-discovery section now concerns only the API index.
 * **A `CLAUDE.md` or `GEMINI.md` that does not exist yet is created as a

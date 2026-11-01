@@ -34,8 +34,6 @@ test_that("setup_mizer_agent works as expected", {
                               mizer_content, fixed = TRUE)))
     }
     expect_false(any(grepl("llms-full", mizer_content, fixed = TRUE)))
-    expect_true(any(grepl("btw_tool_docs_help_page", mizer_content,
-                          fixed = TRUE)))
     expect_true(any(grepl("Rscript -e 'help", mizer_content, fixed = TRUE)))
     expect_true(any(grepl("args(mizer::functionName)", mizer_content,
                           fixed = TRUE)))
@@ -503,8 +501,6 @@ test_that("the r-mizer MCP server is configured in .mcp.json", {
     # is tool-neutral and lives in the static section instead.
     mizer_content <- readLines(file.path(tmp_dir, "MIZER-AGENTS.md"))
     expect_true(any(grepl("live R session", mizer_content, ignore.case = TRUE)))
-    expect_true(any(grepl("btw_tool_docs_help_page", mizer_content,
-                          fixed = TRUE)))
     expect_true(any(grepl("Rscript -e 'help", mizer_content, fixed = TRUE)))
     expect_false(grepl("btw_tool_docs_help_page",
                        .r_session_section(TRUE, FALSE), fixed = TRUE))
@@ -522,9 +518,10 @@ test_that("the r-mizer MCP server is configured in .mcp.json", {
     expect_false(file.exists(mcp_dest))
     mizer_content <- readLines(file.path(tmp_dir, "MIZER-AGENTS.md"))
     expect_false(any(grepl("r-mizer", mizer_content, fixed = TRUE)))
-    # Without the session, the same tool-neutral lookup guidance remains.
-    expect_true(any(grepl("btw_tool_docs_help_page", mizer_content,
-                          fixed = TRUE)))
+    # Without the session, the same tool-neutral lookup guidance remains,
+    # naming no tool that only the session provides.
+    expect_false(any(grepl("btw_tool_docs_help_page", mizer_content,
+                           fixed = TRUE)))
     expect_true(any(grepl("Rscript -e 'help", mizer_content, fixed = TRUE)))
 })
 
