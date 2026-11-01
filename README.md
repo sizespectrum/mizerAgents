@@ -54,13 +54,16 @@ This creates:
   either file it is treated exactly like `AGENTS.md` instead: it gets its own
   copy of the marked block, the rest is left alone, and no `@AGENTS.md` import
   is written into it or removed from it.
-- **`.claude/skills/`** — Claude Code skills (`analyse-and-plot`,
-  `analyse-stability`, `build-model`, `calibrate-model`,
-  `run-simulation`, `set-up-fishing`, `change-parameters`, `extend-mizer`)
-  that agents read
-  automatically when a task matches, giving step-by-step guidance for common
-  mizer workflows. They are refreshed on each run, but only file by file and
-  only where nothing has edited them: see [What your project learns](#what-your-project-learns).
+- **`.claude/skills/`** and **`.agents/skills/`** — agent skills
+  (`analyse-and-plot`, `analyse-stability`, `build-model`, `calibrate-model`,
+  `run-simulation`, `set-up-fishing`, `change-parameters`, `extend-mizer`, …)
+  that agents read automatically when a task matches, giving step-by-step
+  guidance for common mizer workflows. Claude Code looks for skills in
+  `.claude/skills/`, Codex and Gemini CLI in `.agents/skills/`, so each skill is
+  installed in both as an identical copy. (Copies rather than links, which are
+  unreliable on Windows, on network drives and under OneDrive.) They are
+  refreshed on each run, but only file by file and only where nothing has
+  edited them: see [What your project learns](#what-your-project-learns).
 
   The skills come from the **installed mizer** (`inst/skills/`), not from this
   package, so they always describe the version of mizer your project actually
@@ -222,8 +225,9 @@ package never touches.
 - **`.claude/skills/<name>/NOTES.md`** — findings about *this* project. Every
   bundled `SKILL.md` ends by telling agents to read this file alongside it, to
   treat it as taking precedence, and to record what they learn there rather than
-  in `SKILL.md`. Nothing in this package ever writes it. Commit it: it is
-  project knowledge, and your collaborators' agents get it too.
+  in `SKILL.md`. The copy in `.agents/skills/` names the same file, so Claude
+  Code and Codex share one set of notes. Nothing in this package ever writes it.
+  Commit it: it is project knowledge, and your collaborators' agents get it too.
 - **`AGENTS.md`, outside the markers** (or `CLAUDE.md` / `GEMINI.md`, if you
   keep separate instructions for those agents) — project notes that belong to no
   single skill.
@@ -234,14 +238,14 @@ package never touches.
 
 Skills are refreshed file by file, never by replacing whole directories, so a
 `NOTES.md` — or a skill of your own invention — is left alone. The hashes of the
-files installed are recorded in `.claude/skills/.mizerAgents.json`. If a
-`SKILL.md` has been edited since, it is recognised, kept, and reported, with the
-new version written beside it as `SKILL.md.new` for you to merge:
+files installed are recorded in a `.mizerAgents.json` in each skills directory.
+If a `SKILL.md` has been edited since, it is recognised, kept, and reported,
+with the new version written beside it as `SKILL.md.new` for you to merge:
 
 ```
 These skill files have been edited in this project, so they
 were kept and the new version of each was written beside it:
-  run-simulation/SKILL.md  ->  SKILL.md.new
+  .claude/skills/run-simulation/SKILL.md  ->  SKILL.md.new
 ```
 
 Delete the `.new` file when you are done and the skill goes back under package

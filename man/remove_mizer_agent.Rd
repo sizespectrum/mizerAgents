@@ -17,9 +17,9 @@ changed.
 \description{
 Removes the mizer agent support that \code{\link[=setup_mizer_agent]{setup_mizer_agent()}} installed in a
 project: the \code{MIZER-AGENTS.md} reference card, the mizer block in the
-instruction files, the bundled skills in \verb{.claude/skills/}, the \code{r-mizer} MCP
-server in each agent's config, and the \code{btw::btw_mcp_session()} call in the
-project \code{.Rprofile}. Use it when you no longer want the agent support in a
+instruction files, the bundled skills in \verb{.claude/skills/} and
+\verb{.agents/skills/}, the \code{r-mizer} MCP server in each agent's config, and the
+\code{btw::btw_mcp_session()} call in the project \code{.Rprofile}. Use it when you no longer want the agent support in a
 project, or to get back to a clean slate before setting it up differently.
 }
 \details{
@@ -36,13 +36,14 @@ deleted with it, as is a \code{CLAUDE.md} or \code{GEMINI.md} holding nothing bu
 \verb{@AGENTS.md} import among notes of your own is never removed, just as one
 is never written into a file you already had: which of your instruction
 files import which is your business.
-\item Under \verb{.claude/skills/}, a file is removed only if it still matches the
-hash recorded in \code{.claude/skills/.mizerAgents.json} when it was installed.
-One that has been edited here is kept and reported, as is any \code{NOTES.md},
-which this package never writes. Directories left empty are removed. (In a
-project set up by version 0.3.2 or earlier there is no record, so files are
-identified by comparing them with what the installed mizer's skills would
-have produced; anything that does not match is kept.)
+\item Under \verb{.claude/skills/} and \verb{.agents/skills/}, a file is removed only if it
+still matches the hash recorded in that directory's \code{.mizerAgents.json}
+when it was installed. One that has been edited here is kept and reported,
+as is any \code{NOTES.md}, which this package never writes, and any skill of
+another tool's. Directories left empty are removed. (In a project set up by
+version 0.3.2 or earlier there is no record, so files are identified by
+comparing them with what the installed mizer's skills would have produced;
+anything that does not match is kept.)
 \item In each agent's MCP config only the \code{r-mizer} entry is removed; other
 servers you configured there stay, and the file is deleted only if that
 entry was all it held. A config file that cannot be parsed is left alone

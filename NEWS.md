@@ -1,3 +1,30 @@
+# mizerAgents (development version)
+
+## New features
+
+* **The skills are also installed in `.agents/skills/`, so Codex, Gemini CLI
+  and Copilot discover them themselves.** Those agents look for skills in
+  `.agents/skills/` and never in `.claude/skills/`, where Claude Code looks, so
+  each skill is now installed in both as an identical copy, with a manifest of
+  its own. Copies rather than links: a link on Windows would be a junction,
+  which cannot be made on a network drive or a FAT-formatted stick, points at a
+  path that breaks when the project moves, and is mishandled by OneDrive and
+  git. `.agents/skills/` is shared with other tools' skills, so one of theirs
+  that shares a name with one of ours is kept and reported rather than
+  overwritten. `remove_mizer_agent()` removes both copies.
+* **`MIZER-AGENTS.md` no longer lists the skills.** Every agent set up here now
+  lists the skills it finds, with the same names and descriptions, so the index
+  in the card was a second copy of that list, loaded on every request: about
+  2,500 tokens with the 13 skills mizer currently ships. The card now just says
+  where the skills are, tells agents to read the matching one before starting a
+  task, and tells an agent without skill support to choose one from the
+  descriptions under `.agents/skills/`.
+* **Each skill names its `NOTES.md` by path:
+  `.claude/skills/<name>/NOTES.md`.** The footer used to say "beside this one",
+  which with two copies would have given Claude Code and Codex a set of notes
+  each, neither seeing the other's. Notes already kept there stay where they
+  are.
+
 # mizerAgents 0.4.1
 
 ## New features

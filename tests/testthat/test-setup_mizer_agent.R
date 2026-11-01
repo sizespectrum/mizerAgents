@@ -278,18 +278,32 @@ test_that("skills are installed with a manifest and a NOTES.md pointer", {
     expect_true(file.exists(skill))
 
     # Every SKILL.md carries the footer sending project-specific findings to
-    # NOTES.md and general ones upstream
+    # NOTES.md and general ones upstream. The notes are named by their path
+    # under .claude/skills/, so that the copy in .agents/skills/ sends an agent
+    # to the same file rather than to a second set of notes beside itself.
     content <- readLines(skill)
-    expect_true(any(grepl("`NOTES.md`", content, fixed = TRUE)))
+    expect_true(any(grepl("`.claude/skills/calibrate-model/NOTES.md`", content,
+                          fixed = TRUE)))
     expect_true(any(grepl("sizespectrum/mizerAgents/issues", content,
                           fixed = TRUE)))
 
-    # ... and so does the index in the always-loaded card, for agents that do
-    # not discover .claude/skills/ themselves
+    # The same skills are installed for the agents that look in .agents/skills/,
+    # as identical copies with a manifest of their own
+    copy <- file.path(tmp_dir, ".agents", "skills", "calibrate-model",
+                      "SKILL.md")
+    expect_identical(readLines(copy), content)
+    expect_true(file.exists(file.path(tmp_dir, ".agents", "skills",
+                                      .skill_manifest)))
+
+    # The card says where the notes go too, but no longer lists the skills:
+    # every agent set up here lists them itself, so an index in a card loaded
+    # on every request would only be a second copy of that list
     mizer_content <- readLines(file.path(tmp_dir, "MIZER-AGENTS.md"))
     expect_true(any(grepl("NOTES.md", mizer_content, fixed = TRUE)))
     expect_true(any(grepl("sizespectrum/mizerAgents/issues", mizer_content,
                           fixed = TRUE)))
+    expect_true(any(grepl(".agents/skills/", mizer_content, fixed = TRUE)))
+    expect_false(any(grepl("calibrate-model", mizer_content, fixed = TRUE)))
 
     # The manifest records what was installed, keyed by relative path
     manifest <- file.path(skills_dest, .skill_manifest)
@@ -347,6 +361,32 @@ test_that("local edits inside .claude/skills/ survive a re-run", {
     suppressMessages(setup_mizer_agent(path = tmp_dir))
     expect_false(any(grepl("hard-won", readLines(skill), fixed = TRUE)))
     expect_false(file.exists(side))
+})
+
+test_that("another tool's skill in .agents/skills/ is never overwritten", {
+    tmp_dir <- tempfile("mizer_agent_skill_foreign")
+    dir.create(tmp_dir)
+    on.exit(unlink(tmp_dir, recursive = TRUE))
+    skip_if(!nzchar(.skills_source()), "the installed mizer ships no skills")
+
+    # .agents/skills/ is shared with other tools' skills, so a directory there
+    # without our manifest is not one we set up - unlike .claude/skills/, where
+    # it means a project from before the manifest existed. A skill of the
+    # user's that shares a name with ours is kept, with ours written beside it.
+    foreign <- file.path(tmp_dir, ".agents", "skills", "calibrate-model",
+                         "SKILL.md")
+    dir.create(dirname(foreign), recursive = TRUE)
+    writeLines(c("---", "name: calibrate-model", "---", "Someone else's."),
+               foreign)
+
+    expect_message(setup_mizer_agent(path = tmp_dir),
+                   ".agents/skills/calibrate-model/SKILL.md") |>
+        suppressMessages()
+    expect_identical(readLines(foreign)[4], "Someone else's.")
+    expect_true(file.exists(paste0(foreign, ".new")))
+    # The copy in .claude/skills/ is installed as usual
+    expect_true(file.exists(file.path(tmp_dir, ".claude", "skills",
+                                      "calibrate-model", "SKILL.md")))
 })
 
 test_that("a project set up before the manifest existed is refreshed once", {

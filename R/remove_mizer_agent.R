@@ -107,7 +107,7 @@
     .rewrite_or_remove(dest, .trim_blank_edges(updated), existing)
 }
 
-# Uninstall the bundled skills from `.claude/skills/`.
+# Uninstall the bundled skills from each of `.skill_dirs`.
 #
 # What we may delete is what we know we wrote: the manifest records the hash of
 # every file installed, and a file still matching its recorded hash is ours. A
@@ -116,54 +116,54 @@
 # files of a project that has simply never edited them, and errs towards keeping
 # a file whenever it cannot be sure.
 #
-# Returns a list with the paths of the files removed, the relative paths of the
-# files kept, and whether there was a `.claude/skills/` to work on at all.
-# Internal helper.
+# Returns a list with the paths of the files removed, the paths of the files
+# kept relative to the project, and whether there was a skills directory to work
+# on at all. Internal helper.
 .remove_skills <- function(path) {
-    skills_dest <- normalizePath(file.path(path, ".claude", "skills"),
-                                 mustWork = FALSE)
-    if (!dir.exists(skills_dest)) {
-        return(list(removed = character(0), kept = character(0),
-                    found = FALSE))
-    }
-    manifest_path <- file.path(skills_dest, .skill_manifest)
-    recorded <- .read_skill_manifest(manifest_path)
-    if (is.null(recorded)) recorded <- .bundled_skill_hashes()
-
     removed <- character(0)
-    removed_rels <- character(0)
+    removed_skills <- character(0)
     kept <- character(0)
-    for (rel in names(recorded)) {
-        dest <- file.path(skills_dest, rel)
-        # The `.new` sidecar is written by us in its entirety, so it goes
-        # whether or not the file beside it does.
-        unlink(paste0(dest, ".new"))
-        if (!file.exists(dest)) next
-        if (identical(.hash_file(dest), unname(recorded[rel]))) {
-            unlink(dest)
-            removed <- c(removed, dest)
-            removed_rels <- c(removed_rels, rel)
-        } else {
-            kept <- c(kept, rel)
+    found <- FALSE
+    for (d in .skill_dirs) {
+        skills_dest <- normalizePath(file.path(path, d), mustWork = FALSE)
+        if (!dir.exists(skills_dest)) next
+        found <- TRUE
+        manifest_path <- file.path(skills_dest, .skill_manifest)
+        recorded <- .read_skill_manifest(manifest_path)
+        if (is.null(recorded)) recorded <- .bundled_skill_hashes()
+
+        for (rel in names(recorded)) {
+            dest <- file.path(skills_dest, rel)
+            # The `.new` sidecar is written by us in its entirety, so it goes
+            # whether or not the file beside it does.
+            unlink(paste0(dest, ".new"))
+            if (!file.exists(dest)) next
+            if (identical(.hash_file(dest), unname(recorded[rel]))) {
+                unlink(dest)
+                removed <- c(removed, dest)
+                removed_skills <- c(removed_skills, sub("/.*$", "", rel))
+            } else {
+                kept <- c(kept, file.path(d, rel))
+            }
         }
-    }
-    if (file.exists(manifest_path)) {
-        unlink(manifest_path)
-        removed <- c(removed, manifest_path)
+        if (file.exists(manifest_path)) {
+            unlink(manifest_path)
+            removed <- c(removed, manifest_path)
+        }
+
+        .prune_empty_dirs(skills_dest)
+        .remove_empty_dirs(skills_dest, normalizePath(path, mustWork = FALSE))
     }
 
-    .prune_empty_dirs(skills_dest)
-    .remove_empty_dirs(skills_dest, normalizePath(path, mustWork = FALSE))
-
-    for (s in unique(sub("/.*$", "", removed_rels))) {
+    for (s in unique(removed_skills)) {
         message("Removed skill: ", s)
     }
-    list(removed = removed, kept = kept, found = TRUE)
+    list(removed = removed, kept = kept, found = found)
 }
 
 # The hashes the current bundle would have installed, used only when there is no
 # manifest to consult. Empty when the installed mizer ships no skills, in which
-# case nothing under `.claude/skills/` can be identified as ours and everything
+# case nothing in a skills directory can be identified as ours and everything
 # there is kept.
 #
 # Deliberately not filtered through `.skill_payload()`: a project set up by an
@@ -177,7 +177,8 @@
     hashes <- vapply(rels, function(rel) {
         content <- readLines(file.path(src, rel), warn = FALSE)
         if (basename(rel) == "SKILL.md") {
-            content <- c(.strip_article_only(content), .skill_footer)
+            content <- c(.strip_article_only(content),
+                         .skill_footer(sub("/.*$", "", rel)))
         }
         .hash_lines(content)
     }, character(1))
@@ -239,9 +240,9 @@
 #'
 #' Removes the mizer agent support that [setup_mizer_agent()] installed in a
 #' project: the `MIZER-AGENTS.md` reference card, the mizer block in the
-#' instruction files, the bundled skills in `.claude/skills/`, the `r-mizer` MCP
-#' server in each agent's config, and the `btw::btw_mcp_session()` call in the
-#' project `.Rprofile`. Use it when you no longer want the agent support in a
+#' instruction files, the bundled skills in `.claude/skills/` and
+#' `.agents/skills/`, the `r-mizer` MCP server in each agent's config, and the
+#' `btw::btw_mcp_session()` call in the project `.Rprofile`. Use it when you no longer want the agent support in a
 #' project, or to get back to a clean slate before setting it up differently.
 #'
 #' Only what this package wrote is removed, following the same boundary
@@ -257,13 +258,14 @@
 #'   `@AGENTS.md` import among notes of your own is never removed, just as one
 #'   is never written into a file you already had: which of your instruction
 #'   files import which is your business.
-#' * Under `.claude/skills/`, a file is removed only if it still matches the
-#'   hash recorded in `.claude/skills/.mizerAgents.json` when it was installed.
-#'   One that has been edited here is kept and reported, as is any `NOTES.md`,
-#'   which this package never writes. Directories left empty are removed. (In a
-#'   project set up by version 0.3.2 or earlier there is no record, so files are
-#'   identified by comparing them with what the installed mizer's skills would
-#'   have produced; anything that does not match is kept.)
+#' * Under `.claude/skills/` and `.agents/skills/`, a file is removed only if it
+#'   still matches the hash recorded in that directory's `.mizerAgents.json`
+#'   when it was installed. One that has been edited here is kept and reported,
+#'   as is any `NOTES.md`, which this package never writes, and any skill of
+#'   another tool's. Directories left empty are removed. (In a project set up by
+#'   version 0.3.2 or earlier there is no record, so files are identified by
+#'   comparing them with what the installed mizer's skills would have produced;
+#'   anything that does not match is kept.)
 #' * In each agent's MCP config only the `r-mizer` entry is removed; other
 #'   servers you configured there stay, and the file is deleted only if that
 #'   entry was all it held. A config file that cannot be parsed is left alone
@@ -346,9 +348,9 @@ remove_mizer_agent <- function(path = ".") {
         } else "",
         if (isTRUE(skills$found)) {
             paste0(
-                "\n\nAnything else under .claude/skills/, such as a NOTES.md",
-                "\nrecording what earlier work in this project found, was left",
-                "\nwhere it was."
+                "\n\nAnything else under .claude/skills/ or .agents/skills/, such",
+                "\nas a NOTES.md recording what earlier work in this project",
+                "\nfound, was left where it was."
             )
         } else "",
         "\n\nRun setup_mizer_agent() to set the agent support up again."

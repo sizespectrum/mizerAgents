@@ -63,7 +63,7 @@
     }, logical(1)))
     found <- length(configured) > 0 || instruction_block ||
         file.exists(file.path(path, "MIZER-AGENTS.md")) ||
-        file.exists(file.path(path, ".claude", "skills", .skill_manifest))
+        any(file.exists(file.path(path, .skill_dirs, .skill_manifest)))
 
     list(
         found     = found,

@@ -65,60 +65,46 @@
     if (nzchar(src) && file.exists(src)) src else ""
 }
 
-# Extract the `description` field from a SKILL.md YAML frontmatter block.
-# Handles both an inline value and a folded/literal block scalar (`>`, `>-`,
-# `|`, ...), collapsing it to a single-line string. Internal helper.
-.skill_description <- function(skill_md) {
-    lines <- readLines(skill_md, warn = FALSE)
-    idx <- grep("^description:", lines)
-    if (length(idx) == 0) return("(no description)")
-    idx <- idx[1]
-    val <- sub("^description:[ \t]*", "", lines[idx])
-    if (grepl("^[>|]", val) || !nzchar(trimws(val))) {
-        # Block scalar: collect following indented (or blank) lines until the
-        # next top-level key or the closing `---`.
-        parts <- character(0)
-        j <- idx + 1
-        while (j <= length(lines) &&
-               !grepl("^---", lines[j]) &&
-               (grepl("^[ \t]", lines[j]) || !nzchar(lines[j]))) {
-            if (nzchar(trimws(lines[j]))) parts <- c(parts, trimws(lines[j]))
-            j <- j + 1
-        }
-        val <- paste(parts, collapse = " ")
-    }
-    trimws(val)
-}
+# The directories the bundled skills are installed into, one copy in each,
+# because agents have not converged on one: Claude Code discovers skills only in
+# `.claude/skills/`, Codex and Gemini CLI only in `.agents/skills/` (Copilot reads
+# both). Copies rather than links, because a link on Windows is a junction, and
+# junctions cannot be made on a network drive or a FAT-formatted stick, point at
+# a path that moves when the project does, and are mishandled by OneDrive and
+# git. The one file that must not be duplicated, a skill's `NOTES.md`, is kept
+# single by `.skill_footer()` instead.
+#
+# The first is where projects set up by earlier versions have their skills and
+# notes, which is what `.install_skills()` adopts and `.skill_footer()` points
+# at.
+.skill_dirs <- c(".claude/skills", ".agents/skills")
 
-# The "task skills" index for the always-loaded reference card, generated from
-# the bundled skills' own frontmatter. Claude Code discovers `.claude/skills/`
-# natively; every other agent does not, so this index is how they learn which
-# skills exist and when to read them. Only the index (names + descriptions +
-# path) goes in the card; the skill bodies stay on disk and are read on demand,
-# mirroring Claude Code's lazy loading.
+# The "task skills" section of the always-loaded reference card.
+#
+# It used to index the skills, generated from their frontmatter, because only
+# Claude Code discovered them. Now that every agent we set up lists the skills it
+# finds, with the same names and descriptions, an index would be a second copy
+# of a list the agent already has, loaded on every request. What remains is what
+# the listings do not say: where the notes go, and how an agent without skill
+# support finds the right one.
 #
 # Returns "" when the installed mizer ships no skills, which drops the section
 # from the card entirely rather than promising guides that are not there.
-.skills_index_section <- function(skills_src) {
+.skills_section <- function(skills_src) {
     if (!nzchar(skills_src) || !dir.exists(skills_src)) return("")
-    skill_dirs <- sort(list.dirs(skills_src, recursive = FALSE))
-    index_lines <- vapply(skill_dirs, function(d) {
-        sprintf("- **`%s`**: %s",
-                basename(d), .skill_description(file.path(d, "SKILL.md")))
-    }, character(1))
     paste0(
-        "## Task skills (read on demand)\n\n",
-        "Step-by-step guides for common mizer tasks are installed under ",
-        "`.claude/skills/<name>/SKILL.md`. Claude Code loads them ",
-        "automatically; other agents should **read the matching file before ",
-        "starting** such a task rather than working from memory. They are the ",
-        "reference this card is not: workflows, argument tables and the ",
-        "failure modes of each step. Triggers:\n\n",
-        paste(index_lines, collapse = "\n"), "\n\n",
-        "A skill's directory may also hold a `NOTES.md` recording what ",
-        "earlier work in this project found. Read it whenever you read the ",
-        "`SKILL.md`, and treat it as taking precedence. Write new ",
-        "project-specific findings there, creating the file if needed.\n\n",
+        "## Task skills\n\n",
+        "Step-by-step guides for common mizer tasks are installed as skills in ",
+        "`.claude/skills/`, with an identical copy in `.agents/skills/` for the ",
+        "agents that look there. Your tool lists them by name and description: ",
+        "**read the matching one before starting** such a task rather than ",
+        "working from memory. They are the reference this card is not: ",
+        "workflows, argument tables and the failure modes of each step. If your ",
+        "tool lists no mizer skills, find the right one yourself from the ",
+        "`description` at the top of each `.agents/skills/<name>/SKILL.md`.\n\n",
+        "Each skill ends by naming its `NOTES.md`, which records what earlier ",
+        "work in this project found and is where new project-specific findings ",
+        "go.\n\n",
         "Do not edit `SKILL.md` or this card: both are installed by ",
         "`mizerAgents::setup_mizer_agent()`. Project notes that belong to no ",
         "single skill go in `AGENTS.md` / `CLAUDE.md`, outside the ",
@@ -295,37 +281,51 @@
     action
 }
 
-# Appended to every deployed `SKILL.md`. The skills are package-managed and
-# rewritten on every run, but a project accumulates findings of its own, and an
-# agent that has just learned something writes it down wherever it happens to be
-# looking - which is the skill it is following. So each skill points at a
-# `NOTES.md` sibling that this package never writes, giving project-specific
-# notes a home that survives the next refresh, and sends lessons that are true of
-# mizer generally upstream instead of burying them in one project. Only
-# `SKILL.md` is loaded automatically, so the pointer has to live there.
-.skill_footer <- c(
-    "",
-    "---",
-    "",
-    "## Project notes",
-    "",
-    "If a `NOTES.md` file sits beside this one, read it too before you start: it",
-    "records what earlier work in *this* project found, and wins over the guidance",
-    "above wherever the two disagree.",
-    "",
-    "Write what you learn about this project into that `NOTES.md`, creating it if",
-    "it is not there. Do not edit `SKILL.md`: it is installed by",
-    "`mizerAgents::setup_mizer_agent()` and your edits would be reported as a",
-    "conflict on the next run rather than kept.",
-    "",
-    "A lesson that is true of mizer in general, rather than of this project,",
-    "belongs upstream where every project gets it. Tell the user, and offer to",
-    "report it at <https://github.com/sizespectrum/mizerAgents/issues>."
-)
+# Appended to every deployed `SKILL.md` of the skill `name`. The skills are
+# package-managed and rewritten on every run, but a project accumulates findings
+# of its own, and an agent that has just learned something writes it down
+# wherever it happens to be looking - which is the skill it is following. So each
+# skill points at a `NOTES.md` that this package never writes, giving
+# project-specific notes a home that survives the next refresh, and sends lessons
+# that are true of mizer generally upstream instead of burying them in one
+# project. Only `SKILL.md` is loaded automatically, so the pointer has to live
+# there.
+#
+# The path is spelt out rather than "beside this file" because each skill is
+# installed once per `.skill_dirs`, and an agent writes beside whichever copy it
+# was reading: Claude Code and Codex would keep two sets of notes, each blind to
+# the other's. Naming the same file in every copy gives a project one set, in the
+# place where earlier versions already had agents keep it.
+.skill_footer <- function(name) {
+    para <- function(...) strwrap(paste0(...), width = 78)
+    notes <- paste0("`", .skill_dirs[1], "/", name, "/NOTES.md`")
+    c(
+        "",
+        "---",
+        "",
+        "## Project notes",
+        "",
+        para("If ", notes, " exists, read it too before you start: it records ",
+             "what earlier work in *this* project found, and wins over the ",
+             "guidance above wherever the two disagree."),
+        "",
+        para("Write what you learn about this project into that file, creating ",
+             "it if it is not there. Use that path whichever copy of this skill ",
+             "you are reading, so that every agent working in this project ",
+             "shares one set of notes. Do not edit `SKILL.md`: it is installed ",
+             "by `mizerAgents::setup_mizer_agent()` and your edits would be ",
+             "reported as a conflict on the next run rather than kept."),
+        "",
+        para("A lesson that is true of mizer in general, rather than of this ",
+             "project, belongs upstream where every project gets it. Tell the ",
+             "user, and offer to report it at ",
+             "<https://github.com/sizespectrum/mizerAgents/issues>.")
+    )
+}
 
-# Record of what we last wrote into `.claude/skills/`, kept beside the skills
-# themselves: a JSON object mapping each installed file's path, relative to that
-# directory, to its MD5 sum. Without it we cannot tell a file edited in the
+# Record of what we last wrote into a skills directory, kept beside the skills
+# themselves, one per `.skill_dirs`: a JSON object mapping each installed file's
+# path, relative to that directory, to its MD5 sum. Without it we cannot tell a file edited in the
 # project from one installed by an older version of this package, and would have
 # to choose between clobbering the edits and freezing the skills at whatever
 # shipped first.
@@ -403,7 +403,7 @@
     FALSE
 }
 
-# Install the bundled skills into `.claude/skills/`, file by file.
+# Install the bundled skills into the directory `skills_dest`, file by file.
 #
 # The unit of management is the file, not the directory: anything else in a
 # skill's directory - a `NOTES.md`, or a skill of the user's own invention - is
@@ -414,12 +414,16 @@
 # stop shipping are removed if unmodified, so that a dropped skill does not
 # linger for ever.
 #
+# `adopt` says what a directory without a manifest means. In `.claude/skills/`
+# it is a project set up by 0.3.2 or earlier, whose files are ours but went
+# unrecorded. In `.agents/skills/`, which no version without a manifest wrote
+# to, it means nothing there is ours: other agents' skills are installed there
+# too, and one that happens to share a name with ours is the user's to keep.
+#
 # Returns, for the caller to report, a list with the skills installed, the ones
-# removed, and the relative paths of the files whose local edits were kept.
-# Internal helper.
-.install_skills <- function(skills_src, path) {
-    skills_dest <- normalizePath(file.path(path, ".claude", "skills"),
-                                 mustWork = FALSE)
+# removed, and the paths, relative to `skills_dest`, of the files whose local
+# edits were kept. Internal helper.
+.install_skills <- function(skills_src, skills_dest, adopt = TRUE) {
     none <- list(installed = character(0), removed = character(0),
                  kept = character(0))
     if (!.ensure_dir(skills_dest)) return(none)
@@ -428,8 +432,8 @@
     # A project set up before the manifest existed has nothing to compare
     # against, so this first run refreshes everything, exactly as every run did
     # then. From the next one on, edits made here are recognised and kept.
-    adopting <- is.null(recorded)
-    if (adopting) recorded <- character(0)
+    adopting <- adopt && is.null(recorded)
+    if (is.null(recorded)) recorded <- character(0)
 
     all_rels <- sort(list.files(skills_src, recursive = TRUE))
     rels <- .skill_payload(all_rels)
@@ -441,7 +445,8 @@
     for (rel in rels) {
         content <- readLines(file.path(skills_src, rel), warn = FALSE)
         if (basename(rel) == "SKILL.md") {
-            content <- c(.strip_article_only(content), .skill_footer)
+            content <- c(.strip_article_only(content),
+                         .skill_footer(sub("/.*$", "", rel)))
         }
         want <- .hash_lines(content)
         dest <- file.path(skills_dest, rel)
@@ -509,7 +514,7 @@
 #' not a mizer reference, on purpose - a summary complete enough to work from is
 #' a summary an agent will work from instead of reading the skill, and it goes
 #' stale a release later. The card carries only what has to be said up front,
-#' then an index of the task skills, the path to mizer's API index (a
+#' then where the task skills are, the path to mizer's API index (a
 #' curated list of every exported mizer function, grouped by workflow stage) and
 #' how to reach your R session. Argument lists are bundled nowhere: those go
 #' stale silently, so the card sends agents to the help pages of the mizer
@@ -545,12 +550,15 @@
 #'   package did, the file is left untouched - the block reaches the agent
 #'   through the import.
 #'
-#' It also installs a set of Claude Code *skills* into `.claude/skills/` (one
-#' sub-directory with a `SKILL.md` per skill, e.g. `analyse-and-plot` and
-#' `build-model`). Claude Code loads these automatically when a
-#' task matches, giving step-by-step guidance for common mizer workflows. Like
-#' `MIZER-AGENTS.md`, the skills are package-managed and refreshed on every call
-#' so they stay up to date.
+#' It also installs a set of agent *skills* (one sub-directory with a `SKILL.md`
+#' per skill, e.g. `analyse-and-plot` and `build-model`), giving step-by-step
+#' guidance for common mizer workflows. Agents discover these themselves and
+#' load one when a task matches, but they look in different places: Claude Code
+#' in `.claude/skills/`, Codex and Gemini CLI in `.agents/skills/`. So the skills
+#' are installed in both, as two identical copies. (Copies rather than links,
+#' because links are unreliable on Windows, on network drives and under
+#' OneDrive.) Like `MIZER-AGENTS.md`, the skills are package-managed and
+#' refreshed on every call so they stay up to date.
 #'
 #' The skills are taken from the **installed mizer** (`inst/skills/`), not from
 #' this package, so the guidance an agent follows always describes the mizer the
@@ -560,29 +568,33 @@
 #' function still writes everything else and reports that it installed none.
 #'
 #' What a project learns about mizer is kept separate from them, so that neither
-#' overwrites the other. Each skill's directory may hold a `NOTES.md`, which this
-#' package never writes and which the `SKILL.md` tells agents to read alongside
-#' it and to treat as taking precedence: that is where an agent should record
-#' what it discovers about *your* model. Findings that are true of mizer in
+#' overwrites the other. Each skill has a `NOTES.md`, at
+#' `.claude/skills/<name>/NOTES.md`, which this package never writes and which
+#' the `SKILL.md` tells agents to read alongside it and to treat as taking
+#' precedence: that is where an agent should record what it discovers about
+#' *your* model. Both copies of a skill name that one file, so that Claude Code
+#' and Codex share one set of notes rather than keeping one each. Findings that
+#' are true of mizer in
 #' general belong upstream instead, and the skills tell agents to offer to report
 #' them at <https://github.com/sizespectrum/mizerAgents/issues>, so that every
 #' project gets them in the next release.
 #'
 #' Refreshing works file by file rather than by replacing whole directories, so
 #' a `NOTES.md`, or a skill of your own, is left alone. The hashes of the files
-#' installed are recorded in `.claude/skills/.mizerAgents.json`; a file that has
-#' since been edited is recognised, kept, and reported, with the new version
-#' written beside it as `<file>.new` for you to merge, rather than silently
-#' overwritten. (A project set up by version 0.3.2 or earlier has no such record,
-#' so the first run after upgrading refreshes the skills as it always did and
-#' starts keeping one.) Files that later versions stop shipping are removed if
-#' they are unmodified.
+#' installed are recorded in a `.mizerAgents.json` in each of the two
+#' directories; a file that has since been edited is recognised, kept, and
+#' reported, with the new version written beside it as `<file>.new` for you to
+#' merge, rather than silently overwritten. A skill of another tool's in
+#' `.agents/skills/` that happens to share a name with one of ours is treated
+#' the same way. (A project set up by version 0.3.2 or earlier has no record in
+#' `.claude/skills/`, so the first run after upgrading refreshes the skills there
+#' as it always did and starts keeping one.) Files that later versions stop
+#' shipping are removed if they are unmodified.
 #'
-#' So that agents other than Claude Code (which do not discover `.claude/skills/`
-#' natively) can use the skills too, an index of them (each skill's
-#' name, one-line description, and path) is generated from the skills' own frontmatter
-#' and added to `MIZER-AGENTS.md`. Those agents can then read the relevant
-#' `SKILL.md` on demand when a task matches.
+#' `MIZER-AGENTS.md` does not list the skills, since every agent set up here
+#' already lists the ones it finds. It tells agents to read the matching skill
+#' before starting a task, and tells an agent without skill support where to
+#' look.
 #'
 #' Finally, unless `r_session = FALSE`, it configures an MCP server named
 #' `r-mizer` so that the agent can reach your live R session. Agents have not
@@ -727,7 +739,7 @@ setup_mizer_agent <- function(path = ".", overwrite = FALSE,
     # decides where each one goes. `.fill_card_section()` explains why that
     # matters; the section builders are just above it.
     card <- readLines(mizer_src, warn = FALSE)
-    card <- .fill_card_section(card, "skills", .skills_index_section(skills_src))
+    card <- .fill_card_section(card, "skills", .skills_section(skills_src))
     card <- .fill_card_section(
         card, "r-session",
         if (isTRUE(r_session)) .r_session_section(run_r, pkg_dev) else "")
@@ -768,24 +780,32 @@ setup_mizer_agent <- function(path = ".", overwrite = FALSE,
         }
     }
 
-    # Deploy the bundled Claude skills into `.claude/skills/`. Each skill is a
+    # Deploy the bundled skills into each of `.skill_dirs`. Each skill is a
     # sub-directory containing a `SKILL.md` file. These are package-managed, so
     # they are refreshed (like `MIZER-AGENTS.md`) to stay up to date - but only
     # file by file, and only where nothing has edited them here.
     kept <- character(0)
     if (nzchar(skills_src) && dir.exists(skills_src)) {
-        skills <- .install_skills(skills_src, path)
-        kept <- skills$kept
-        if (length(skills$installed)) {
+        skills <- lapply(.skill_dirs, function(d) {
+            .install_skills(skills_src,
+                            normalizePath(file.path(path, d), mustWork = FALSE),
+                            adopt = d == .skill_dirs[1])
+        })
+        installed <- lapply(skills, `[[`, "installed")
+        removed <- unique(unlist(lapply(skills, `[[`, "removed")))
+        kept <- unlist(Map(function(d, s) file.path(d, s$kept),
+                           .skill_dirs, skills), use.names = FALSE)
+        if (length(unlist(installed))) {
+            where <- .skill_dirs[lengths(installed) > 0]
             bullets <- c(bullets, paste0(
-                "Installed ", .count(length(skills$installed), "skill"),
-                " in .claude/skills/ (Claude Code loads them itself)"))
+                "Installed ", .count(length(unique(unlist(installed))), "skill"),
+                " in ", paste0(where, "/", collapse = " and "),
+                " (agents load them themselves)"))
         }
-        if (length(skills$removed)) {
+        if (length(removed)) {
             bullets <- c(bullets, paste0(
-                "Removed ", .count(length(skills$removed), "skill"),
-                " no longer bundled: ",
-                paste(skills$removed, collapse = ", ")))
+                "Removed ", .count(length(removed), "skill"),
+                " no longer bundled: ", paste(removed, collapse = ", ")))
         }
     } else {
         bullets <- c(bullets, paste0(

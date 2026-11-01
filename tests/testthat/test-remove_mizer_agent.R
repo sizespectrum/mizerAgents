@@ -79,6 +79,9 @@ test_that("remove_mizer_agent keeps what belongs to the user", {
     expect_false(file.exists(file.path(skill_dirs[2], "SKILL.md")))
     expect_true(length(list.dirs(file.path(tmp_dir, ".claude", "skills"),
                                  recursive = FALSE)) == 2)
+    # The copy for the other agents held nothing of the project's, so it goes
+    # entirely, taking `.agents/` with it once the Antigravity config is gone
+    expect_false(dir.exists(file.path(tmp_dir, ".agents")))
 })
 
 test_that("remove_mizer_agent handles a project set up before the manifest", {
@@ -95,6 +98,7 @@ test_that("remove_mizer_agent handles a project set up before the manifest", {
     unlink(manifest)
     suppressMessages(remove_mizer_agent(path = tmp_dir))
     expect_false(dir.exists(file.path(tmp_dir, ".claude")))
+    expect_false(dir.exists(file.path(tmp_dir, ".agents")))
 })
 
 test_that("remove_mizer_agent removes the pre-marker bare import", {
