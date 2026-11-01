@@ -182,6 +182,23 @@
     append(lines[-at], strsplit(text, "\n", fixed = TRUE)[[1]], after = at - 1)
 }
 
+# The reference card as a character vector of lines: the static prose plus
+# three generated sections, substituted into the placeholders it carries rather
+# than appended, so that the card decides where each one goes.
+# `.fill_card_section()` explains why that matters; the section builders are
+# just above it. Separate from writing it so that `.project_is_stale()` can
+# compare a project's card with the one setup would write now. Internal helper.
+.build_card <- function(r_session, run_r, pkg_dev) {
+    card <- readLines(system.file("MIZER-AGENTS.md", package = "mizerAgents"),
+                      warn = FALSE)
+    card <- .fill_card_section(card, "skills", .skills_section(.skills_source()))
+    card <- .fill_card_section(
+        card, "r-session",
+        if (isTRUE(r_session)) .r_session_section(run_r, pkg_dev) else "")
+    .fill_card_section(card, "function-lookup",
+                       .function_lookup_section(.llms_source()))
+}
+
 # The instruction files agents read at startup. None of them is a fallback for
 # another: Claude Code reads `CLAUDE.md` and not `AGENTS.md`, and Gemini CLI
 # reads `GEMINI.md` unless `context.fileName` says otherwise. So all three are
@@ -323,6 +340,15 @@
     )
 }
 
+# What we install for the file `rel` of the skills source: the file itself, or
+# for a `SKILL.md` the agent's half of it with our footer appended. Internal
+# helper.
+.skill_content <- function(skills_src, rel) {
+    content <- readLines(file.path(skills_src, rel), warn = FALSE)
+    if (basename(rel) != "SKILL.md") return(content)
+    c(.strip_article_only(content), .skill_footer(sub("/.*$", "", rel)))
+}
+
 # Record of what we last wrote into a skills directory, kept beside the skills
 # themselves, one per `.skill_dirs`: a JSON object mapping each installed file's
 # path, relative to that directory, to its MD5 sum. Without it we cannot tell a file edited in the
@@ -443,11 +469,7 @@
     kept <- character(0)
 
     for (rel in rels) {
-        content <- readLines(file.path(skills_src, rel), warn = FALSE)
-        if (basename(rel) == "SKILL.md") {
-            content <- c(.strip_article_only(content),
-                         .skill_footer(sub("/.*$", "", rel)))
-        }
+        content <- .skill_content(skills_src, rel)
         want <- .hash_lines(content)
         dest <- file.path(skills_dest, rel)
         side <- paste0(dest, ".new")
@@ -728,26 +750,13 @@ setup_mizer_agent <- function(path = ".", overwrite = FALSE,
     # project, so a re-run meant as a refresh can turn a setting back over
     # without meaning to; `update_mizer_agent()` is the way to avoid that.
     before <- .detect_options(path)
-    mizer_src     <- system.file("MIZER-AGENTS.md", package = "mizerAgents")
     llms_src      <- .llms_source()
     skills_src    <- .skills_source()
     mizer_dest    <- normalizePath(file.path(path, "MIZER-AGENTS.md"), mustWork = FALSE)
     agents_dest   <- normalizePath(file.path(path, "AGENTS.md"),       mustWork = FALSE)
 
-    # The card is the static prose plus three generated sections, substituted
-    # into the placeholders it carries rather than appended, so that the card
-    # decides where each one goes. `.fill_card_section()` explains why that
-    # matters; the section builders are just above it.
-    card <- readLines(mizer_src, warn = FALSE)
-    card <- .fill_card_section(card, "skills", .skills_section(skills_src))
-    card <- .fill_card_section(
-        card, "r-session",
-        if (isTRUE(r_session)) .r_session_section(run_r, pkg_dev) else "")
-    card <- .fill_card_section(card, "function-lookup",
-                               .function_lookup_section(llms_src))
-
     # Always write/overwrite the package-managed MIZER-AGENTS.md file
-    writeLines(card, mizer_dest)
+    writeLines(.build_card(r_session, run_r, pkg_dev), mizer_dest)
 
     # Everything this run did is reported as one bulleted list at the end
     # rather than as a message per file, which was longer than anyone reads.

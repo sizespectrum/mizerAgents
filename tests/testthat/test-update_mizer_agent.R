@@ -109,6 +109,8 @@ test_that(".check_mizeragents_version reports when a newer version is available"
     expect_true(any(grepl("A newer version of mizerAgents is available", msgs)))
     expect_true(any(grepl("99.0.0 > 0.4.1", msgs, fixed = TRUE)))
     expect_true(any(grepl("pak::pak", msgs, fixed = TRUE)))
+    # Upgrading the package refreshes no project, so the message says how to
+    expect_true(any(grepl("update_mizer_agent()", msgs, fixed = TRUE)))
 
     # When local is up to date or newer, it says nothing
     msgs_ok <- capture_messages(
@@ -156,4 +158,64 @@ test_that("the version check is made once by setup and once by an update", {
 
     suppressMessages(update_mizer_agent(path = tmp_dir, check_version = FALSE))
     expect_identical(calls, 2L)
+})
+
+test_that("a project is stale when an update would change its files", {
+    tmp_dir <- tempfile("mizer_agent_stale")
+    dir.create(tmp_dir)
+    on.exit(unlink(tmp_dir, recursive = TRUE))
+    skip_if(!nzchar(.skills_source()), "the installed mizer ships no skills")
+
+    # Never set up, and just set up: nothing to refresh either way
+    expect_false(.project_is_stale(tmp_dir))
+    suppressMessages(setup_mizer_agent(path = tmp_dir, check_version = FALSE))
+    expect_false(.project_is_stale(tmp_dir))
+
+    # The card is compared with the one the project's own settings give, so a
+    # project set up with non-default ones is not stale either
+    suppressMessages(setup_mizer_agent(path = tmp_dir, run_r = FALSE,
+                                       pkg_dev = TRUE, check_version = FALSE))
+    expect_false(.project_is_stale(tmp_dir))
+
+    # A project from before 0.4.3 has no copy in .agents/skills/
+    unlink(file.path(tmp_dir, ".agents", "skills"), recursive = TRUE)
+    expect_true(.project_is_stale(tmp_dir))
+    suppressMessages(update_mizer_agent(path = tmp_dir, check_version = FALSE))
+    expect_false(.project_is_stale(tmp_dir))
+
+    # A skill file installed by an older bundle and untouched since
+    manifest <- file.path(tmp_dir, ".claude", "skills", .skill_manifest)
+    skill <- file.path(tmp_dir, ".claude", "skills", "calibrate-model",
+                       "SKILL.md")
+    writeLines("An older version of the skill", skill)
+    hashes <- .read_skill_manifest(manifest)
+    hashes["calibrate-model/SKILL.md"] <- unname(tools::md5sum(skill))
+    .write_skill_manifest(manifest, hashes)
+    expect_true(.project_is_stale(tmp_dir))
+    suppressMessages(update_mizer_agent(path = tmp_dir, check_version = FALSE))
+    expect_false(.project_is_stale(tmp_dir))
+
+    # A skill file edited here is kept by an update, so it is not staleness:
+    # reporting it would repeat on every connect until the edit was undone
+    cat("\nA note added by hand.\n", file = skill, append = TRUE)
+    expect_false(.project_is_stale(tmp_dir))
+
+    # An out-of-date card
+    card <- file.path(tmp_dir, "MIZER-AGENTS.md")
+    writeLines(c(readLines(card), "An older line"), card)
+    expect_true(.project_is_stale(tmp_dir))
+})
+
+test_that("connect_mizer_agent says when the project is out of date", {
+    skip_if_not_installed("btw")
+    local_mocked_bindings(.session_slot = function() NULL,
+                          .connect_preflight = function(path) NULL,
+                          .project_is_stale = function(path) TRUE)
+    local_mocked_bindings(btw_mcp_session = function(...) NULL, .package = "btw")
+    expect_message(suppressWarnings(connect_mizer_agent(tempdir())),
+                   "update_mizer_agent()", fixed = TRUE)
+
+    # A check that fails costs nothing but the message
+    local_mocked_bindings(.project_is_stale = function(path) stop("boom"))
+    expect_no_message(suppressWarnings(connect_mizer_agent(tempdir())))
 })

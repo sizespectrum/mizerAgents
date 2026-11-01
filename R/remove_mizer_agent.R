@@ -174,15 +174,8 @@
     src <- .skills_source()
     if (!nzchar(src) || !dir.exists(src)) return(character(0))
     rels <- sort(list.files(src, recursive = TRUE))
-    hashes <- vapply(rels, function(rel) {
-        content <- readLines(file.path(src, rel), warn = FALSE)
-        if (basename(rel) == "SKILL.md") {
-            content <- c(.strip_article_only(content),
-                         .skill_footer(sub("/.*$", "", rel)))
-        }
-        .hash_lines(content)
-    }, character(1))
-    hashes
+    vapply(rels, function(rel) .hash_lines(.skill_content(src, rel)),
+           character(1))
 }
 
 # Take our server out of a JSON config, leaving any other servers alone and

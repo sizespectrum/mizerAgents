@@ -29,6 +29,16 @@
   `Rscript` command the card gives every project, without starting a new R
   process for each lookup. It is named only in the session section, so a
   project set up with `r_session = FALSE` is never sent to a tool it lacks.
+* **`connect_mizer_agent()` says when the project's agent files are out of
+  date**, that is, when `update_mizer_agent()` would change the reference card
+  or a skill because mizer or mizerAgents has been upgraded since the project
+  was set up. Upgrading either package changes no project, and until now
+  nothing said so. It only reports: refreshing rewrites files you may have
+  committed, so `update_mizer_agent()` is still yours to run. Skill files
+  edited in the project do not count, since an update keeps them.
+* **The message announcing a newer mizerAgents now says to run
+  `update_mizer_agent()` in each project** after upgrading, since installing
+  the new version refreshes none of them.
 
 # mizerAgents 0.4.2
 

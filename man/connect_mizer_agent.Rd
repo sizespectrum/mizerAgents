@@ -42,6 +42,14 @@ and what they are allowed to do in it, warning you if the answer is none -
 handing over a session that nothing is set up to reach otherwise fails
 silently.
 
+It also tells you when the project's agent files are out of date: when
+\code{\link[=update_mizer_agent]{update_mizer_agent()}} would change the reference card or a skill, because
+mizer or mizerAgents has been upgraded since the project was set up. It does
+not refresh them itself, since that rewrites files you may have committed;
+run \code{\link[=update_mizer_agent]{update_mizer_agent()}} when it suits you. Skill files you have edited do
+not count, as an update keeps them. A project that connects through the
+\code{.Rprofile} never calls this function, so it is not told.
+
 Call it once per session. A second call in the same session does not refresh
 the connection but breaks it, so this function checks and refuses; see
 "Connecting twice" below.
